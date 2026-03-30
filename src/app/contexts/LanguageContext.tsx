@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
-export type Language = 'en' | 'hi' | 'pa';
+export type Language = 'en' | 'hi' | 'pa' | 'mr' | 'ta';
 
 interface LanguageContextType {
   language: Language;
@@ -391,6 +391,260 @@ const translations = {
     'rice_price_forecast': 'ਚਾਵਲ ਕੀਮਤ ਪੂਰਵ-ਅਨੁਮਾਨ',
     'soil_health_report': 'ਪ੍ਰਥਿਵੀ ਸਵਾਸਥਿਯਾ ਰਿਪੋਰਟ',
     'good_condition': 'ਅਚੰਨ ਸਥਿਤੀ',
+  },
+  mr: {
+    // Common - Marathi
+    'common.welcome': 'स्वागत आहे',
+    'common.login': 'लॉगिन',
+    'common.logout': 'लॉगआउट',
+    'common.submit': 'सबमिट करा',
+    'common.cancel': 'रद्द करा',
+    'common.save': 'जतन करा',
+    'common.delete': 'हटवा',
+    'common.edit': 'संपादन करा',
+    'common.loading': 'लोड होत आहे...',
+    'common.error': 'त्रुटी',
+    'common.success': 'यशस्वी',
+    
+    // Navigation
+    'nav.home': 'होम',
+    'nav.features': 'वैशिष्ट्ये',
+    'nav.about': 'आमच्याबद्दल',
+    'nav.contact': 'संपर्क',
+    'nav.dashboard': 'डॅशबोर्ड',
+    'nav.profile': 'प्रोफाइल',
+    
+    // Home Page
+    'home.title': 'सागरी - कृषी सहाय्यक',
+    'home.subtitle': 'तुमचा बुद्धिमान शेती सहाय्यक',
+    'home.description': 'भारतीय शेतकऱ्यांना पीक रोग ओळख, उत्पन्न अंदाज आणि स्मार्ट शेती उपायांसाठी AI-संचालित साधनांसह सशक्त करणे.',
+    'home.cta': 'सुरू करा',
+    'home.learnMore': 'अधिक जाणून घ्या',
+    
+    // Features
+    'features.diseaseDetection': 'रोग ओळख',
+    'features.diseaseDesc': 'AI-संचालित पीक रोग ओळख',
+    'features.yieldPrediction': 'उत्पन्न अंदाज',
+    'features.yieldDesc': 'ML सह पीक उत्पन्नाचा अंदाज',
+    'features.priceForecasting': 'किंमत अंदाज',
+    'features.priceDesc': 'बाजार किंमत अंदाज',
+    'features.recommendations': 'स्मार्ट शिफारसी',
+    'features.recommendDesc': 'वैयक्तिक शेती सल्ला',
+    
+    // Dashboard
+    'dashboard.totalPredictions': 'एकूण अंदाज',
+    'dashboard.points': 'गुण',
+    'dashboard.activeToday': 'आज सक्रिय',
+    'dashboard.quickActions': 'जलद क्रिया',
+    'dashboard.recentActivity': 'अलीकडील क्रियाकलाप',
+    
+    // Disease Detection
+    'disease.title': 'पीक रोग ओळख',
+    'disease.upload': 'विश्लेषणासाठी पीक प्रतिमा अपलोड करा',
+    'disease.analyzing': 'प्रतिमा विश्लेषण करत आहे...',
+    'disease.result': 'विश्लेषण परिणाम',
+    'disease.confidence': 'विश्वास',
+    'disease.treatment': 'शिफारस केलेले उपचार',
+    
+    // Voice Assistant
+    'voice.listening': 'ऐकत आहे...',
+    'voice.speak': 'आता बोला',
+    'voice.assistant': 'व्हॉइस असिस्टंट',
+    'voice.howCanIHelp': 'मी आज तुमची कशी मदत करू शकतो?',
+    
+    // Login
+    'login.phone': 'मोबाइल नंबर',
+    'login.enterPhone': '10 अंकी मोबाइल नंबर प्रविष्ट करा',
+    'login.sendOtp': 'OTP पाठवा',
+    'login.enterOtp': 'OTP प्रविष्ट करा',
+    'login.verifyOtp': 'OTP सत्यापित करा',
+    'login.selectRole': 'तुमची भूमिका निवडा',
+    'login.farmer': 'शेतकरी',
+    'login.admin': 'प्रशासक',
+    'login.yourName': 'तुमचे नाव',
+    'login.enterName': 'तुमचे नाव प्रविष्ट करा',
+    'login.completeLogin': 'लॉगिन पूर्ण करा',
+    
+    // Community
+    'community.title': 'शेतकरी समुदाय',
+    'community.share': 'तुमचा अनुभव शेअर करा',
+    'community.post': 'पोस्ट',
+    'community.like': 'आवडले',
+    'community.comment': 'टिप्पणी',
+    
+    // Market
+    'market.prices': 'बाजार किंमती',
+    'market.location': 'स्थान',
+    'market.price': 'किंमत',
+    'market.change': 'बदल',
+    
+    // Weather
+    'weather.title': 'हवामान अंदाज',
+    'weather.temperature': 'तापमान',
+    'weather.humidity': 'आर्द्रता',
+    'weather.wind': 'वारा वेग',
+    'weather.forecast': 'अंदाज',
+    
+    // Farmer Dashboard
+    'disease_detection': 'रोग ओळख',
+    'upload_crop_photo': 'पीक फोटो अपलोड करा',
+    'risk_prediction': 'जोखीम अंदाज',
+    'check_crop_failure_risk': 'पीक अपयश जोखीम तपासा',
+    'price_forecast': 'किंमत अंदाज',
+    'future_price_trends': 'भविष्यातील किंमत ट्रेंड',
+    'crop_advice': 'पीक सल्ला',
+    'smart_recommendations': 'स्मार्ट शिफारसी',
+    'crop_calendar': 'पीक दिनदर्शिका',
+    'best_time_to_sow_harvest': 'पेरणी/कापणीचा सर्वोत्तम वेळ',
+    'weather': 'हवामान',
+    'live_weather_updates': 'थेट हवामान अपडेट',
+    'market_price': 'बाजार किंमत',
+    'compare_mandi_rates': 'मंडी दरांची तुलना करा',
+    'community': 'समुदाय',
+    'connect_with_farmers': 'शेतकऱ्यांशी संपर्क साधा',
+    'expert_connect': 'तज्ञ संपर्क',
+    'chat_with_experts': 'तज्ञांशी चॅट करा',
+    'govt_schemes': 'सरकारी योजना',
+    'subsidy_information': 'अनुदान माहिती',
+    'soil_health': 'माती आरोग्य',
+    'soil_test_reports': 'माती चाचणी अहवाल',
+    'my_history': 'माझा इतिहास',
+    'past_predictions': 'मागील अंदाज',
+    'heavy_rain_expected': 'तुमच्या क्षेत्रात मुसळधार पाऊस अपेक्षित',
+    'disease_outbreak_nearby_area': 'जवळच्या भागात रोग उद्रेक',
+    'wheat_prices_rising': 'गहू किंमती वाढत आहेत',
+    'wheat_disease_check': 'गहू रोग तपासणी',
+    'healthy': 'निरोगी',
+    'rice_price_forecast': 'तांदूळ किंमत अंदाज',
+    'soil_health_report': 'माती आरोग्य अहवाल',
+    'good_condition': 'चांगली स्थिती',
+  },
+  ta: {
+    // Common - Tamil
+    'common.welcome': 'வரவேற்கிறோம்',
+    'common.login': 'உள்நுழைவு',
+    'common.logout': 'வெளியேறு',
+    'common.submit': 'சமர்ப்பிக்கவும்',
+    'common.cancel': 'ரத்துசெய்',
+    'common.save': 'சேமி',
+    'common.delete': 'நீக்கு',
+    'common.edit': 'திருத்து',
+    'common.loading': 'ஏற்றுகிறது...',
+    'common.error': 'பிழை',
+    'common.success': 'வெற்றி',
+    
+    // Navigation
+    'nav.home': 'முகப்பு',
+    'nav.features': 'அம்சங்கள்',
+    'nav.about': 'எங்களை பற்றி',
+    'nav.contact': 'தொடர்பு',
+    'nav.dashboard': 'டாஷ்போர்டு',
+    'nav.profile': 'சுயவிவரம்',
+    
+    // Home Page
+    'home.title': 'சாக்ரி - கிருஷி சஹாயக்',
+    'home.subtitle': 'உங்கள் புத்திசாலி விவசாய உதவியாளர்',
+    'home.description': 'இந்திய விவசாயிகளுக்கு பயிர் நோய் கண்டறிதல், விளைச்சல் கணிப்பு மற்றும் ஸ்மார்ட் விவசாய தீர்வுகளுக்கான AI-இயங்கும் கருவிகளுடன் அதிகாரமளித்தல்.',
+    'home.cta': 'தொடங்கு',
+    'home.learnMore': 'மேலும் அறிக',
+    
+    // Features
+    'features.diseaseDetection': 'நோய் கண்டறிதல்',
+    'features.diseaseDesc': 'AI-இயங்கும் பயிர் நோய் அடையாளம்',
+    'features.yieldPrediction': 'விளைச்சல் கணிப்பு',
+    'features.yieldDesc': 'ML உடன் பயிர் விளைச்சல் கணிப்பு',
+    'features.priceForecasting': 'விலை முன்னறிவிப்பு',
+    'features.priceDesc': 'சந்தை விலை கணிப்புகள்',
+    'features.recommendations': 'ஸ்மார்ட் பரிந்துரைகள்',
+    'features.recommendDesc': 'தனிப்பயனாக்கப்பட்ட விவசாய ஆலோசனை',
+    
+    // Dashboard
+    'dashboard.totalPredictions': 'மொத்த கணிப்புகள்',
+    'dashboard.points': 'புள்ளிகள்',
+    'dashboard.activeToday': 'இன்று செயலில்',
+    'dashboard.quickActions': 'விரைவு செயல்கள்',
+    'dashboard.recentActivity': 'சமீபத்திய செயல்பாடு',
+    
+    // Disease Detection
+    'disease.title': 'பயிர் நோய் கண்டறிதல்',
+    'disease.upload': 'பகுப்பாய்வுக்கான பயிர் படத்தை பதிவேற்றவும்',
+    'disease.analyzing': 'படம் பகுப்பாய்வு செய்கிறது...',
+    'disease.result': 'பகுப்பாய்வு முடிவு',
+    'disease.confidence': 'நம்பிக்கை',
+    'disease.treatment': 'பரிந்துரைக்கப்பட்ட சிகிச்சை',
+    
+    // Voice Assistant
+    'voice.listening': 'கேட்கிறது...',
+    'voice.speak': 'இப்போது பேசுங்கள்',
+    'voice.assistant': 'குரல் உதவியாளர்',
+    'voice.howCanIHelp': 'இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?',
+    
+    // Login
+    'login.phone': 'மொபைல் எண்',
+    'login.enterPhone': '10 இலக்க மொபைல் எண்ணை உள்ளிடவும்',
+    'login.sendOtp': 'OTP அனுப்பு',
+    'login.enterOtp': 'OTP உள்ளிடவும்',
+    'login.verifyOtp': 'OTP சரிபார்க்கவும்',
+    'login.selectRole': 'உங்கள் பங்கை தேர்ந்தெடுக்கவும்',
+    'login.farmer': 'விவசாயி',
+    'login.admin': 'நிர்வாகி',
+    'login.yourName': 'உங்கள் பெயர்',
+    'login.enterName': 'உங்கள் பெயரை உள்ளிடவும்',
+    'login.completeLogin': 'உள்நுழைவை முடிக்கவும்',
+    
+    // Community
+    'community.title': 'விவசாயி சமூகம்',
+    'community.share': 'உங்கள் அனுபவத்தை பகிரவும்',
+    'community.post': 'இடுகை',
+    'community.like': 'விருப்பம்',
+    'community.comment': 'கருத்து',
+    
+    // Market
+    'market.prices': 'சந்தை விலைகள்',
+    'market.location': 'இடம்',
+    'market.price': 'விலை',
+    'market.change': 'மாற்றம்',
+    
+    // Weather
+    'weather.title': 'வானிலை முன்னறிவிப்பு',
+    'weather.temperature': 'வெப்பநிலை',
+    'weather.humidity': 'ஈரப்பதம்',
+    'weather.wind': 'காற்றின் வேகம்',
+    'weather.forecast': 'முன்னறிவிப்பு',
+    
+    // Farmer Dashboard
+    'disease_detection': 'நோய் கண்டறிதல்',
+    'upload_crop_photo': 'பயிர் புகைப்படத்தை பதிவேற்றவும்',
+    'risk_prediction': 'ஆபத்து கணிப்பு',
+    'check_crop_failure_risk': 'பயிர் தோல்வி அபாயத்தை சரிபார்க்கவும்',
+    'price_forecast': 'விலை முன்னறிவிப்பு',
+    'future_price_trends': 'எதிர்கால விலை போக்குகள்',
+    'crop_advice': 'பயிர் ஆலோசனை',
+    'smart_recommendations': 'ஸ்மார்ட் பரிந்துரைகள்',
+    'crop_calendar': 'பயிர் நாட்காட்டி',
+    'best_time_to_sow_harvest': 'விதைப்பு/அறுவடைக்கான சிறந்த நேரம்',
+    'weather': 'வானிலை',
+    'live_weather_updates': 'நேரடி வானிலை புதுப்பிப்புகள்',
+    'market_price': 'சந்தை விலை',
+    'compare_mandi_rates': 'மண்டி விலைகளை ஒப்பிடுக',
+    'community': 'சமூகம்',
+    'connect_with_farmers': 'விவசாயிகளுடன் இணைக்கவும்',
+    'expert_connect': 'நிபுணர் இணைப்பு',
+    'chat_with_experts': 'நிபுணர்களுடன் அரட்டை',
+    'govt_schemes': 'அரசு திட்டங்கள்',
+    'subsidy_information': 'மானியம் தகவல்',
+    'soil_health': 'மண் ஆரோக்கியம்',
+    'soil_test_reports': 'மண் சோதனை அறிக்கைகள்',
+    'my_history': 'எனது வரலாறு',
+    'past_predictions': 'கடந்த கணிப்புகள்',
+    'heavy_rain_expected': 'உங்கள் பகுதியில் பலத்த மழை எதிர்பார்க்கப்படுகிறது',
+    'disease_outbreak_nearby_area': 'அருகிலுள்ள பகுதியில் நோய் பரவல்',
+    'wheat_prices_rising': 'கோதுமை விலைகள் உயர்ந்து வருகின்றன',
+    'wheat_disease_check': 'கோதுமை நோய் சோதனை',
+    'healthy': 'ஆரோக்கியமான',
+    'rice_price_forecast': 'அரிசி விலை முன்னறிவிப்பு',
+    'soil_health_report': 'மண் ஆரோக்கிய அறிக்கை',
+    'good_condition': 'நல்ல நிலை',
   },
 };
 

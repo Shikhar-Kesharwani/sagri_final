@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, X, Sparkles, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Volume2, X, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useNavigate } from 'react-router';
+import { useLanguage, Language } from '../contexts/LanguageContext';
+import { useNavigate, useLocation } from 'react-router';
+import { useAuth } from './AuthProvider';
+
+// Language codes for Web Speech API
+const LANGUAGE_CODES: Record<Language, string> = {
+  en: 'en-IN',
+  hi: 'hi-IN',
+  pa: 'pa-IN',
+  mr: 'mr-IN',
+  ta: 'ta-IN',
+};
+
+// Comprehensive command mapping for all routes and actions
+interface CommandMap {
+  keywords: string[];
+  action: () => void;
+  response: Record<Language, string>;
+}
 
 export function VoiceAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,184 +29,575 @@ export function VoiceAssistant() {
   const [isFloating, setIsFloating] = useState(true);
   const [error, setError] = useState('');
   const [isSupported, setIsSupported] = useState(true);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
   const recognitionRef = useRef<any>(null);
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth();
 
+  // Check browser support on mount
   useEffect(() => {
-    // Check if Web Speech API is supported
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
       setIsSupported(false);
       setError('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
-      return;
+      setPermissionStatus('denied');
+    } else {
+      setPermissionStatus('prompt');
     }
+  }, []);
 
-    // Initialize Web Speech API only when user interacts (not on mount)
-    // This prevents the "not-allowed" error on page load
+  // Initialize speech recognition when needed
+  const initializeSpeechRecognition = () => {
+    if (recognitionRef.current) return true;
+
     try {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      if (!SpeechRecognition) {
+        throw new Error('Speech Recognition not supported');
+      }
+
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
+      recognitionRef.current.maxAlternatives = 1;
       
       // Set language based on current language
-      const langCode = language === 'hi' ? 'hi-IN' : language === 'pa' ? 'pa-IN' : 'en-IN';
-      recognitionRef.current.lang = langCode;
+      recognitionRef.current.lang = LANGUAGE_CODES[language];
+
+      recognitionRef.current.onstart = () => {
+        console.log('Speech recognition started');
+        setIsListening(true);
+        setError('');
+        setPermissionStatus('granted');
+      };
 
       recognitionRef.current.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
+        console.log('Recognized text:', text);
         setTranscript(text);
         handleCommand(text);
-        setIsListening(false);
-        setError('');
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
+        console.error('Speech recognition error:', event.error, event);
         setIsListening(false);
         
-        // Provide user-friendly error messages
-        if (event.error === 'not-allowed') {
-          setError(language === 'hi' 
-            ? 'माइक्रोफोन की अनुमति की आवश्यकता है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफोन की अनुमति दें।'
-            : language === 'pa'
-            ? 'ਮਾਈਕ੍ਰੋਫੋਨ ਦੀ ਇਜਾਜ਼ਤ ਦੀ ਲੋੜ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਬ੍ਰਾਊਜ਼ਰ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਮਾਈਕ੍ਰੋਫੋਨ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ।'
-            : 'Microphone permission denied. Please allow microphone access in your browser settings.');
-        } else if (event.error === 'no-speech') {
-          setError(language === 'hi' 
-            ? 'कोई आवाज नहीं सुनाई दी। कृपया फिर से प्रयास करें।'
-            : language === 'pa'
-            ? 'ਕੋਈ ਆਵਾਜ਼ ਨਹੀਂ ਸੁਣਾਈ ਦਿੱਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।'
-            : 'No speech detected. Please try again.');
-        } else if (event.error === 'audio-capture') {
-          setError(language === 'hi' 
-            ? 'माइक्रोफोन नहीं मिला। कृपया जांचें कि माइक्रोफोन कनेक्ट है।'
-            : language === 'pa'
-            ? 'ਮਾਈਕ੍ਰੋਫੋਨ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਜਾਂਚ ਕਰੋ ਕਿ ਮਾਈਕ੍ਰੋਫੋਨ ਕਨੈਕਟ ਹੈ।'
-            : 'Microphone not found. Please check if your microphone is connected.');
-        } else if (event.error === 'network') {
-          setError(language === 'hi' 
-            ? 'नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें।'
-            : language === 'pa'
-            ? 'ਨੈੱਟਵਰਕ ਗਲਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਜਾਂਚੋ।'
-            : 'Network error. Please check your internet connection.');
-        } else {
-          // Silently ignore other errors to prevent console spam
-          // Only show errors when user is actively using the feature
-          if (isListening) {
-            setError(language === 'hi' 
-              ? 'आवाज पहचान त्रुटि। कृपया फिर से प्रयास करें।'
-              : language === 'pa'
-              ? 'ਆਵਾਜ਼ ਪਛਾਣ ਗਲਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।'
-              : 'Voice recognition error. Please try again.');
+        // Provide user-friendly error messages in all languages
+        const errorMessages: Record<string, Record<Language, string>> = {
+          'not-allowed': {
+            en: 'Microphone permission denied. Please click "Allow" when prompted by your browser.',
+            hi: 'माइक्रोफोन की अनुमति अस्वीकृत। कृपया ब्राउज़र द्वारा पूछे जाने पर "अनुमति दें" पर क्लिक करें।',
+            pa: 'ਮਾਈਕ੍ਰੋਫੋਨ ਦੀ ਇਜਾਜ਼ਤ ਰੱਦ। ਕਿਰਪਾ ਕਰਕੇ ਬ੍ਰਾਊਜ਼ਰ ਦੁਆਰਾ ਪੁੱਛੇ ਜਾਣ \'ਤੇ "ਇਜਾਜ਼ਤ ਦਿਓ" \'ਤੇ ਕਲਿੱਕ ਕਰੋ।',
+            mr: 'मायक्रोफोन परवानगी नाकारली. कृपया ब्राउझरद्वारे विचारल्यावर "परवानगी द्या" वर क्लिक करा.',
+            ta: 'மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. உலாவியால் கேட்கப்படும்போது "அனுமதி" என்பதைக் கிளிக் செய்யவும்.',
+          },
+          'no-speech': {
+            en: 'No speech detected. Please speak clearly and try again.',
+            hi: 'कोई आवाज नहीं सुनाई दी। कृपया स्पष्ट बोलें और फिर से प्रयास करें।',
+            pa: 'ਕੋਈ ਆਵਾਜ਼ ਨਹੀਂ ਸੁਣਾਈ ਦਿੱਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਸਪਸ਼ਟ ਬੋਲੋ ਅਤੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
+            mr: 'कोणतेही भाषण आढळले नाही. कृपया स्पष्टपणे बोला आणि पुन्हा प्रयत्न करा.',
+            ta: 'பேச்சு கண்டறியப்படவில்லை. தயவுசெய்து தெளிவாகப் பேசி மீண்டும் முயற்சிக்கவும்.',
+          },
+          'audio-capture': {
+            en: 'Microphone not found or not working. Please check your microphone.',
+            hi: 'माइक्रोफोन नहीं मिला या काम नहीं कर रहा। कृपया अपना माइक्रोफोन जांचें।',
+            pa: 'ਮਾਈਕ੍ਰੋਫੋਨ ਨਹੀਂ ਮਿਲਿਆ ਜਾਂ ਕੰਮ ਨਹੀਂ ਕਰ ਰਿਹਾ। ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਮਾਈਕ੍ਰੋਫੋਨ ਜਾਂਚੋ।',
+            mr: 'मायक्रोफोन सापडला नाही किंवा काम करत नाही. कृपया तुमचा मायक्रोफोन तपासा.',
+            ta: 'மைக்ரோஃபோன் கிடைக்கவில்லை அல்லது வேலை செய்யவில்லை. உங்கள் மைக்ரோஃபோனை சரிபார்க்கவும்.',
+          },
+          'network': {
+            en: 'Network error. Speech recognition requires internet connection.',
+            hi: 'नेटवर्क त्रुटि। आवाज पहचान के लिए इंटरनेट कनेक्शन आवश्यक है।',
+            pa: 'ਨੈੱਟਵਰਕ ਗਲਤੀ। ਆਵਾਜ਼ ਪਛਾਣ ਲਈ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਦੀ ਲੋੜ ਹੈ।',
+            mr: 'नेटवर्क त्रुटी. आवाज ओळखीसाठी इंटरनेट कनेक्शन आवश्यक आहे.',
+            ta: 'நெட்வொர்க் பிழை. குரல் அங்கீகாரத்திற்கு இணைய இணைப்பு தேவை.',
+          },
+          'aborted': {
+            en: 'Speech recognition was stopped.',
+            hi: 'आवाज पहचान रोक दी गई।',
+            pa: 'ਆਵਾਜ਼ ਪਛਾਣ ਰੋਕ ਦਿੱਤੀ ਗਈ।',
+            mr: 'आवाज ओळख थांबवली गेली.',
+            ta: 'குரல் அங்கீகாரம் நிறுத்தப்பட்டது.',
+          },
+        };
+
+        const errorMsg = errorMessages[event.error];
+        if (errorMsg) {
+          setError(errorMsg[language]);
+          if (event.error === 'not-allowed') {
+            setPermissionStatus('denied');
           }
+        } else {
+          // Generic error message
+          const genericError = {
+            en: 'Voice recognition error. Please try again.',
+            hi: 'आवाज पहचान त्रुटि। कृपया फिर से प्रयास करें।',
+            pa: 'ਆਵਾਜ਼ ਪਛਾਣ ਗਲਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
+            mr: 'आवाज ओळख त्रुटी. कृपया पुन्हा प्रयत्न करा.',
+            ta: 'குரல் அங்கீகார பிழை. மீண்டும் முயற்சிக்கவும்.',
+          };
+          setError(genericError[language]);
         }
       };
 
       recognitionRef.current.onend = () => {
+        console.log('Speech recognition ended');
         setIsListening(false);
       };
+
+      return true;
     } catch (err) {
       console.error('Error initializing speech recognition:', err);
       setIsSupported(false);
       setError('Failed to initialize speech recognition.');
+      return false;
     }
-  }, [language, isListening]);
+  };
 
+  // Request microphone permission and start listening
   const startListening = async () => {
     if (!isSupported) {
       return;
     }
 
-    if (!recognitionRef.current) {
-      setError('Speech recognition not available.');
-      return;
-    }
-
     try {
+      // Clear previous state
       setTranscript('');
       setResponse('');
       setError('');
+      
+      // Initialize speech recognition if not already done
+      if (!initializeSpeechRecognition()) {
+        return;
+      }
+
+      // Update language before starting
+      if (recognitionRef.current) {
+        recognitionRef.current.lang = LANGUAGE_CODES[language];
+      }
+
+      // Start recognition - browser will prompt for permission if needed
       setIsListening(true);
-      await recognitionRef.current.start();
+      recognitionRef.current.start();
+      
     } catch (err: any) {
       console.error('Error starting recognition:', err);
       setIsListening(false);
       
-      if (err.message?.includes('already started')) {
-        // Already listening, just reset state
+      if (err.message?.includes('already started') || err.message?.includes('recognition has already started')) {
+        // Already listening, just update state
         setIsListening(true);
       } else {
-        setError(language === 'hi' 
-          ? 'आवाज पहचान शुरू नहीं हो सका। कृपया फिर से प्रयास करें।'
-          : language === 'pa'
-          ? 'ਆਵਾਜ਼ ਪਛਾਣ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।'
-          : 'Could not start voice recognition. Please try again.');
+        const startErrorMsg = {
+          en: 'Could not start voice recognition. Click the microphone button to try again.',
+          hi: 'आवाज पहचान शुरू नहीं हो सका। फिर से प्रयास करने के लिए माइक्रोफोन बटन पर क्लिक करें।',
+          pa: 'ਆਵਾਜ਼ ਪਛਾਣ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋ ਸਕੀ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰਨ ਲਈ ਮਾਈਕ੍ਰੋਫੋਨ ਬਟਨ \'ਤੇ ਕਲਿੱਕ ਕਰੋ।',
+          mr: 'आवाज ओळख सुरू करू शकलो नाही. पुन्हा प्रयत्न करण्यासाठी मायक्रोफोन बटणावर क्लिक करा.',
+          ta: 'குரல் அங்கீகாரத்தைத் தொடங்க முடியவில்லை. மீண்டும் முயற்சிக்க மைக்ரோஃபோன் பொத்தானைக் கிளிக் செய்யவும்.',
+        };
+        setError(startErrorMsg[language]);
       }
     }
   };
 
   const stopListening = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.error('Error stopping recognition:', err);
+      }
       setIsListening(false);
     }
   };
 
   const speak = (text: string) => {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    const langCode = language === 'hi' ? 'hi-IN' : language === 'pa' ? 'pa-IN' : 'en-IN';
-    utterance.lang = langCode;
+    utterance.lang = LANGUAGE_CODES[language];
     utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    
+    // Handle speech synthesis errors
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event);
+    };
+    
     window.speechSynthesis.speak(utterance);
   };
 
   const handleCommand = (text: string) => {
     const lowerText = text.toLowerCase();
-    let responseText = '';
-    let action = null;
+    
+    // Define all command mappings
+    const commands: CommandMap[] = [
+      // Language switching
+      {
+        keywords: ['english', 'इंग्लिश', 'अंग्रेजी', 'ਅੰਗਰੇਜ਼ੀ', 'इंग्रजी', 'ஆங்கிலம்'],
+        action: () => setLanguage('en'),
+        response: {
+          en: 'Switching to English',
+          hi: 'अंग्रेजी में बदल रहे हैं',
+          pa: 'ਅੰਗਰੇਜ਼ੀ ਵਿੱਚ ਬਦਲ ਰਹੇ ਹਾਂ',
+          mr: 'इंग्रजीमध्ये बदलत आहे',
+          ta: 'ஆங்கிலத்திற்கு மாறுகிறது',
+        },
+      },
+      {
+        keywords: ['hindi', 'हिन्दी', 'हिंदी', 'ਹਿੰਦੀ', 'हिंदी', 'இந்தி'],
+        action: () => setLanguage('hi'),
+        response: {
+          en: 'Switching to Hindi',
+          hi: 'हिंदी में बदल रहे हैं',
+          pa: 'ਹਿੰਦੀ ਵਿੱਚ ਬਦਲ ਰਹੇ ਹਾਂ',
+          mr: 'हिंदीमध्ये बदलत आहे',
+          ta: 'இந்திக்கு மாறுகிறது',
+        },
+      },
+      {
+        keywords: ['punjabi', 'पंजाबी', 'ਪੰਜਾਬੀ', 'पंजाबी', 'பஞ்சாபி'],
+        action: () => setLanguage('pa'),
+        response: {
+          en: 'Switching to Punjabi',
+          hi: 'पंजाबी में बदल रहे हैं',
+          pa: 'ਪੰਜਾਬੀ ਵਿੱਚ ਬਦਲ ਰਹੇ ਹਾਂ',
+          mr: 'पंजाबीमध्ये बदलत आहे',
+          ta: 'பஞ்சாபிக்கு மாறுகிறது',
+        },
+      },
+      {
+        keywords: ['marathi', 'मराठी', 'ਮਰਾਠੀ', 'मराठी', 'மராத்தி'],
+        action: () => setLanguage('mr'),
+        response: {
+          en: 'Switching to Marathi',
+          hi: 'मराठी में बदल रहे हैं',
+          pa: 'ਮਰਾਠੀ ਵਿੱਚ ਬਦਲ ਰਹੇ ਹਾਂ',
+          mr: 'मराठीमध्ये बदलत आहे',
+          ta: 'மராத்திக்கு மாறுகிறது',
+        },
+      },
+      {
+        keywords: ['tamil', 'तमिल', 'ਤਮਿਲ', 'तमिळ', 'தமிழ்'],
+        action: () => setLanguage('ta'),
+        response: {
+          en: 'Switching to Tamil',
+          hi: 'तमिल में बदल रहे हैं',
+          pa: 'ਤਮਿਲ ਵਿੱਚ ਬਦਲ ਰਹੇ ਹਾਂ',
+          mr: 'तमिळमध्ये बदलत आहे',
+          ta: 'தமிழுக்கு மாறுகிறது',
+        },
+      },
+      
+      // Navigation commands
+      {
+        keywords: ['home', 'होम', 'मुख्य', 'घर', 'ਘਰ', 'ਹੋਮ', 'घर', 'முகப்பு'],
+        action: () => navigate('/'),
+        response: {
+          en: 'Going to home page',
+          hi: 'होम पेज पर जा रहे हैं',
+          pa: 'ਹੋਮ ਪੇਜ ਤੇ ਜਾ ਰਹੇ ਹਾਂ',
+          mr: 'होम पेजवर जात आहे',
+          ta: 'முகப்பு பக்கத்திற்கு செல்கிறது',
+        },
+      },
+      {
+        keywords: ['dashboard', 'डैशबोर्ड', 'ਡੈਸ਼ਬੋਰਡ', 'डॅशबोर्ड', 'டாஷ்போர்டு'],
+        action: () => navigate('/farmer'),
+        response: {
+          en: 'Opening farmer dashboard',
+          hi: 'किसान डैशबोर्ड खोल रहे हैं',
+          pa: 'ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'शेतकरी डॅशबोर्ड उघडत आहे',
+          ta: 'விவசாயி டாஷ்போர்டை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['login', 'लॉगिन', 'साइन इन', 'ਲਾਗਇਨ', 'लॉगिन', 'உள்நுழைவு'],
+        action: () => navigate('/'),
+        response: {
+          en: 'Opening login page',
+          hi: 'लॉगिन पेज खोल रहे हैं',
+          pa: 'ਲਾਗਇਨ ਪੇਜ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'लॉगिन पेज उघडत आहे',
+          ta: 'உள்நுழைவு பக்கத்தை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['logout', 'लॉगआउट', 'साइन आउट', 'ਲਾਗਆਉਟ', 'लॉगआउट', 'வெளியேறு'],
+        action: () => {
+          logout();
+          navigate('/');
+        },
+        response: {
+          en: 'Logging out',
+          hi: 'लॉगआउट कर रहे हैं',
+          pa: 'ਲਾਗਆਉਟ ਕਰ ਰਹੇ ਹਾਂ',
+          mr: 'लॉगआउट करत आहे',
+          ta: 'வெளியேறுகிறது',
+        },
+      },
+      
+      // Feature pages
+      {
+        keywords: ['disease', 'रोग', 'बीमारी', 'ਰੋਗ', 'बिमारी', 'रोग', 'நோய்'],
+        action: () => navigate('/disease-detection'),
+        response: {
+          en: 'Opening disease detection',
+          hi: 'रोग पहचान खोल रहे हैं',
+          pa: 'ਰੋਗ ਪਛਾਣ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'रोग ओळख उघडत आहे',
+          ta: 'நோய் கண்டறிதலை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['risk', 'जोखिम', 'खतरा', 'ਖਤਰਾ', 'जोखीम', 'ஆபத்து'],
+        action: () => navigate('/risk-prediction'),
+        response: {
+          en: 'Opening risk prediction',
+          hi: 'जोखिम पूर्वानुमान खोल रहे हैं',
+          pa: 'ਖਤਰਾ ਪੂਰਵ-ਅਨੁਮਾਨ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'जोखीम अंदाज उघडत आहे',
+          ta: 'ஆபத்து கணிப்பை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['price', 'मूल्य', 'कीमत', 'भाव', 'दाम', 'ਕੀਮਤ', 'किंमत', 'விலை'],
+        action: () => navigate('/price-forecasting'),
+        response: {
+          en: 'Opening price forecasting',
+          hi: 'मूल्य पूर्वानुमान खोल रहे हैं',
+          pa: 'ਕੀਮਤ ਪੂਰਵ-ਅਨੁਮਾਨ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'किंमत अंदाज उघडत आहे',
+          ta: 'விலை முன்னறிவிப்பை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['recommendation', 'सुझाव', 'सलाह', 'ਸਲਾਹ', 'शिफारस', 'பரிந்துரை', 'advice'],
+        action: () => navigate('/crop-recommendation'),
+        response: {
+          en: 'Opening crop recommendations',
+          hi: 'फसल सुझाव खोल रहे हैं',
+          pa: 'ਫਸਲ ਸਿਫਾਰਸ਼ਾਂ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'पीक शिफारसी उघडत आहे',
+          ta: 'பயிர் பரிந்துரைகளை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['calendar', 'कैलेंडर', 'ਕੈਲੈਂਡਰ', 'दिनदर्शिका', 'நாட்காட்டி'],
+        action: () => navigate('/crop-calendar'),
+        response: {
+          en: 'Opening crop calendar',
+          hi: 'फसल कैलेंडर खोल रहे हैं',
+          pa: 'ਫਸਲ ਕੈਲੈਂਡਰ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'पीक दिनदर्शिका उघडत आहे',
+          ta: 'பயிர் நாட்காட்டியை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['weather', 'मौसम', 'ਮੌਸਮ', 'हवामान', 'வானிலை'],
+        action: () => navigate('/weather'),
+        response: {
+          en: 'Opening weather dashboard',
+          hi: 'मौसम डैशबोर्ड खोल रहे हैं',
+          pa: 'ਮੌਸਮ ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'हवामान डॅशबोर्ड उघडत आहे',
+          ta: 'வானிலை டாஷ்போர்டை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['market', 'बाजार', 'मंडी', 'ਬਾਜ਼ਾਰ', 'ਮੰਡੀ', 'बाजार', 'சந்தை'],
+        action: () => navigate('/market-price'),
+        response: {
+          en: 'Opening market prices',
+          hi: 'बाजार मूल्य खोल रहे हैं',
+          pa: 'ਬਾਜ਼ਾਰ ਕੀਮਤਾਂ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'बाजार किंमती उघडत आहे',
+          ta: 'சந்தை விலைகளை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['community', 'समुदाय', 'ਭਾਈਚਾਰਾ', 'समुदाय', 'சமூகம்'],
+        action: () => navigate('/community'),
+        response: {
+          en: 'Opening farmer community',
+          hi: 'किसान समुदाय खोल रहे हैं',
+          pa: 'ਕਿਸਾਨ ਭਾਈਚਾਰਾ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'शेतकरी समुदाय उघडत आहे',
+          ta: 'விவசாயி சமூகத்தை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['expert', 'विशेषज्ञ', 'एक्सपर्ट', 'ਵਿਸ਼ੇਸ਼ਗਿਆ', 'तज्ञ', 'நிபுணர்'],
+        action: () => navigate('/expert-connect'),
+        response: {
+          en: 'Opening expert connect',
+          hi: 'विशेषज्ञ कनेक्ट खोल रहे हैं',
+          pa: 'ਵਿਸ਼ੇਸ਼ਗਿਆ ਕਨੈਕਟ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'तज्ञ संपर्क उघडत आहे',
+          ta: 'நிபுணர் இணைப்பை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['scheme', 'योजना', 'ਯੋਜਨਾ', 'योजना', 'திட்டம்', 'government'],
+        action: () => navigate('/schemes'),
+        response: {
+          en: 'Opening government schemes',
+          hi: 'सरकारी योजनाएं खोल रहे हैं',
+          pa: 'ਸਰਕਾਰੀ ਯੋਜਨਾਵਾਂ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'सरकारी योजना उघडत आहे',
+          ta: 'அரசு திட்டங்களை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['soil', 'मिट्टी', 'ਮਿੱਟੀ', 'माती', 'மண்'],
+        action: () => navigate('/soil-health'),
+        response: {
+          en: 'Opening soil health',
+          hi: 'मिट्टी स्वास्थ्य खोल रहे हैं',
+          pa: 'ਮਿੱਟੀ ਸਿਹਤ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'माती आरोग्य उघडत आहे',
+          ta: 'மண் ஆரோக்கியத்தை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['history', 'इतिहास', 'ਇਤਿਹਾਸ', 'इतिहास', 'வரலாறு'],
+        action: () => navigate('/history'),
+        response: {
+          en: 'Opening prediction history',
+          hi: 'भविष्यवाणी इतिहास खोल रहे हैं',
+          pa: 'ਭਵਿੱਖਬਾਣੀ ਇਤਿਹਾਸ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'अंदाज इतिहास उघडत आहे',
+          ta: 'கணிப்பு வரலாற்றை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['sell', 'बेचना', 'विक्री', 'ਵੇਚਣਾ', 'विक्री', 'விற்க'],
+        action: () => navigate('/sell-crops'),
+        response: {
+          en: 'Opening sell crops',
+          hi: 'फसल बेचना खोल रहे हैं',
+          pa: 'ਫਸਲ ਵੇਚਣਾ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'पीक विक्री उघडत आहे',
+          ta: 'பயிர்களை விற்பதை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['buy', 'खरीदना', 'seeds', 'बीज', 'ਬੀਜ', 'बीयाणे', 'விதைகள்'],
+        action: () => navigate('/buy-seeds'),
+        response: {
+          en: 'Opening buy seeds',
+          hi: 'बीज खरीदना खोल रहे हैं',
+          pa: 'ਬੀਜ ਖਰੀਦਣਾ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'बीयाणे खरेदी उघडत आहे',
+          ta: 'விதைகளை வாங்குவதை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['loan', 'ऋण', 'कर्ज', 'ਕਰਜ਼ਾ', 'कर्ज', 'கடன்'],
+        action: () => navigate('/check-loans'),
+        response: {
+          en: 'Opening loan information',
+          hi: 'ऋण जानकारी खोल रहे हैं',
+          pa: 'ਕਰਜ਼ਾ ਜਾਣਕਾਰੀ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'कर्ज माहिती उघडत आहे',
+          ta: 'கடன் தகவலை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['equipment', 'उपकरण', 'यंत्र', 'ਉਪਕਰਣ', 'उपकरणे', 'கருவிகள்'],
+        action: () => navigate('/book-equipment'),
+        response: {
+          en: 'Opening equipment booking',
+          hi: 'उपकरण बुकिंग खोल रहे हैं',
+          pa: 'ਉਪਕਰਣ ਬੁੱਕਿੰਗ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'उपकरणे बुकिंग उघडत आहे',
+          ta: 'கருவி முன்பதிவை திறக்கிறது',
+        },
+      },
+      {
+        keywords: ['admin', 'एडमिन', 'प्रशासक', 'ਐਡਮਿਨ', 'प्रशासक', 'நிர்வாகி'],
+        action: () => navigate('/admin'),
+        response: {
+          en: 'Opening admin dashboard',
+          hi: 'एडमिन डैशबोर्ड खोल रहे हैं',
+          pa: 'ਐਡਮਿਨ ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ',
+          mr: 'प्रशासक डॅशबोर्ड उघडत आहे',
+          ta: 'நிர்வாக டாஷ்போர்டை திறக்கிறது',
+        },
+      },
+      
+      // Action commands
+      {
+        keywords: ['close', 'बंद', 'band', 'ਬੰਦ', 'बंद', 'மூடு'],
+        action: () => setIsOpen(false),
+        response: {
+          en: 'Closing voice assistant',
+          hi: 'वॉयस असिस्टेंट बंद कर रहे हैं',
+          pa: 'ਵੌਇਸ ਅਸਿਸਟੈਂਟ ਬੰਦ ਕਰ ਰਹੇ ਹਾਂ',
+          mr: 'व्हॉइस असिस्टंट बंद करत आहे',
+          ta: 'குரல் உதவியாளரை மூடுகிறது',
+        },
+      },
+      {
+        keywords: ['help', 'मदद', 'सहायता', 'ਮਦਦ', 'मदत', 'உதவி'],
+        action: () => {},
+        response: {
+          en: 'You can say commands like: open dashboard, check weather, market prices, disease detection, or switch language',
+          hi: 'आप कह सकते हैं: डैशबोर्ड खोलें, मौसम जांचें, बाजार मूल्य, रोग पहचान, या भाषा बदलें',
+          pa: 'ਤੁਸੀਂ ਕਹਿ ਸਕਦੇ ਹੋ: ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹੋ, ਮੌਸਮ ਜਾਂਚੋ, ਬਾਜ਼ਾਰ ਕੀਮਤਾਂ, ਰੋਗ ਪਛਾਣ, ਜਾਂ ਭਾਸ਼ਾ ਬਦਲੋ',
+          mr: 'तुम्ही म्हणू शकता: डॅशबोर्ड उघडा, हवामान तपासा, बाजार किंमती, रोग ओळख, किंवा भाषा बदला',
+          ta: 'நீங்கள் சொல்லலாம்: டாஷ்போர்டு திற, வானிலை சரிபார், சந்தை விலைகள், நோய் கண்டறிதல், அல்லது மொழி மாற்று',
+        },
+      },
+      {
+        keywords: ['back', 'पीछे', 'वापस', 'ਵਾਪਸ', 'मागे', 'பின்னால்'],
+        action: () => window.history.back(),
+        response: {
+          en: 'Going back',
+          hi: 'वापस जा रहे हैं',
+          pa: 'ਵਾਪਸ ਜਾ ਰਹੇ ਹਾਂ',
+          mr: 'मागे जात आहे',
+          ta: 'பின்னால் செல்கிறது',
+        },
+      },
+    ];
 
-    // Navigation commands
-    if (lowerText.includes('home') || lowerText.includes('होम') || lowerText.includes('ਹੋਮ')) {
-      responseText = language === 'hi' ? 'होम पर जा रहे हैं' : language === 'pa' ? 'ਹੋਮ ਤੇ ਜਾ ਰਹੇ ਹਾਂ' : 'Going to home';
-      action = () => navigate('/');
-    } else if (lowerText.includes('dashboard') || lowerText.includes('डैशबोर्ड') || lowerText.includes('ਡੈਸ਼ਬੋਰਡ')) {
-      responseText = language === 'hi' ? 'डैशबोर्ड खोल रहे हैं' : language === 'pa' ? 'ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening dashboard';
-      action = () => navigate('/farmer');
-    } else if (lowerText.includes('disease') || lowerText.includes('रोग') || lowerText.includes('ਰੋਗ')) {
-      responseText = language === 'hi' ? 'रोग पहचान खोल रहे हैं' : language === 'pa' ? 'ਰੋਗ ਪਛਾਣ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening disease detection';
-      action = () => navigate('/farmer/disease-detection');
-    } else if (lowerText.includes('yield') || lowerText.includes('उपज') || lowerText.includes('ਉਪਜ')) {
-      responseText = language === 'hi' ? 'उपज भविष्यवाणी खोल रहे हैं' : language === 'pa' ? 'ਉਪਜ ਭਵਿੱਖਬਾਣੀ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening yield prediction';
-      action = () => navigate('/farmer/yield-prediction');
-    } else if (lowerText.includes('price') || lowerText.includes('मूल्य') || lowerText.includes('ਕੀਮਤ')) {
-      responseText = language === 'hi' ? 'मूल्य पूर्वानुमान खोल रहे हैं' : language === 'pa' ? 'ਕੀਮਤ ਪੂਰਵ-ਅਨੁਮਾਨ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening price forecasting';
-      action = () => navigate('/farmer/price-forecasting');
-    } else if (lowerText.includes('weather') || lowerText.includes('मौसम') || lowerText.includes('ਮੌਸਮ')) {
-      responseText = language === 'hi' ? 'मौसम डैशबोर्ड खोल रहे हैं' : language === 'pa' ? 'ਮੌਸਮ ਡੈਸ਼ਬੋरਡ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening weather dashboard';
-      action = () => navigate('/farmer/weather');
-    } else if (lowerText.includes('market') || lowerText.includes('बाजार') || lowerText.includes('ਬਾਜ਼ਾਰ')) {
-      responseText = language === 'hi' ? 'बाजार मूल्य खोल रहे हैं' : language === 'pa' ? 'ਬਾਜ਼ਾਰ ਕੀਮਤਾਂ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening market prices';
-      action = () => navigate('/farmer/market-prices');
-    } else if (lowerText.includes('community') || lowerText.includes('समुदाय') || lowerText.includes('ਭਾਈਚਾਰਾ')) {
-      responseText = language === 'hi' ? 'समुदाय खोल रहे हैं' : language === 'pa' ? 'ਭਾਈਚਾਰਾ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ' : 'Opening community';
-      action = () => navigate('/farmer/community');
-    } else {
-      responseText = language === 'hi' 
-        ? 'मुझे समझ नहीं आया। कृपया फिर से कोशिश करें।' 
-        : language === 'pa' 
-        ? 'ਮੈਨੂੰ ਸਮਝ ਨਹੀਂ ਆਈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।'
-        : 'I didn\'t understand. Please try again.';
+    // Find matching command
+    let matchedCommand: CommandMap | null = null;
+    for (const command of commands) {
+      if (command.keywords.some(keyword => lowerText.includes(keyword))) {
+        matchedCommand = command;
+        break;
+      }
     }
 
-    setResponse(responseText);
-    speak(responseText);
-
-    if (action) {
-      setTimeout(() => {
-        action();
-        setIsOpen(false);
-      }, 2000);
+    if (matchedCommand) {
+      const responseText = matchedCommand.response[language];
+      setResponse(responseText);
+      speak(responseText);
+      matchedCommand.action();
+      
+      // Auto-close after navigation (except for help and close commands)
+      if (!matchedCommand.keywords.includes('help') && !matchedCommand.keywords.includes('close')) {
+        setTimeout(() => setIsOpen(false), 2000);
+      }
+    } else {
+      // No command matched
+      const noMatchResponse = {
+        en: 'I didn\'t understand that. Say "help" to hear available commands.',
+        hi: 'मुझे समझ नहीं आया। उपलब्ध कमांड सुनने के लिए "मदद" कहें।',
+        pa: 'ਮੈਨੂੰ ਸਮਝ ਨਹੀਂ ਆਈ। ਉਪਲਬਧ ਕਮਾਂਡ ਸੁਣਨ ਲਈ "ਮਦਦ" ਕਹੋ।',
+        mr: 'मला समजले नाही. उपलब्ध आदेश ऐकण्यासाठी "मदत" म्हणा.',
+        ta: 'எனக்கு புரியவில்லை. கிடைக்கக்கூடிய கட்டளைகளைக் கேட்க "உதவி" என்று சொல்லுங்கள்.',
+      };
+      
+      const responseText = noMatchResponse[language];
+      setResponse(responseText);
+      speak(responseText);
     }
   };
 
@@ -206,6 +614,7 @@ export function VoiceAssistant() {
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen(true)}
             className="fixed bottom-6 right-6 z-40 w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full shadow-2xl flex items-center justify-center group"
+            aria-label="Open Voice Assistant"
           >
             <motion.div
               animate={{ 
@@ -239,7 +648,7 @@ export function VoiceAssistant() {
               initial={{ opacity: 0, scale: 0.8, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 50 }}
-              className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-3xl shadow-2xl z-50 overflow-hidden"
+              className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[80vh] overflow-y-auto"
             >
               {/* Animated Background */}
               <div className="absolute inset-0 opacity-30">
@@ -257,7 +666,8 @@ export function VoiceAssistant() {
               <div className="relative p-6">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                  className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
+                  aria-label="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -274,17 +684,39 @@ export function VoiceAssistant() {
                   <p className="text-purple-200 text-sm">{t('voice.howCanIHelp')}</p>
                 </div>
 
+                {/* Permission Status */}
+                {permissionStatus === 'granted' && !error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-green-500/20 backdrop-blur-xl rounded-2xl p-3 mb-4 flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <p className="text-green-200 text-xs">
+                      {language === 'en' && 'Microphone ready'}
+                      {language === 'hi' && 'माइक्रोफोन तैयार है'}
+                      {language === 'pa' && 'ਮਾਈਕ੍ਰੋਫੋਨ ਤਿਆਰ ਹੈ'}
+                      {language === 'mr' && 'मायक्रोफोन तयार आहे'}
+                      {language === 'ta' && 'மைக்ரோஃபோன் தயார்'}
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Microphone Button */}
                 <div className="flex justify-center mb-6">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={isListening ? stopListening : startListening}
+                    disabled={!isSupported}
                     className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${
                       isListening
                         ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.8)]'
-                        : 'bg-white/20 backdrop-blur-xl hover:bg-white/30'
+                        : isSupported
+                        ? 'bg-white/20 backdrop-blur-xl hover:bg-white/30'
+                        : 'bg-gray-500/20 cursor-not-allowed'
                     }`}
+                    aria-label={isListening ? 'Stop listening' : 'Start listening'}
                   >
                     {isListening ? (
                       <motion.div
@@ -300,7 +732,7 @@ export function VoiceAssistant() {
                 </div>
 
                 {/* Status Text */}
-                <div className="text-center mb-4">
+                <div className="text-center mb-4 min-h-[24px]">
                   {isListening && (
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
@@ -310,7 +742,7 @@ export function VoiceAssistant() {
                       {t('voice.listening')}
                     </motion.p>
                   )}
-                  {!isListening && !transcript && (
+                  {!isListening && !transcript && isSupported && (
                     <p className="text-purple-200">{t('voice.speak')}</p>
                   )}
                 </div>
@@ -322,7 +754,13 @@ export function VoiceAssistant() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 mb-4"
                   >
-                    <p className="text-sm text-purple-200 mb-1">You said:</p>
+                    <p className="text-sm text-purple-200 mb-1">
+                      {language === 'en' && 'You said:'}
+                      {language === 'hi' && 'आपने कहा:'}
+                      {language === 'pa' && 'ਤੁਸੀਂ ਕਿਹਾ:'}
+                      {language === 'mr' && 'तुम्ही म्हणालात:'}
+                      {language === 'ta' && 'நீங்கள் சொன்னீர்கள்:'}
+                    </p>
                     <p className="text-white font-medium">{transcript}</p>
                   </motion.div>
                 )}
@@ -332,7 +770,7 @@ export function VoiceAssistant() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 flex items-start gap-3"
+                    className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 flex items-start gap-3 mb-4"
                   >
                     <Volume2 className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
                     <p className="text-white">{response}</p>
@@ -341,7 +779,7 @@ export function VoiceAssistant() {
 
                 {/* Voice Indicator */}
                 {isListening && (
-                  <div className="flex justify-center gap-1 mt-4">
+                  <div className="flex justify-center gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
                       <motion.div
                         key={i}
@@ -362,11 +800,41 @@ export function VoiceAssistant() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-500/10 backdrop-blur-xl rounded-2xl p-4 flex items-start gap-3"
+                    className="bg-red-500/20 backdrop-blur-xl rounded-2xl p-4 mb-4"
                   >
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-500">{error}</p>
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-200 text-sm">{error}</p>
+                    </div>
                   </motion.div>
+                )}
+
+                {/* Quick Tips */}
+                {!transcript && !error && !isListening && (
+                  <div className="text-center">
+                    <p className="text-xs text-purple-300 mb-2">
+                      {language === 'en' && 'Try saying:'}
+                      {language === 'hi' && 'कहने की कोशिश करें:'}
+                      {language === 'pa' && 'ਕਹਿਣ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੋ:'}
+                      {language === 'mr' && 'म्हणण्याचा प्रयत्न करा:'}
+                      {language === 'ta' && 'இதைச் சொல்ல முயற்சிக்கவும்:'}
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {(language === 'en' ? ['dashboard', 'weather', 'market', 'help'] :
+                        language === 'hi' ? ['डैशबोर्ड', 'मौसम', 'बाजार', 'मदद'] :
+                        language === 'pa' ? ['ਡੈਸ਼ਬੋਰਡ', 'ਮੌਸਮ', 'ਬਾਜ਼ਾਰ', 'ਮਦਦ'] :
+                        language === 'mr' ? ['डॅशबोर्ड', 'हवामान', 'बाजार', 'मदत'] :
+                        ['டாஷ்போர்டு', 'வானிலை', 'சந்தை', 'உதவி']
+                      ).map((cmd) => (
+                        <span
+                          key={cmd}
+                          className="px-3 py-1.5 bg-white/10 backdrop-blur-xl rounded-lg text-xs text-white"
+                        >
+                          &quot;{cmd}&quot;
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </motion.div>
