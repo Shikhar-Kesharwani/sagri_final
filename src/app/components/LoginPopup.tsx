@@ -51,7 +51,7 @@ export function LoginPopup({ isOpen, onClose }: LoginPopupProps) {
   const [primaryCrop, setPrimaryCrop] = useState('');
   const [error, setError] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
-  const { login } = useAuth();
+  const { login, signup, user } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -81,7 +81,8 @@ export function LoginPopup({ isOpen, onClose }: LoginPopupProps) {
     if (name && role && state && district && village && pincode && landSize && primaryCrop) {
       setError('');
       try {
-        await login(phone, role, name, state, district, village, pincode, landSize, primaryCrop);
+        // Phone/OTP flow registers a new user — use signup, not login
+        await signup(phone, '', name, role, phone, state, district, village, pincode, landSize, primaryCrop);
         // Show welcome overview instead of immediately navigating
         setShowWelcome(true);
       } catch (error: any) {
@@ -94,7 +95,9 @@ export function LoginPopup({ isOpen, onClose }: LoginPopupProps) {
   const handleWelcomeComplete = () => {
     setShowWelcome(false);
     onClose();
-    navigate(role === 'farmer' ? '/farmer' : '/admin');
+    // Use actual user role from AuthProvider, not local form state (null on sign-in)
+    const actualRole = user?.role || role;
+    navigate(actualRole === 'farmer' ? '/farmer' : '/admin');
   };
 
   // Show welcome overview

@@ -64,7 +64,7 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
   const [primaryCrop, setPrimaryCrop] = useState('');
   const [error, setError] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
-  const { login } = useAuth();
+  const { login, signup, user } = useAuth();
   const navigate = useNavigate();
 
   if (!isOpen && !showWelcome) return null;
@@ -93,7 +93,8 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     if (name && role && state && district && village && pincode && landSize && primaryCrop) {
       setError('');
       try {
-        await login(phone, role, name, state, district, village, pincode, landSize, primaryCrop);
+        // Phone/OTP flow registers a new user — use signup, not login
+        await signup(phone, '', name, role, phone, state, district, village, pincode, landSize, primaryCrop);
         setShowWelcome(true);
       } catch (error: any) {
         console.error('Login failed:', error);
@@ -104,7 +105,9 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
 
   const handleWelcomeComplete = () => {
     setShowWelcome(false);
-    navigate(role === 'farmer' ? '/farmer' : '/admin');
+    // Use actual user role from AuthProvider, not local form state (which is null on sign-in)
+    const actualRole = user?.role || role;
+    navigate(actualRole === 'farmer' ? '/farmer' : '/admin');
   };
 
   if (showWelcome) {

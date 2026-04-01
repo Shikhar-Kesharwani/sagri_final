@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth, UserRole } from './AuthProvider';
+import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router';
 import { WelcomeOverview } from './WelcomeOverview';
 import { Logo } from './Logo';
@@ -71,7 +72,7 @@ export function EmailAuth({ isOpen, onClose }: EmailAuthProps) {
   const [loading, setLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, user } = useAuth();
   const navigate = useNavigate();
 
   if (!isOpen && !showWelcome) return null;
@@ -140,11 +141,21 @@ export function EmailAuth({ isOpen, onClose }: EmailAuthProps) {
     }
   };
 
-  const handleWelcomeComplete = () => {
+  const handleWelcomeComplete = async () => {
     setShowWelcome(false);
     if (onClose) onClose();
-    navigate(role === 'farmer' ? '/farmer' : '/admin');
+    // Triple-safe role resolution:
+    // 1. Use AuthProvider user (fetched from profiles DB)
+    // 2. Fall back to Supabase session user_metadata (stored in JWT)
+    // 3. Default to 'farmer' if nothing found
+    let resolvedRole: string = user?.role || role || '';
+    if (!resolvedRole) {
+      const { data: { session } } = await supabase.auth.getSession();
+      resolvedRole = session?.user?.user_metadata?.role || 'farmer';
+    }
+    navigate(resolvedRole === 'farmer' ? '/farmer' : '/admin');
   };
+
 
   if (showWelcome) {
     return <WelcomeOverview isOpen={showWelcome} onComplete={handleWelcomeComplete} userName={name} />;

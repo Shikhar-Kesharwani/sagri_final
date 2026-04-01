@@ -194,10 +194,10 @@ export function FarmerDashboard() {
   ];
 
   const farmStats = [
-    { label: 'Land Size', value: '15 Acres', icon: <MapPin className="w-5 h-5" />, color: 'emerald' },
-    { label: 'Active Crops', value: '3', icon: <Sprout className="w-5 h-5" />, color: 'green' },
-    { label: 'Yield Prediction', value: '125%', icon: <Target className="w-5 h-5" />, color: 'blue' },
-    { label: 'Health Score', value: '95/100', icon: <Activity className="w-5 h-5" />, color: 'purple' },
+    { label: t('land_size'), value: '15 Acres', icon: <MapPin className="w-5 h-5" />, color: 'emerald' },
+    { label: t('active_crops'), value: '3', icon: <Sprout className="w-5 h-5" />, color: 'green' },
+    { label: t('yield_prediction'), value: '125%', icon: <Target className="w-5 h-5" />, color: 'blue' },
+    { label: t('health_score'), value: '95/100', icon: <Activity className="w-5 h-5" />, color: 'purple' },
   ];
 
   const soilHealthData = [
@@ -317,7 +317,7 @@ export function FarmerDashboard() {
                   transition={{ delay: 0.4 }}
                   className="text-emerald-100 text-lg"
                 >
-                  Your farm is looking great today. Keep up the excellent work!
+                  {t('farm_looking_great')}
                 </motion.p>
               </div>
               
@@ -374,7 +374,7 @@ export function FarmerDashboard() {
           <div className="flex items-center gap-2 mb-6">
             <Sparkles className="w-6 h-6 text-emerald-500" />
             <h2 className="text-2xl font-bold text-stone-900 dark:text-white">
-              Marketplace & Services
+              {t('marketplace_services')}
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -384,10 +384,10 @@ export function FarmerDashboard() {
                 className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer"
               >
                 <ShoppingCart className="w-10 h-10 mb-3 opacity-90" />
-                <h3 className="text-xl font-bold mb-2">Sell Crops</h3>
-                <p className="text-green-100 text-sm mb-3">List your produce & connect with buyers</p>
+                <h3 className="text-xl font-bold mb-2">{t('sell_crops')}</h3>
+                <p className="text-green-100 text-sm mb-3">{t('sell_crops_desc')}</p>
                 <div className="flex items-center text-sm font-semibold">
-                  Get Best Price
+                  {t('get_best_price')}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </motion.div>
@@ -399,10 +399,10 @@ export function FarmerDashboard() {
                 className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer"
               >
                 <ShoppingBag className="w-10 h-10 mb-3 opacity-90" />
-                <h3 className="text-xl font-bold mb-2">Buy Seeds</h3>
-                <p className="text-blue-100 text-sm mb-3">Certified quality seeds from trusted brands</p>
+                <h3 className="text-xl font-bold mb-2">{t('buy_seeds')}</h3>
+                <p className="text-blue-100 text-sm mb-3">{t('buy_seeds_desc')}</p>
                 <div className="flex items-center text-sm font-semibold">
-                  Browse Seeds
+                  {t('browse_seeds')}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </motion.div>
@@ -414,10 +414,10 @@ export function FarmerDashboard() {
                 className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer"
               >
                 <Landmark className="w-10 h-10 mb-3 opacity-90" />
-                <h3 className="text-xl font-bold mb-2">Check Loans</h3>
-                <p className="text-purple-100 text-sm mb-3">Compare agricultural loan schemes</p>
+                <h3 className="text-xl font-bold mb-2">{t('check_loans')}</h3>
+                <p className="text-purple-100 text-sm mb-3">{t('check_loans_desc')}</p>
                 <div className="flex items-center text-sm font-semibold">
-                  View Schemes
+                  {t('view_schemes')}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </motion.div>
@@ -429,10 +429,10 @@ export function FarmerDashboard() {
                 className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer"
               >
                 <Tractor className="w-10 h-10 mb-3 opacity-90" />
-                <h3 className="text-xl font-bold mb-2">Rent Equipment</h3>
-                <p className="text-orange-100 text-sm mb-3">Book tractors & farming machinery</p>
+                <h3 className="text-xl font-bold mb-2">{t('rent_equipment')}</h3>
+                <p className="text-orange-100 text-sm mb-3">{t('rent_equipment_desc')}</p>
                 <div className="flex items-center text-sm font-semibold">
-                  Book Now
+                  {t('book_now')}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </motion.div>
@@ -451,12 +451,12 @@ export function FarmerDashboard() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <Cloud className="w-6 h-6 text-emerald-500" />
-                Weather Forecast
+                {t('weather_forecast')}
               </h2>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-4xl font-bold text-stone-900 dark:text-white">28°C</div>
-                  <div className="text-sm text-stone-600 dark:text-stone-400">Partly Cloudy</div>
+                  <div className="text-sm text-stone-600 dark:text-stone-400">{t('partly_cloudy')}</div>
                 </div>
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
@@ -494,17 +494,17 @@ export function FarmerDashboard() {
               <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl p-4 text-white">
                 <Droplet className="w-6 h-6 mb-2" />
                 <div className="text-2xl font-bold">65%</div>
-                <div className="text-xs opacity-90">Humidity</div>
+                <div className="text-xs opacity-90">{t('humidity')}</div>
               </div>
               <div className="bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl p-4 text-white">
                 <Wind className="w-6 h-6 mb-2" />
                 <div className="text-2xl font-bold">12 km/h</div>
-                <div className="text-xs opacity-90">Wind Speed</div>
+                <div className="text-xs opacity-90">{t('wind_speed_label')}</div>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl p-4 text-white">
                 <CloudRain className="w-6 h-6 mb-2" />
                 <div className="text-2xl font-bold">45%</div>
-                <div className="text-xs opacity-90">Rain Chance</div>
+                <div className="text-xs opacity-90">{t('rain_chance')}</div>
               </div>
             </div>
           </motion.div>
@@ -522,7 +522,7 @@ export function FarmerDashboard() {
               >
                 <Bell className="w-6 h-6 text-emerald-500" />
               </motion.div>
-              <h2 className="text-xl font-bold text-stone-900 dark:text-white">Alerts</h2>
+              <h2 className="text-xl font-bold text-stone-900 dark:text-white">{t('alerts')}</h2>
             </div>
             
             <div className="space-y-3">
@@ -572,7 +572,7 @@ export function FarmerDashboard() {
           >
             <h2 className="text-2xl font-bold text-stone-900 dark:text-white mb-6 flex items-center gap-2">
               <Droplet className="w-6 h-6 text-emerald-500" />
-              Soil Health Analytics
+              {t('soil_health_analytics')}
             </h2>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -633,7 +633,7 @@ export function FarmerDashboard() {
           >
             <h2 className="text-2xl font-bold text-stone-900 dark:text-white mb-6 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-emerald-500" />
-              Market Price Trends
+              {t('market_price_trends')}
             </h2>
             
             <ResponsiveContainer width="100%" height={300}>
@@ -668,9 +668,9 @@ export function FarmerDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-              Today's Tasks
+              {t('todays_tasks')}
             </h2>
-            <span className="text-sm text-stone-600 dark:text-stone-400">{tasks.filter(t => !t.completed).length} pending</span>
+            <span className="text-sm text-stone-600 dark:text-stone-400">{tasks.filter(t => !t.completed).length} {t('pending')}</span>
           </div>
           
           <div className="space-y-3">
@@ -737,7 +737,7 @@ export function FarmerDashboard() {
                     {feature.description}
                   </p>
                   <div className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
-                    Open
+                    {t('open_feature')}
                     <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </Link>

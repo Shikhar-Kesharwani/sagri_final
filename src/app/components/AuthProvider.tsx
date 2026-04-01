@@ -96,13 +96,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken,
       });
     } catch (error) {
-      console.error('Failed to load user profile:', error);
-      // Don't throw - just set loading to false so app can continue
-      // User will still be authenticated via Supabase session
+      console.error('Failed to load user profile from API, falling back to Supabase session:', error);
+      // FALLBACK: read role directly from the Supabase session user_metadata
+      // This ensures the user is always set even if the edge function is down
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const meta = session.user.user_metadata;
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            phone: meta?.phone,
+            name: meta?.name || session.user.email?.split('@')[0] || 'User',
+            role: (meta?.role as UserRole) || 'farmer', // default to farmer if unknown
+            state: meta?.state,
+            district: meta?.district,
+            location: meta?.location,
+            accessToken,
+          });
+        }
+      } catch (fallbackError) {
+        console.error('Fallback profile load also failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   const signup = async (
     email: string,

@@ -230,6 +230,127 @@ export function VoiceAssistant() {
     window.speechSynthesis.speak(utterance);
   };
 
+  // Short-term memory for last mentioned crop
+  const lastCropRef = useRef<string>('');
+
+  const normalizeText = (text: string): string =>
+    text
+      .replace(/\bgahu\b|\bgehun\b|\bgahun\b|\bgaahu\b/g, 'gehu')
+      .replace(/\bdawai\b|\bdawa\b/g, 'spray')
+      .replace(/\bkeede\b|\bkide\b|\bkeed\b/g, 'keeda')
+      .replace(/\bpaani\b/g, 'pani')
+      .replace(/\bbaarish\b|\bbaaris\b/g, 'barish')
+      .replace(/\bdhaan\b/g, 'dhan');
+
+  const detectCrop = (text: string): string | null => {
+    const cropMap: Record<string, string[]> = {
+      'Wheat': ['gehu', 'wheat', 'gahu', '\u0a15\u0a23\u0a15', '\u0917\u0947\u0939\u0942\u0902'],
+      'Rice': ['dhan', 'rice', 'paddy', 'chawal', '\u0927\u093e\u0928', '\u0a27\u0a3e\u0a28'],
+      'Cotton': ['kapas', 'cotton', 'kappas', '\u0a15\u0a2a\u0a3e\u0a39', '\u0915\u092a\u093e\u0938'],
+      'Maize': ['makka', 'maize', 'corn', '\u0a2e\u0a71\u0a15\u0a40', '\u092e\u0915\u094d\u0915\u093e'],
+      'Sugarcane': ['ganna', 'sugarcane', '\u0a17\u0a70\u0a28\u0a3e', '\u0917\u0928\u094d\u0928\u093e'],
+      'Mustard': ['sarson', 'mustard', '\u0a38\u0a30\u0a4d\u0a39\u0a4b\u0a02', '\u0938\u0930\u0938\u094b\u0902'],
+    };
+    for (const [crop, keywords] of Object.entries(cropMap)) {
+      if (keywords.some(k => text.includes(k))) return crop;
+    }
+    return null;
+  };
+
+  const handleFarmingQuery = (rawText: string): string | null => {
+    const text = normalizeText(rawText.toLowerCase());
+    const detectedCrop = detectCrop(text);
+    if (detectedCrop) lastCropRef.current = detectedCrop;
+    const crop = detectedCrop || lastCropRef.current || 'fasal';
+
+    const pestKw = ['keeda', 'pest', 'insect', 'kira', 'bimari', 'rog', 'disease', 'fungus', '\u0915\u0940\u0921\u093c\u0947', '\u0930\u094b\u0917'];
+    if (pestKw.some(k => text.includes(k))) {
+      const r: Record<Language, string> = {
+        en: `${crop} has pest or disease symptoms. Spray Neem oil or visit your nearest Krishi Kendra.`,
+        hi: `\u0906\u092a\u0915\u0940 ${crop} \u0915\u0940 \u092b\u0938\u0932 \u092e\u0947\u0902 \u0915\u0940\u0921\u093c\u0947 \u0932\u0917\u0947 \u0939\u0948\u0902\u0964 \u0928\u0940\u092e \u0924\u0947\u0932 \u0915\u093e \u091b\u093f\u0921\u093c\u0915\u093e\u0935 \u0915\u0930\u0947\u0902 \u092f\u093e \u0928\u091c\u0926\u0940\u0915\u0940 \u0915\u0943\u0937\u093f \u0915\u0947\u0902\u0926\u094d\u0930 \u0938\u0947 \u0938\u0902\u092a\u0930\u094d\u0915 \u0915\u0930\u0947\u0902\u0964`,
+        pa: `\u0a24\u0a41\u0a39\u0a3e\u0a21\u0a40 ${crop} \u0a26\u0a40 \u0a2b\u0a38\u0a32 \u0a35\u0a3f\u0a71\u0a1a \u0a15\u0a40\u0a5c\u0a47 \u0a32\u0a71\u0a17\u0a47 \u0a39\u0a28\u0964 \u0a28\u0a3f\u0a70\u0a2e \u0a26\u0a47 \u0a24\u0a47\u0a32 \u0a26\u0a3e \u0a1b\u0a3f\u0a5c\u0a15\u0a3e\u0a05 \u0a15\u0a30\u0a4b\u0964`,
+        mr: `${crop} \u092a\u093f\u0915\u093e\u0935\u0930 \u0915\u0940\u0921 \u0906\u0939\u0947\u0964 \u0915\u0921\u0942\u0932\u093f\u0902\u092c\u093e\u091a\u0947 \u0924\u0947\u0932 \u092b\u0935\u093e\u0930\u093e \u0915\u093f\u0902\u0935\u093e \u0915\u0943\u0937\u0940 \u0915\u0947\u0902\u0926\u094d\u0930\u093e\u0936\u0940 \u0938\u0902\u092a\u0930\u094d\u0915 \u0915\u0930\u093e.`,
+        ta: `${crop} \u0baa\u0baf\u0bbf\u0bb0\u0bbf\u0bb2\u0bcd \u0baa\u0bc2\u0b9a\u0bcd\u0b9a\u0bbf \u0ba4\u0bbe\u0b95\u0bcd\u0b95\u0bbf\u0baf\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1. \u0bb5\u0bc7\u0baa\u0bcd\u0baa \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd \u0ba4\u0bc6\u0bb3\u0bbf\u0b95\u0bcd\u0b95\u0bb5\u0bc1\u0bae\u0bcd.`,
+      };
+      return r[language];
+    }
+
+    const waterKw = ['pani', 'irrigation', 'sinchai', 'sukha', 'sookha', '\u092a\u093e\u0928\u0940'];
+    if (waterKw.some(k => text.includes(k))) {
+      const r: Record<Language, string> = {
+        en: `Your ${crop} needs water. Irrigate in the morning or evening immediately.`,
+        hi: `\u0906\u092a\u0915\u0940 ${crop} \u0915\u094b \u092a\u093e\u0928\u0940 \u0915\u0940 \u091c\u0930\u0942\u0930\u0924 \u0939\u0948\u0964 \u0938\u0941\u092c\u0939 \u092f\u093e \u0936\u093e\u092e \u0924\u0941\u0930\u0902\u0924 \u0938\u093f\u0902\u091a\u093e\u0908 \u0915\u0930\u0947\u0902\u0964`,
+        pa: `\u0a24\u0a41\u0a39\u0a3e\u0a21\u0a40 ${crop} \u0a28\u0a42\u0a70 \u0a2a\u0a3e\u0a23\u0a40 \u0a26\u0a40 \u0a32\u0a4b\u0a5c \u0a39\u0a48\u0964 \u0a38\u0a35\u0a47\u0a30\u0a47 \u0a1c\u0a3e\u0a02 \u0a38\u0a3c\u0a3e\u0a2e \u0a28\u0a42\u0a70 \u0a38\u0a3f\u0a70\u0a1a\u0a3e\u0a08 \u0a15\u0a30\u0a4b\u0964`,
+        mr: `\u0924\u0941\u092e\u091a\u094d\u092f\u093e ${crop} \u0932\u093e \u092a\u093e\u0923\u094d\u092f\u093e\u091a\u0940 \u0917\u0930\u091c \u0906\u0939\u0947\u0964 \u0938\u0915\u093e\u0933\u0940 \u0915\u093f\u0902\u0935\u093e \u0938\u0902\u0927\u094d\u092f\u093e\u0915\u093e\u0933\u0940 \u0924\u093e\u092c\u0921\u0924\u094b\u092c \u092a\u093e\u0923\u0940 \u0926\u094d\u092f\u093e.`,
+        ta: `\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd ${crop} \u0baa\u0baf\u0bbf\u0bb0\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0ba4\u0ba3\u0bcd\u0ba3\u0bc0\u0bb0\u0bcd \u0ba4\u0bc7\u0bb5\u0bc8. \u0b95\u0bbe\u0bb2\u0bc8 \u0b85\u0bb2\u0bcd\u0bb2\u0ba4\u0bc1 \u0bae\u0bbe\u0bb2\u0bc8\u0baf\u0bbf\u0bb2\u0bcd \u0baa\u0bbe\u0b9a\u0ba9\u0bae\u0bcd \u0b9a\u0bc6\u0baf\u0bcd\u0baf\u0bb5\u0bc1\u0bae\u0bcd.`,
+      };
+      return r[language];
+    }
+
+    const marketKw = ['bhav', 'rate', 'mandi', 'price', 'keemat', 'bazar', 'daam', '\u092d\u093e\u0935', '\u092e\u0902\u0921\u0940'];
+    if (marketKw.some(k => text.includes(k))) {
+      navigate('/price-forecasting');
+      const r: Record<Language, string> = {
+        en: `Opening market prices for ${crop}. Check today's mandi rates before selling.`,
+        hi: `${crop} \u0915\u0947 \u092e\u0902\u0921\u0940 \u092d\u093e\u0935 \u0926\u0947\u062d \u0930\u0939\u0947 \u0939\u0948\u0902\u0964`,
+        pa: `${crop} \u0a26\u0a47 \u0a2e\u0a70\u0a21\u0a40 \u0a2d\u0a3e\u0a05 \u0a26\u0a47\u0a16 \u0a30\u0a39\u0a47 \u0a39\u0a3e\u0a02\u0964`,
+        mr: `${crop} \u091a\u0947 \u092e\u0902\u0921\u0940 \u092d\u093e\u0935 \u092a\u093e\u0939\u0924 \u0906\u0939\u0947.`,
+        ta: `${crop} \u0b9a\u0ba8\u0bcd\u0ba4\u0bc8 \u0bb5\u0bbf\u0bb2\u0bc8\u0b95\u0bb3\u0bc8 \u0ba4\u0bbf\u0bb1\u0b95\u0bcd\u0b95\u0bbf\u0bb0\u0bc1\u0ba4\u0bc1.`,
+      };
+      return r[language];
+    }
+
+    const schemeKw = ['yojana', 'subsidy', 'sarkar', 'government', '\u092f\u094b\u091c\u0928\u093e', '\u0938\u092c\u094d\u0938\u093f\u0921\u0940'];
+    if (schemeKw.some(k => text.includes(k))) {
+      navigate('/schemes');
+      const r: Record<Language, string> = {
+        en: 'Opening government schemes. PM-Kisan Samman Nidhi and crop insurance are available.',
+        hi: '\u0938\u0930\u0915\u093e\u0930\u0940 \u092f\u094b\u091c\u0928\u093e\u090f\u0902 \u062e\u094b\u0932 \u0930\u0939\u0947 \u0939\u0948\u0902\u0964 PM-\u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f \u0914\u0930 \u092b\u0938\u0932 \u092c\u0940\u092e\u093e \u0906\u092a\u0915\u0947 \u0932\u093f\u090f \u0909\u092a\u0932\u092c\u094d\u0927 \u0939\u0948\u0902\u0964',
+        pa: '\u0a38\u0a30\u0a15\u0a3e\u0a30\u0a40 \u0a2f\u0a4b\u0a1c\u0a28\u0a3e\u0a35\u0a3e\u0a02 \u0a16\u0a4b\u0a32\u0a4d\u0a39 \u0a30\u0a39\u0a47 \u0a39\u0a3e\u0a02\u0964',
+        mr: '\u0938\u0930\u0915\u093e\u0930\u0940 \u092f\u094b\u091c\u0928\u093e \u0909\u0918\u0921\u0924 \u0906\u0939\u0947.',
+        ta: '\u0a85\u0bb0\u0b9a\u0bc1 \u0ba4\u0bbf\u0b9f\u0bcd\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bc8 \u0ba4\u0bbf\u0bb1\u0b95\u0bcd\u0b95\u0bbf\u0bb0\u0bc1\u0ba4\u0bc1.',
+      };
+      return r[language];
+    }
+
+    const fertKw = ['khad', 'fertilizer', 'urea', 'dap', 'khaad', '\u0916\u093e\u0926'];
+    if (fertKw.some(k => text.includes(k))) {
+      const r: Record<Language, string> = {
+        en: `For ${crop}, use DAP at sowing and Urea in splits. Avoid overuse.`,
+        hi: `${crop} \u0915\u0947 \u0932\u093f\u090f \u092c\u0941\u0906\u0908 \u092e\u0947\u0902 DAP \u0914\u0930 \u092c\u093e\u0926 \u092e\u0947\u0902 \u092f\u0942\u0930\u093f\u092f\u093e \u0915\u093f\u0936\u094d\u0924\u094b\u0902 \u092e\u0947\u0902 \u0921\u093e\u0932\u0947\u0902\u0964`,
+        pa: `${crop} \u0a32\u0a08 \u0a2c\u0a3f\u0a1c\u0a3e\u0a08 \u0a35\u0a47\u0a32\u0a47 DAP \u0a05\u0a24\u0a47 \u0a2b\u0a3f\u0a30 \u0a2f\u0a42\u0a30\u0a40\u0a06 \u0a35\u0a30\u0a24\u0a4b\u0964`,
+        mr: `${crop} \u0938\u093e\u0920\u0940 \u092a\u0947\u0930\u0923\u0940\u0924 DAP \u0906\u0923\u093f \u0928\u0902\u0924\u0930 \u092f\u0942\u0930\u093f\u092f\u093e \u0935\u093e\u092a\u0930\u093e.`,
+        ta: `${crop} \u0b95\u0bcd\u0b95\u0bc1 \u0bb5\u0bbf\u0ba4\u0bc8\u0baa\u0bcd\u0baa\u0bbf\u0bb2\u0bcd DAP, \u0baa\u0bbf\u0bb1\u0b95\u0bc1 \u0baf\u0bc2\u0bb0\u0bbf\u0baf\u0bbe \u0b87\u0b9f\u0bb5\u0bc1\u0bae\u0bcd.`,
+      };
+      return r[language];
+    }
+
+    const equipKw = ['tractor', 'machine', 'yantra', 'rent', 'kiraya', '\u0924\u094d\u0930\u0948\u0915\u094d\u091f\u0930'];
+    if (equipKw.some(k => text.includes(k))) {
+      navigate('/book-equipment');
+      const r: Record<Language, string> = {
+        en: 'Opening equipment booking. Rent tractors and harvesters at best rates.',
+        hi: '\u0909\u092a\u0915\u0930\u0923 \u092c\u0941\u0915\u093f\u0902\u0917 \u062e\u094b\u0932 \u0930\u0939\u0947 \u0939\u0948\u0902\u0964 \u0920\u0940\u0915 \u0926\u093e\u092e \u092a\u0930 \u091f\u094d\u0930\u0948\u0915\u094d\u091f\u0930 \u0932\u0947\u0902\u0964',
+        pa: '\u0a09\u0a2a\u0a15\u0a30\u0a23 \u0a2c\u0a41\u0a71\u0a15\u0a3f\u0a70\u0a17 \u0a16\u0a4b\u0a32\u0a4d\u0a39 \u0a30\u0a39\u0a47 \u0a39\u0a3e\u0a02\u0964',
+        mr: '\u0909\u092a\u0915\u0930\u0923 \u092c\u0941\u0915\u093f\u0902\u0917 \u0909\u0918\u0921\u0924 \u0906\u0939\u0947.',
+        ta: '\u0b95\u0bb0\u0bc1\u0bb5\u0bbf \u0bae\u0bc1\u0ba9\u0bcd\u0baa\u0ba4\u0bbf\u0bb5\u0bc1 \u0ba4\u0bbf\u0bb1\u0b95\u0bcd\u0b95\u0bbf\u0bb0\u0bc1\u0ba4\u0bc1.',
+      };
+      return r[language];
+    }
+
+    if (detectedCrop) {
+      const r: Record<Language, string> = {
+        en: `You mentioned ${crop}. What is the problem? Say: pest, water, fertilizer, or market price.`,
+        hi: `\u0906\u092a\u0928\u0947 ${crop} \u0915\u093e \u091c\u093c\u093f\u0915\u094d\u0930 \u0915\u093f\u092f\u093e\u0964 \u0915\u094d\u092f\u093e \u0938\u092e\u0938\u094d\u092f\u093e \u0939\u0948? \u0915\u0940\u0921\u093c\u093e, \u092a\u093e\u0928\u0940, \u062e\u093e\u0926 \u092f\u093e \u092d\u093e\u0935 \u092c\u094b\u0932\u0947\u0902\u0964`,
+        pa: `\u0a24\u0a41\u0a38\u0a40\u0a02 ${crop} \u0a26\u0a3e \u0a1c\u0a3c\u0a3f\u0a15\u0a30 \u0a15\u0a40\u0a24\u0a3e\u0964 \u0a15\u0a40 \u0a38\u0a2e\u0a71\u0a38\u0a3f\u0a06 \u0a39\u0a48? \u0a15\u0a40\u0a5c\u0a3e, \u0a2a\u0a3e\u0a23\u0a40, \u0a16\u0a3e\u0a26 \u0a1c\u0a3e\u0a02 \u0a2d\u0a3e\u0a05 \u0a26\u0a71\u0a38\u0a4b\u0964`,
+        mr: `\u0924\u0941\u092e\u094d\u0939\u0940 ${crop} \u091a\u093e \u0909\u0932\u094d\u0932\u0947\u0916 \u0915\u0947\u0932\u093e. \u0915\u093e\u092f \u0938\u092e\u0938\u094d\u092f\u093e \u0906\u0939\u0947? \u0915\u0940\u0921, \u092a\u093e\u0923\u0940, \u062e\u0924 \u0935\u093e \u092d\u093e\u0935 \u0938\u093e\u0902\u0917\u093e.`,
+        ta: `\u0ba8\u0bc0\u0b99\u0bcd\u0b95\u0bb3\u0bcd ${crop} \u0baa\u0bb1\u0bcd\u0bb1\u0bbf \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bbf\u0b9f\u0bcd\u0b9f\u0bc0\u0bb0\u0bcd\u0b95\u0bb3\u0bcd. \u0b8f\u0ba9\u0bcd\u0ba9 \u0baa\u0bbf\u0bb0\u0b9a\u0bcd\u0b9a\u0bbf\u0ba9\u0bc8? \u0baa\u0bc2\u0b9a\u0bcd\u0b9a\u0bbf, \u0ba8\u0bc0\u0bb0\u0bcd, \u0b89\u0bb0\u0bae\u0bcd \u0b85\u0bb2\u0bcd\u0bb2\u0ba4\u0bc1 \u0bb5\u0bbf\u0bb2\u0bc8 \u0b9a\u0bca\u0bb2\u0bcd\u0bb2\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd.`,
+      };
+      return r[language];
+    }
+    return null;
+  };
+
   const handleCommand = (text: string) => {
     const lowerText = text.toLowerCase();
     
@@ -586,20 +707,26 @@ export function VoiceAssistant() {
         setTimeout(() => setIsOpen(false), 2000);
       }
     } else {
-      // No command matched
-      const noMatchResponse = {
-        en: 'I didn\'t understand that. Say "help" to hear available commands.',
-        hi: 'मुझे समझ नहीं आया। उपलब्ध कमांड सुनने के लिए "मदद" कहें।',
-        pa: 'ਮੈਨੂੰ ਸਮਝ ਨਹੀਂ ਆਈ। ਉਪਲਬਧ ਕਮਾਂਡ ਸੁਣਨ ਲਈ "ਮਦਦ" ਕਹੋ।',
-        mr: 'मला समजले नाही. उपलब्ध आदेश ऐकण्यासाठी "मदत" म्हणा.',
-        ta: 'எனக்கு புரியவில்லை. கிடைக்கக்கூடிய கட்டளைகளைக் கேட்க "உதவி" என்று சொல்லுங்கள்.',
-      };
-      
-      const responseText = noMatchResponse[language];
-      setResponse(responseText);
-      speak(responseText);
+      // Try farming NLU engine before giving up
+      const farmingResponse = handleFarmingQuery(lowerText);
+      if (farmingResponse) {
+        setResponse(farmingResponse);
+        speak(farmingResponse);
+      } else {
+        // Smart clarifying question — never say "I don't understand"
+        const clarify: Record<Language, string> = {
+          en: 'Are you asking about your crop? Say: pest problem, water issue, market price, or government scheme.',
+          hi: 'क्या आप फसल के बारे में पूछ रहे हैं? कीड़ा, पानी, मंडी भाव या सरकारी योजना बोलें।',
+          pa: 'ਕੀ ਤੁਸੀਂ ਫਸਲ ਬਾਰੇ ਪੁੱਛ ਰਹੇ ਹੋ? ਕੀੜਾ, ਪਾਣੀ, ਮੰਡੀ ਭਾਅ ਜਾਂ ਸਰਕਾਰੀ ਯੋਜਨਾ ਦੱਸੋ।',
+          mr: 'तुम्ही पिकाबद्दल विचारत आहात का? कीड, पाणी, मंडी भाव किंवा सरकारी योजना सांगा.',
+          ta: 'நீங்கள் பயிர் பற்றி கேட்கிறீர்களா? பூச்சி, நீர், சந்தை விலை அல்லது அரசு திட்டம் சொல்லுங்கள்.',
+        };
+        setResponse(clarify[language]);
+        speak(clarify[language]);
+      }
     }
   };
+
 
   return (
     <>
