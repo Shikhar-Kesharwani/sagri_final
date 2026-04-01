@@ -24,53 +24,34 @@ export function DiseaseDetection() {
     }
   };
 
-  const analyzeImage = () => {
+  const analyzeImage = async () => {
+    if (!selectedImage) return;
+    
     setAnalyzing(true);
-    // Simulate AI analysis
-    setTimeout(() => {
-      const mockResults = [
-        {
-          disease: 'Healthy',
-          confidence: 92,
-          severity: 'None',
-          recommendation: 'Your crop looks healthy! Continue with regular care.',
-          treatment: [],
-          color: 'green',
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/detect_disease', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          disease: 'Leaf Blight',
-          confidence: 87,
-          severity: 'Medium',
-          recommendation: 'Early signs of leaf blight detected. Immediate treatment recommended.',
-          treatment: [
-            'Remove affected leaves',
-            'Apply fungicide (Mancozeb 75% WP)',
-            'Improve air circulation',
-            'Reduce overhead watering',
-          ],
-          color: 'orange',
-        },
-        {
-          disease: 'Rust Disease',
-          confidence: 94,
-          severity: 'High',
-          recommendation: 'Severe rust infection detected. Urgent treatment required.',
-          treatment: [
-            'Apply Propiconazole fungicide immediately',
-            'Remove heavily infected plants',
-            'Spray every 7-10 days',
-            'Monitor surrounding crops',
-          ],
-          color: 'red',
-        },
-      ];
+        body: JSON.stringify({
+          image_data: selectedImage
+        }),
+      });
 
-      const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-      setResult(randomResult);
-      setAnalyzing(false);
+      if (!response.ok) throw new Error('API Request Failed');
+
+      const data = await response.json();
+      
+      setResult(data);
       updatePoints(10);
-      toast.success('Analysis complete! +10 points earned');
-    }, 3000);
+      toast.success('AI Analysis complete! +10 points');
+    } catch (error) {
+      toast.error('Could not reach AI backend. Is the FastAPI server running?');
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (

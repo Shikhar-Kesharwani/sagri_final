@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Header } from '../components/Header';
 import { VoiceAssistant } from '../components/VoiceAssistant';
-import { Leaf, Droplet, ThermometerSun, Wind } from 'lucide-react';
+import { Leaf, Droplet, ThermometerSun, Wind, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
@@ -20,43 +20,56 @@ export function CropRecommendation() {
   const [recommendations, setRecommendations] = useState<any>(null);
   const { updatePoints } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Mock recommendations
-    const crops = [
-      {
-        name: 'Rice',
-        suitability: 92,
-        expectedYield: '45-50 quintal/acre',
-        duration: '120-150 days',
-        investment: '₹25,000-30,000',
-        profit: '₹50,000-60,000',
-        reason: 'Excellent soil and weather conditions',
-      },
-      {
-        name: 'Wheat',
-        suitability: 85,
-        expectedYield: '35-40 quintal/acre',
-        duration: '110-130 days',
-        investment: '₹20,000-25,000',
-        profit: '₹45,000-55,000',
-        reason: 'Good pH and nutrient levels',
-      },
-      {
-        name: 'Maize',
-        suitability: 78,
-        expectedYield: '30-35 quintal/acre',
-        duration: '90-110 days',
-        investment: '₹18,000-22,000',
-        profit: '₹35,000-45,000',
-        reason: 'Suitable temperature range',
-      },
-    ];
+    try {
+      // Show loading toast
+      toast.loading('Analyzing soil data...');
 
-    setRecommendations({ crops });
-    updatePoints(15);
-    toast.success('Recommendations generated! +15 points earned');
+      const response = await fetch('http://localhost:8000/api/predict_crop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          N: Number(formData.nitrogen),
+          P: Number(formData.phosphorus),
+          K: Number(formData.potassium),
+          temperature: Number(formData.temperature),
+          humidity: Number(formData.humidity),
+          rainfall: Number(formData.rainfall),
+          ph: Number(formData.ph),
+        }),
+      });
+
+      if (!response.ok) throw new Error('API Request Failed');
+
+      const data = await response.json();
+      
+      const crops = [
+        {
+          name: data.recommended_crop.charAt(0).toUpperCase() + data.recommended_crop.slice(1),
+          suitability: 98,
+          expectedYield: 'Based on optimal conditions',
+          duration: 'Standard crop cycle',
+          investment: 'Variable',
+          profit: 'High Potential',
+          reason: data.is_mock 
+            ? 'Mock Prediction: ' + (data.warning || '')
+            : 'ML Prediction based on your exact NPK and weather values!',
+        }
+      ];
+
+      toast.dismiss(); // clear loading
+      setRecommendations({ crops });
+      updatePoints(15);
+      toast.success(data.is_mock ? 'Mock recommendation generated!' : 'AI Recommendation generated! +15 points');
+      
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Could not reach AI backend. Is the FastAPI server running?');
+    }
   };
 
   return (

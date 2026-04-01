@@ -20,13 +20,27 @@ export function RiskPrediction() {
   const [loading, setLoading] = useState(false);
   const { updatePoints } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate AI prediction
-    setTimeout(() => {
-      const riskLevel = Math.floor(Math.random() * 100);
+    try {
+      const response = await fetch('http://localhost:8000/api/predict_risk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cropType: formData.cropType,
+          soilPh: Number(formData.soilPh),
+          rainfall: Number(formData.rainfall),
+          temperature: Number(formData.temperature),
+          humidity: Number(formData.humidity),
+        }),
+      });
+
+      if (!response.ok) throw new Error('API Request Failed');
+
+      const data = await response.json();
+      const riskLevel = data.riskLevel;
       const risk =
         riskLevel < 30
           ? { level: 'Low', color: 'green', message: 'Conditions are favorable' }
@@ -56,16 +70,19 @@ export function RiskPrediction() {
           },
         ],
         recommendations: [
+          data.is_mock ? 'Note: Using mock prediction. Train the AI model!' : 'AI-verified environmental risk reading.',
           'Monitor weather forecasts regularly',
           'Ensure proper drainage systems',
-          'Consider crop insurance',
           'Maintain soil moisture levels',
         ],
       });
       setLoading(false);
       updatePoints(15);
-      toast.success('Risk assessment complete! +15 points earned');
-    }, 2000);
+      toast.success(data.is_mock ? 'Mock assessment complete!' : 'AI Risk assessment complete! +15 points');
+    } catch (error) {
+      setLoading(false);
+      toast.error('Could not reach backend API.');
+    }
   };
 
   return (

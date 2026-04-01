@@ -1,0 +1,9 @@
+# Python envs
+venv/
+.env
+__pycache__/
+
+# Node.js
+node_modules/
+dist/
+.vite/
