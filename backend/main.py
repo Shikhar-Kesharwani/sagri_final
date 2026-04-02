@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 # --- 1. Load Models (if they exist) ---
-CROP_MODEL_PATH = "crop_random_forest.pkl"
+CROP_MODEL_PATH = "models/crop_random_forest.pkl"
 crop_model = None
 
 if os.path.exists(CROP_MODEL_PATH):
@@ -28,8 +28,8 @@ else:
     print("⚠️ Warning: No trained crop model found. API will use a fallback mock response until you train and upload the model.")
 
 # --- Load Disease Model ---
-DISEASE_MODEL_PATH = "disease_mobilenet.keras"
-DISEASE_CLASSES_PATH = "disease_classes.txt"
+DISEASE_MODEL_PATH = "models/disease_mobilenet.keras"
+DISEASE_CLASSES_PATH = "models/disease_classes.txt"
 disease_model = None
 disease_classes = []
 
@@ -48,7 +48,7 @@ else:
     print("⚠️ Warning: No disease model found.")
 
 # --- Load Prophet Model ---
-PRICE_MODEL_PATH = "price_prophet_model.json"
+PRICE_MODEL_PATH = "models/price_prophet_model.json"
 price_model = None
 
 if os.path.exists(PRICE_MODEL_PATH):
@@ -65,7 +65,7 @@ else:
     print("⚠️ Warning: No price model found.")
 
 # --- Load Risk Model ---
-RISK_MODEL_PATH = "crop_risk_model.pkl"
+RISK_MODEL_PATH = "models/crop_risk_model.pkl"
 risk_model_data = None
 
 if os.path.exists(RISK_MODEL_PATH):
@@ -234,12 +234,14 @@ class DiseaseInput(BaseModel):
 def detect_disease(data: DiseaseInput):
     """
     Endpoint to predict plant diseases from a Base64 encoded image.
+    Uses PIL for preprocessing to avoid tf.image.decode_image TensorShape issues.
     """
     if disease_model and len(disease_classes) > 0:
         try:
-            import tensorflow as tf
             import numpy as np
             import base64
+            from PIL import Image
+            import io
             
             print(f"📸 Received image for disease detection... (length: {len(data.image_data)})")
             
@@ -252,20 +254,22 @@ def detect_disease(data: DiseaseInput):
             img_bytes = base64.b64decode(encoded)
             print(f"✅ Decoded base64 bytes (size: {len(img_bytes)})")
             
-            # 2. Preprocess to match MobileNetV2 inputs
+            # 2. Use PIL to decode and resize - avoids TensorShape unknown rank error
             try:
-                img_tensor = tf.image.decode_image(img_bytes, channels=3)
-                img_tensor = tf.image.resize(img_tensor, [224, 224])
-                img_array = tf.expand_dims(img_tensor, 0)
-                # MobileNetV2 preprocessing is handled by the layer in the model graph if trained correctly
-                print(f"✅ Preprocessed image tensor: {img_array.shape}")
+                pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                pil_img = pil_img.resize((224, 224))
+                # Do NOT divide by 255 — preprocess_input is baked into the model graph
+                # and expects raw [0, 255] float32 pixel values as input.
+                img_array = np.array(pil_img, dtype=np.float32)
+                img_array = np.expand_dims(img_array, axis=0)  # Shape: (1, 224, 224, 3)
+                print(f"✅ Preprocessed image array shape: {img_array.shape}")
             except Exception as decode_err:
                 print(f"❌ Image decoding error: {decode_err}")
                 raise HTTPException(status_code=400, detail="Invalid image format. Please upload a valid JPG/PNG.")
             
             # 3. Predict
             predictions = disease_model.predict(img_array)
-            class_idx = np.argmax(predictions[0])
+            class_idx = int(np.argmax(predictions[0]))
             confidence = float(predictions[0][class_idx]) * 100
             disease_name = disease_classes[class_idx]
             
@@ -277,8 +281,13 @@ def detect_disease(data: DiseaseInput):
                 "disease": disease_name.replace("_", " "),
                 "confidence": round(confidence, 1),
                 "severity": "None" if is_healthy else ("High" if confidence > 80 else "Medium"),
-                "recommendation": "Crop looks great!" if is_healthy else f"AI identified {disease_name}.",
-                "treatment": [] if is_healthy else ["Consult local expert for fungicide recommendations.", "Remove highly affected leaves."],
+                "recommendation": "Crop looks great! No disease detected." if is_healthy else f"AI identified possible {disease_name.replace('_', ' ')}. Please take action.",
+                "treatment": [] if is_healthy else [
+                    "Isolate the affected plants immediately.",
+                    "Consult a local agricultural expert.",
+                    "Consider appropriate fungicide/pesticide treatment.",
+                    "Remove and destroy severely affected leaves."
+                ],
                 "color": "green" if is_healthy else "red"
             }
         except HTTPException as he:
@@ -287,10 +296,9 @@ def detect_disease(data: DiseaseInput):
             print(f"❌ Backend error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     else:
-        # Throw strict error if real model is not present
         print("❌ Disease model not loaded.")
         raise HTTPException(
             status_code=503, 
-            detail="The Real AI Model (disease_mobilenet.keras) could not be loaded. Please ensure it is in the backend folder and tensorflow is installed."
+            detail="Disease model not loaded. Ensure disease_mobilenet.keras is in the backend folder and TensorFlow is installed."
         )
 
