@@ -241,20 +241,35 @@ def detect_disease(data: DiseaseInput):
             import numpy as np
             import base64
             
-            # 1. Parse Base64 image
-            header, encoded = data.image_data.split(",", 1)
+            print(f"📸 Received image for disease detection... (length: {len(data.image_data)})")
+            
+            # 1. Parse Base64 image (handle with or without data:image/... base64 header)
+            if "," in data.image_data:
+                header, encoded = data.image_data.split(",", 1)
+            else:
+                encoded = data.image_data
+                
             img_bytes = base64.b64decode(encoded)
+            print(f"✅ Decoded base64 bytes (size: {len(img_bytes)})")
             
             # 2. Preprocess to match MobileNetV2 inputs
-            img_tensor = tf.image.decode_image(img_bytes, channels=3)
-            img_tensor = tf.image.resize(img_tensor, [224, 224])
-            img_array = tf.expand_dims(img_tensor, 0)
+            try:
+                img_tensor = tf.image.decode_image(img_bytes, channels=3)
+                img_tensor = tf.image.resize(img_tensor, [224, 224])
+                img_array = tf.expand_dims(img_tensor, 0)
+                # MobileNetV2 preprocessing is handled by the layer in the model graph if trained correctly
+                print(f"✅ Preprocessed image tensor: {img_array.shape}")
+            except Exception as decode_err:
+                print(f"❌ Image decoding error: {decode_err}")
+                raise HTTPException(status_code=400, detail="Invalid image format. Please upload a valid JPG/PNG.")
             
             # 3. Predict
             predictions = disease_model.predict(img_array)
             class_idx = np.argmax(predictions[0])
             confidence = float(predictions[0][class_idx]) * 100
             disease_name = disease_classes[class_idx]
+            
+            print(f"🎯 Prediction: {disease_name} ({confidence:.2f}%)")
             
             is_healthy = "healthy" in disease_name.lower()
             
@@ -266,10 +281,14 @@ def detect_disease(data: DiseaseInput):
                 "treatment": [] if is_healthy else ["Consult local expert for fungicide recommendations.", "Remove highly affected leaves."],
                 "color": "green" if is_healthy else "red"
             }
+        except HTTPException as he:
+            raise he
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            print(f"❌ Backend error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     else:
         # Throw strict error if real model is not present
+        print("❌ Disease model not loaded.")
         raise HTTPException(
             status_code=503, 
             detail="The Real AI Model (disease_mobilenet.keras) could not be loaded. Please ensure it is in the backend folder and tensorflow is installed."

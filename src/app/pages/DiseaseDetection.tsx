@@ -40,15 +40,23 @@ export function DiseaseDetection() {
         }),
       });
 
-      if (!response.ok) throw new Error('API Request Failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'AI Model Error');
+      }
 
       const data = await response.json();
       
       setResult(data);
       updatePoints(10);
       toast.success('AI Analysis complete! +10 points');
-    } catch (error) {
-      toast.error('Could not reach AI backend. Is the FastAPI server running?');
+    } catch (error: any) {
+      console.error('AI error:', error);
+      if (error.message.includes('Failed to fetch')) {
+        toast.error('Cannot connect to AI backend. Make sure the FastAPI server is running on port 8000.');
+      } else {
+        toast.error(`AI Error: ${error.message}`);
+      }
     } finally {
       setAnalyzing(false);
     }
