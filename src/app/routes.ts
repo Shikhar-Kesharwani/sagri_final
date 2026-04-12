@@ -19,6 +19,7 @@ import { SellCrops } from "./pages/SellCrops";
 import { BuySeeds } from "./pages/BuySeeds";
 import { CheckLoans } from "./pages/CheckLoans";
 import { BookEquipment } from "./pages/BookEquipment";
+import { ResetPassword } from "./pages/ResetPassword";
 
 export const router = createBrowserRouter([
   {
@@ -100,6 +101,10 @@ export const router = createBrowserRouter([
       {
         path: "book-equipment",
         Component: BookEquipment,
+      },
+      {
+        path: "reset-password",
+        Component: ResetPassword,
       },
     ],
   },

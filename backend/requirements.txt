@@ -4,6 +4,8 @@ pydantic==2.7.2
 scikit-learn==1.4.2
 pandas==2.2.2
 joblib==1.4.2
+requests==2.32.3
+python-dotenv==1.0.1
 # Optional but heavy ML dependencies; commented out initially so install is fast.
 # If you run the actual models, you'll need these:
 tensorflow

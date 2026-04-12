@@ -104,3 +104,8 @@ html {
 .dark ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #34d399, #10b981);
 }
+
+/* Hide reCAPTCHA badge for cleaner UI */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}

@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 
+const API_BASE_URL =
+  (import.meta as any).env?.VITE_BACKEND_URL?.trim() || 'http://127.0.0.1:8000';
+
 export function DiseaseDetection() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -30,7 +33,7 @@ export function DiseaseDetection() {
     setAnalyzing(true);
     
     try {
-      const response = await fetch('http://localhost:8000/api/detect_disease', {
+      const response = await fetch(`${API_BASE_URL}/api/detect_disease`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,19 +44,35 @@ export function DiseaseDetection() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'AI Model Error');
+        let errorMessage = 'AI Model Error';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          const text = await response.text();
+          if (text) errorMessage = text;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      const safeResult = {
+        ...data,
+        treatment: Array.isArray(data?.treatment) ? data.treatment : [],
+        color: data?.color || 'red',
+        disease: data?.disease || 'Unknown disease',
+        confidence: typeof data?.confidence === 'number' ? data.confidence : 0,
+        severity: data?.severity || 'Unknown',
+        recommendation: data?.recommendation || 'No recommendation available.',
+      };
       
-      setResult(data);
+      setResult(safeResult);
       updatePoints(10);
       toast.success('AI Analysis complete! +10 points');
     } catch (error: any) {
       console.error('AI error:', error);
       if (error.message.includes('Failed to fetch')) {
-        toast.error('Cannot connect to AI backend. Make sure the FastAPI server is running on port 8000.');
+        toast.error(`Cannot connect to AI backend at ${API_BASE_URL}. Make sure FastAPI is running.`);
       } else {
         toast.error(`AI Error: ${error.message}`);
       }
@@ -205,7 +224,7 @@ export function DiseaseDetection() {
                 <p className="text-gray-700 dark:text-gray-300">{result.recommendation}</p>
               </div>
 
-              {result.treatment.length > 0 && (
+              {Array.isArray(result.treatment) && result.treatment.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                     Treatment Steps

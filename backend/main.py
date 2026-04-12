@@ -1,14 +1,36 @@
 from pathlib import Path
 import base64
 import io
+import json
 import logging
 import random
+import time
 
 import joblib
 import pandas as pd
+import requests as http_requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+# --- API Keys ---
+FAST2SMS_API_KEY = "e8ngMPO4d1ctybvp2IomN3iTkUYuZVWzaFKfE6LqRBXDSQjwx0TNE8wlHfO15rnBIuLzcvdhX439VZmG"
+
+# --- Registered Emails Store (JSON file for persistence across restarts) ---
+_EMAILS_FILE = Path(__file__).parent / "registered_emails.json"
+
+def _load_registered_emails() -> set:
+    if _EMAILS_FILE.exists():
+        try:
+            return set(json.loads(_EMAILS_FILE.read_text()))
+        except Exception:
+            return set()
+    return set()
+
+def _mark_email_registered(email: str) -> None:
+    emails = _load_registered_emails()
+    emails.add(email.strip().lower())
+    _EMAILS_FILE.write_text(json.dumps(list(emails)))
 
 app = FastAPI(title="Sagri ML Backend API")
 logger = logging.getLogger("sagri.backend")
@@ -81,7 +103,37 @@ else:
     logger.warning("No trained crop risk model found.")
 
 
-# --- 2. Request Models ---
+# --- 2. In-Memory OTP Store ---
+# Structure: { identifier(phone/email): { "otp": "123456", "expires": <unix_timestamp> } }
+_otp_store: dict = {}
+OTP_TTL_SECONDS = 300  # 5 minutes
+
+
+def _generate_otp() -> str:
+    return str(random.randint(100000, 999999))
+
+
+def _store_otp(identifier: str, otp: str) -> None:
+    _otp_store[identifier] = {
+        "otp": otp,
+        "expires": time.time() + OTP_TTL_SECONDS,
+    }
+
+
+def _verify_stored_otp(identifier: str, otp: str) -> tuple[bool, str]:
+    entry = _otp_store.get(identifier)
+    if not entry:
+        return False, "No OTP found. Please request a new one."
+    if time.time() > entry["expires"]:
+        _otp_store.pop(identifier, None)
+        return False, "OTP has expired. Please request a new one."
+    if entry["otp"] != otp:
+        return False, "Invalid OTP. Please try again."
+    _otp_store.pop(identifier, None)  # One-time use — delete after success
+    return True, "OTP verified successfully."
+
+
+# --- 3. Request Models ---
 class CropInput(BaseModel):
     N: float
     P: float
@@ -109,10 +161,110 @@ class DiseaseInput(BaseModel):
     image_data: str
 
 
-# --- 3. API Endpoints ---
+class SendSmsOtpInput(BaseModel):
+    phone: str  # 10-digit Indian number
+
+
+class SendEmailOtpInput(BaseModel):
+    email: str
+
+
+class VerifyOtpInput(BaseModel):
+    identifier: str  # phone or email
+    otp: str
+
+
+# --- 4. API Endpoints ---
 @app.get("/")
 def read_root():
     return {"status": "online", "message": "Sagri ML Backend API is running!"}
+
+
+# ------ Registered Email Check Endpoints ------
+
+@app.get("/api/check-email-registered")
+def check_email_registered(email: str):
+    """Check if an email is already registered. Called BEFORE sending OTP."""
+    exists = email.strip().lower() in _load_registered_emails()
+    return {"exists": exists}
+
+
+@app.post("/api/mark-email-registered")
+def mark_email_registered(data: SendEmailOtpInput):
+    """Persist email as registered after successful signup. Called AFTER signup completes."""
+    _mark_email_registered(data.email)
+    return {"success": True}
+
+
+# ------ OTP Endpoints ------
+
+@app.post("/api/send-sms-otp")
+def send_sms_otp(data: SendSmsOtpInput):
+    phone = data.phone.strip()
+    if len(phone) != 10 or not phone.isdigit():
+        raise HTTPException(status_code=400, detail="Invalid phone number. Must be exactly 10 digits.")
+
+    api_key = FAST2SMS_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Fast2SMS API key not set.")
+
+    otp = _generate_otp()
+    _store_otp(phone, otp)
+
+    headers = {"authorization": api_key}
+    payload = {
+        "message": f"Your SAGRI login OTP is {otp}. Valid for 5 minutes. Do not share this code with anyone.",
+        "route": "q",
+        "numbers": phone,
+        "flash": 0,
+    }
+
+    try:
+        resp = http_requests.post(
+            "https://www.fast2sms.com/dev/bulkV2",
+            headers=headers,
+            json=payload,
+            timeout=10,
+        )
+        result = resp.json()
+        if not result.get("return", False):
+            _otp_store.pop(phone, None)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Fast2SMS error: {result.get('message', 'Unknown error')}",
+            )
+        return {"success": True, "message": f"OTP sent to +91{phone}"}
+    except http_requests.RequestException as e:
+        _otp_store.pop(phone, None)
+        raise HTTPException(status_code=502, detail=f"SMS service unreachable: {str(e)}")
+
+
+@app.post("/api/verify-sms-otp")
+def verify_sms_otp(data: VerifyOtpInput):
+    ok, msg = _verify_stored_otp(data.identifier.strip(), data.otp.strip())
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg}
+
+
+@app.post("/api/send-email-otp")
+def send_email_otp(data: SendEmailOtpInput):
+    email = data.email.strip().lower()
+    if "@" not in email or "." not in email:
+        raise HTTPException(status_code=400, detail="Invalid email address.")
+
+    otp = _generate_otp()
+    _store_otp(email, otp)
+    # Return OTP to the frontend — EmailJS will deliver the email from the browser
+    return {"success": True, "otp": otp, "message": f"OTP generated for {email}"}
+
+
+@app.post("/api/verify-email-otp")
+def verify_email_otp(data: VerifyOtpInput):
+    ok, msg = _verify_stored_otp(data.identifier.strip().lower(), data.otp.strip())
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg}
 
 
 @app.post("/api/predict_crop")

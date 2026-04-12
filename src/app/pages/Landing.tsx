@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Header } from '../components/Header';
-import { EmailAuth } from '../components/EmailAuth';
+import { ModernAuth } from '../components/ModernAuth';
 import { motion } from 'motion/react';
 import {
   Sprout,
@@ -641,7 +641,7 @@ export function Landing() {
         </div>
       </footer>
 
-      <EmailAuth isOpen={showLogin} onClose={() => setShowLogin(false)} />
+      <ModernAuth isOpen={showLogin} onClose={() => setShowLogin(false)} />
     </div>
   );
 }

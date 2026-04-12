@@ -1,559 +1,594 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Phone, 
-  ArrowRight, 
-  CheckCircle, 
-  Sparkles,
-  Leaf,
-  TrendingUp,
-  Shield,
-  Users,
-  ChevronRight,
-  MapPin,
-  Home,
-  Wheat
+import emailjs from '@emailjs/browser';
+import {
+  Mail, ArrowRight, CheckCircle, Sparkles, Leaf,
+  TrendingUp, Shield, Users, ChevronRight, Wheat, Loader2,
+  Lock, Eye, EyeOff, UserPlus, LogIn,
 } from 'lucide-react';
 import { useAuth, UserRole } from './AuthProvider';
 import { useNavigate } from 'react-router';
 import { WelcomeOverview } from './WelcomeOverview';
 import { Logo } from './Logo';
 
-interface ModernAuthProps {
-  isOpen: boolean;
-  onClose?: () => void;
-}
+const EMAILJS_SERVICE_ID  = 'service_zlm6dfd';
+const EMAILJS_TEMPLATE_ID = 'template_gkmqa1l';
+const EMAILJS_PUBLIC_KEY  = 'buGEM--HOcsCraah1';
+const BACKEND_URL         = 'http://localhost:8000';
 
-// Indian states
 const INDIAN_STATES = [
-  'Punjab', 'Haryana', 'Uttar Pradesh', 'Madhya Pradesh', 'Rajasthan',
-  'Maharashtra', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'Andhra Pradesh',
-  'Telangana', 'West Bengal', 'Bihar', 'Odisha', 'Chhattisgarh',
-  'Jharkhand', 'Assam', 'Kerala', 'Himachal Pradesh', 'Uttarakhand'
+  'Punjab','Haryana','Uttar Pradesh','Madhya Pradesh','Rajasthan',
+  'Maharashtra','Gujarat','Karnataka','Tamil Nadu','Andhra Pradesh',
+  'Telangana','West Bengal','Bihar','Odisha','Chhattisgarh',
+  'Jharkhand','Assam','Kerala','Himachal Pradesh','Uttarakhand',
+];
+const CROP_TYPES = [
+  { id: 'wheat', name: 'Wheat (गेहूं)' }, { id: 'rice', name: 'Rice (धान)' },
+  { id: 'cotton', name: 'Cotton (कपास)' }, { id: 'sugarcane', name: 'Sugarcane (गन्ना)' },
+  { id: 'maize', name: 'Maize (मक्का)' }, { id: 'pulses', name: 'Pulses (दालें)' },
+  { id: 'soybean', name: 'Soybean (सोयाबीन)' }, { id: 'groundnut', name: 'Groundnut (मूंगफली)' },
+  { id: 'bajra', name: 'Bajra (बाजरा)' }, { id: 'jowar', name: 'Jowar (ज्वार)' },
+  { id: 'mustard', name: 'Mustard (सरसों)' }, { id: 'barley', name: 'Barley (जौ)' },
+  { id: 'vegetables', name: 'Vegetables (सब्जियां)' }, { id: 'fruits', name: 'Fruits (फल)' },
 ];
 
-// Crops
-const CROP_TYPES = [
-  { id: 'wheat', name: 'Wheat (गेहूं)' },
-  { id: 'rice', name: 'Rice (धान)' },
-  { id: 'cotton', name: 'Cotton (कपास)' },
-  { id: 'sugarcane', name: 'Sugarcane (गन्ना)' },
-  { id: 'maize', name: 'Maize (मक्का)' },
-  { id: 'pulses', name: 'Pulses (दालें)' },
-  { id: 'soybean', name: 'Soybean (सोयाबीन)' },
-  { id: 'groundnut', name: 'Groundnut (मूंगफली)' },
-  { id: 'bajra', name: 'Bajra (बाजरा)' },
-  { id: 'jowar', name: 'Jowar (ज्वार)' },
-  { id: 'mustard', name: 'Mustard (सरसों)' },
-  { id: 'barley', name: 'Barley (जौ)' },
-  { id: 'vegetables', name: 'Vegetables (सब्जियां)' },
-  { id: 'fruits', name: 'Fruits (फल)' }
-];
+type SignupStep = 'email' | 'otp' | 'setpassword' | 'role' | 'details';
+interface ModernAuthProps { isOpen: boolean; onClose?: () => void; }
 
 export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
-  const [step, setStep] = useState<'phone' | 'otp' | 'role' | 'details'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>(null);
-  const [state, setState] = useState('');
-  const [district, setDistrict] = useState('');
-  const [village, setVillage] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [landSize, setLandSize] = useState('');
+  // ── All state ── (hooks must be at the very top, no exceptions)
+  const [authTab,     setAuthTab]     = useState<'signup' | 'login' | 'forgot_password'>('signup');
+  const [step,        setStep]        = useState<SignupStep>('email');
+  const [email,       setEmail]       = useState('');
+  const [otp,         setOtp]         = useState('');
+  const [password,    setPassword]    = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [showPass,    setShowPass]    = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [role,        setRole]        = useState<UserRole>(null);
+  const [name,        setName]        = useState('');
+  const [state,       setState]       = useState('');
+  const [district,    setDistrict]    = useState('');
+  const [village,     setVillage]     = useState('');
+  const [pincode,     setPincode]     = useState('');
+  const [landSize,    setLandSize]    = useState('');
   const [primaryCrop, setPrimaryCrop] = useState('');
-  const [error, setError] = useState('');
+  const [loginEmail,  setLoginEmail]  = useState('');
+  const [loginPass,   setLoginPass]   = useState('');
+  const [showLoginPass, setShowLoginPass] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [error,       setError]       = useState('');
+  const [isLoading,   setIsLoading]   = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  const { login, signup, user } = useAuth();
+  const [timer,       setTimer]       = useState(30);
+
+  const { login, signup, user, resetPassword } = useAuth();
   const navigate = useNavigate();
 
+  // ── ALL useEffects MUST be here, before any conditional return ──
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (step === 'otp' && timer > 0) {
+      interval = setInterval(() => setTimer(p => p - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
+
+  // Redirect returning user after login() sets user state
+  useEffect(() => {
+    if (user && isOpen && authTab === 'login') {
+      navigate(user.role === 'admin' ? '/admin' : '/farmer');
+    }
+  }, [user, isOpen, authTab, navigate]);
+
+  // ── Early returns AFTER all hooks ──
   if (!isOpen && !showWelcome) return null;
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phone.length === 10) {
-      setStep('otp');
-    }
+  if (showWelcome) {
+    return (
+      <WelcomeOverview
+        isOpen={showWelcome}
+        onComplete={() => {
+          setShowWelcome(false);
+          navigate(user?.role === 'admin' ? '/admin' : '/farmer');
+        }}
+        userName={name}
+      />
+    );
+  }
+
+  // ── Helper: switch tabs ──
+  const switchTab = (tab: 'signup' | 'login' | 'forgot_password') => {
+    setAuthTab(tab); setError('');
+    setStep('email'); setOtp(''); setPassword(''); setConfirmPass('');
+    setForgotEmail(''); setForgotSuccess(false);
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  // ══════════════════════════════════════════════════════════════════════
+  // SIGNUP HANDLERS
+  // ══════════════════════════════════════════════════════════════════════
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length === 6) {
-      setStep('role');
-    }
+    if (!email.includes('@') || !email.includes('.')) { setError('Enter a valid email address'); return; }
+    setIsLoading(true); setError('');
+    try {
+      // ── Step 0: Check if email already registered (before wasting an OTP) ──
+      const checkRes  = await fetch(`${BACKEND_URL}/api/check-email-registered?email=${encodeURIComponent(email)}`);
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        setError('⚠️ This email is already registered. Please use the Login tab to sign in.');
+        setIsLoading(false);
+        return;
+      }
+
+      // ── Step 1: Generate OTP on backend ──
+      const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to generate OTP');
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
+      setTimer(30); setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Could not send OTP. Please try again.');
+    } finally { setIsLoading(false); }
   };
 
-  const handleRoleSelect = (selectedRole: UserRole) => {
-    setRole(selectedRole);
-    setStep('details');
+  const handleResendOtp = async () => {
+    setOtp(''); setIsLoading(true); setError('');
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to resend OTP');
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
+      setTimer(30);
+    } catch (err: any) {
+      setError(err.message || 'Could not resend OTP.');
+    } finally { setIsLoading(false); }
   };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6) return;
+    setIsLoading(true); setError('');
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/verify-email-otp`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Invalid OTP');
+      setStep('setpassword');
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP. Please try again.');
+    } finally { setIsLoading(false); }
+  };
+
+  const handleSetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (password !== confirmPass) { setError('Passwords do not match'); return; }
+    setError(''); setStep('role');
+  };
+
+  const handleRoleSelect = (selectedRole: UserRole) => { setRole(selectedRole); setStep('details'); };
 
   const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && role && state && district && village && pincode && landSize && primaryCrop) {
-      setError('');
-      try {
-        // Phone/OTP flow registers a new user — use signup, not login
-        await signup(phone, '', name, role, phone, state, district, village, pincode, landSize, primaryCrop);
-        setShowWelcome(true);
-      } catch (error: any) {
-        console.error('Login failed:', error);
-        setError(error.message || 'Login failed. Please try again.');
+    if (!name || !role || !state || !district || !village || !pincode || !landSize || !primaryCrop) return;
+    setIsLoading(true); setError('');
+    try {
+      await signup(email, password, name, role, undefined, state, district, village, pincode, landSize, primaryCrop);
+      // Mark this email as registered so duplicate signups are blocked next time
+      await fetch(`${BACKEND_URL}/api/mark-email-registered`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setShowWelcome(true);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally { setIsLoading(false); }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // LOGIN & FORGOT PASSWORD HANDLERS
+  // ══════════════════════════════════════════════════════════════════════
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !loginPass) { setError('Please enter your email and password'); return; }
+    setIsLoading(true); setError('');
+    try {
+      await login(loginEmail, loginPass);
+      // user state update triggers the useEffect above which navigates
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password. Please try again.');
+    } finally { setIsLoading(false); }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) { setError('Please enter your email'); return; }
+    setIsLoading(true); setError('');
+    try {
+      if (resetPassword) {
+        await resetPassword(forgotEmail);
+        setForgotSuccess(true);
       }
-    }
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset link. Please try again.');
+    } finally { setIsLoading(false); }
   };
 
-  const handleWelcomeComplete = () => {
-    setShowWelcome(false);
-    // Use actual user role from AuthProvider, not local form state (which is null on sign-in)
-    const actualRole = user?.role || role;
-    navigate(actualRole === 'farmer' ? '/farmer' : '/admin');
-  };
+  const signupSteps: SignupStep[] = ['email', 'otp', 'setpassword', 'role', 'details'];
+  const currentStepIndex = signupSteps.indexOf(step);
 
-  if (showWelcome) {
-    return <WelcomeOverview isOpen={showWelcome} onComplete={handleWelcomeComplete} userName={name} />;
-  }
-
+  // ══════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-900 via-emerald-800 to-teal-900">
-        {/* Animated particles */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white/20 rounded-full"
-              animate={{
-                x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth],
-                y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight],
-              }}
-              transition={{
-                duration: 20 + Math.random() * 10,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              style={{
-                left: Math.random() * 100 + '%',
-                top: Math.random() * 100 + '%',
-              }}
+            <motion.div key={i} className="absolute w-2 h-2 bg-white/20 rounded-full"
+              animate={{ x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth], y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight] }}
+              transition={{ duration: 20 + Math.random() * 10, repeat: Infinity, ease: 'linear' }}
+              style={{ left: Math.random() * 100 + '%', top: Math.random() * 100 + '%' }}
             />
           ))}
         </div>
-        
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-emerald-400/20 via-transparent to-transparent" />
       </div>
 
-      {/* Content */}
       <div className="relative h-full flex items-center justify-center p-4">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-          
-          {/* Left Side - Branding */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="hidden lg:block text-white space-y-6"
-          >
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="w-24 h-24 mb-8"
-            >
-              <Logo />
-            </motion.div>
 
-            <h1 className="text-5xl font-bold mb-4">
-              SAGRI
-              <span className="block text-2xl font-normal text-green-200 mt-2">
-                Krishi Shayak 🌾
-              </span>
+          {/* Left Branding */}
+          <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="hidden lg:block text-white space-y-6">
+            <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }} className="w-24 h-24 mb-8"><Logo /></motion.div>
+            <h1 className="text-5xl font-bold mb-4">SAGRI
+              <span className="block text-2xl font-normal text-green-200 mt-2">Krishi Shayak 🌾</span>
             </h1>
-
-            <p className="text-xl text-green-100 leading-relaxed">
-              Your Intelligent Farming Assistant powered by AI
-            </p>
-
+            <p className="text-xl text-green-100 leading-relaxed">Your Intelligent Farming Assistant powered by AI</p>
             <div className="space-y-4 pt-8">
               {[
                 { icon: <Leaf className="w-6 h-6" />, text: 'AI-Powered Crop Disease Detection' },
                 { icon: <TrendingUp className="w-6 h-6" />, text: 'Smart Price Forecasting' },
                 { icon: <Shield className="w-6 h-6" />, text: 'Risk Prediction & Alerts' },
                 { icon: <Users className="w-6 h-6" />, text: 'Expert Connect 24/7' },
-              ].map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8 + index * 0.1 }}
-                  className="flex items-center gap-3 text-green-100"
-                >
-                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    {feature.icon}
-                  </div>
-                  <span>{feature.text}</span>
+              ].map((f, i) => (
+                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 + i * 0.1 }} className="flex items-center gap-3 text-green-100">
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">{f.icon}</div>
+                  <span>{f.text}</span>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* Right Side - Auth Form */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="w-full"
-          >
+          {/* Right Auth Card */}
+          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="w-full">
             <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
-              
+
               {/* Mobile Logo */}
               <div className="lg:hidden text-center mb-6">
-                <motion.div
-                  animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                  className="w-16 h-16 mx-auto mb-4"
-                >
-                  <Logo />
-                </motion.div>
+                <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }} className="w-16 h-16 mx-auto mb-4"><Logo /></motion.div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">SAGRI</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Krishi Shayak</p>
               </div>
 
+              {/* New User / Login Toggle */}
+              <div className="flex rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-600 mb-8">
+                <button type="button" onClick={() => switchTab('signup')}
+                  className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-all ${authTab === 'signup' ? 'bg-green-500 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <UserPlus className="w-4 h-4" /> New User
+                </button>
+                <button type="button" onClick={() => switchTab('login')}
+                  className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-all ${authTab === 'login' ? 'bg-green-500 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <LogIn className="w-4 h-4" /> Login
+                </button>
+              </div>
+
               <AnimatePresence mode="wait">
-                {/* Step 1: Phone Number */}
-                {step === 'phone' && (
-                  <motion.div
-                    key="phone"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Welcome to SAGRI
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Your Intelligent Farming Assistant
-                      </p>
-                    </div>
 
-                    <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Mobile Number
-                        </label>
-                        <div className="relative">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            placeholder="Enter 10-digit mobile number"
-                            className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-lg transition-all"
-                            maxLength={10}
-                          />
-                        </div>
-                      </div>
-
-                      <motion.button
-                        type="submit"
-                        disabled={phone.length !== 10}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
-                      >
-                        Send OTP
-                        <ArrowRight className="w-5 h-5" />
-                      </motion.button>
-                    </form>
-                  </motion.div>
-                )}
-
-                {/* Step 2: OTP */}
-                {step === 'otp' && (
-                  <motion.div
-                    key="otp"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
+                {/* ── LOGIN ── */}
+                {authTab === 'login' && (
+                  <motion.div key="login" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Phone className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        <LogIn className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
-                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Enter OTP
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Sent to +91 {phone}
-                      </p>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back!</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Login with your email and password</p>
                     </div>
-
-                    <form onSubmit={handleOtpSubmit} className="space-y-6">
+                    <form onSubmit={handleLogin} className="space-y-5">
                       <div>
-                        <input
-                          type="text"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="Enter 6-digit OTP"
-                          className="w-full px-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-3xl tracking-widest dark:bg-gray-700 dark:text-white transition-all"
-                          maxLength={6}
-                        />
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="Enter your registered email"
+                            className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                        </div>
                       </div>
-
-                      <motion.button
-                        type="submit"
-                        disabled={otp.length !== 6}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
-                      >
-                        Verify OTP
-                        <CheckCircle className="w-5 h-5" />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input type={showLoginPass ? 'text' : 'password'} value={loginPass} onChange={e => setLoginPass(e.target.value)} placeholder="Enter your password"
+                            className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                          <button type="button" onClick={() => setShowLoginPass(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            {showLoginPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                          <button type="button" onClick={() => switchTab('forgot_password')} className="text-sm text-green-600 hover:underline">Forgot Password?</button>
+                        </div>
+                      </div>
+                      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                      <motion.button type="submit" disabled={isLoading || !loginEmail || !loginPass}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Logging in...</> : <>Login <ArrowRight className="w-5 h-5" /></>}
                       </motion.button>
-
-                      <button
-                        type="button"
-                        onClick={() => setStep('phone')}
-                        className="w-full text-green-600 dark:text-green-400 text-sm hover:underline"
-                      >
-                        Change Mobile Number
-                      </button>
+                      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                        Don't have an account?{' '}
+                        <button type="button" onClick={() => switchTab('signup')} className="text-green-600 font-semibold hover:underline">Register here</button>
+                      </p>
                     </form>
                   </motion.div>
                 )}
 
-                {/* Step 3: Role Selection */}
-                {step === 'role' && (
-                  <motion.div
-                    key="role"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
+                {/* ── FORGOT PASSWORD ── */}
+                {authTab === 'forgot_password' && (
+                  <motion.div key="forgot" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                    <div className="text-center mb-8">
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Reset Password</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">We'll send a reset link to your email</p>
+                    </div>
+                    {forgotSuccess ? (
+                      <div className="text-center space-y-6">
+                        <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-xl">
+                          Password reset link has been sent! Please check your email.
+                        </div>
+                        <button type="button" onClick={() => switchTab('login')}
+                          className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-4 rounded-xl font-semibold transition-all">
+                          Return to Login
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleForgotPassword} className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="Enter your registered email"
+                              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                          </div>
+                        </div>
+                        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                        <motion.button type="submit" disabled={isLoading || !forgotEmail}
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
+                          {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</> : <>Send Reset Link <ArrowRight className="w-5 h-5" /></>}
+                        </motion.button>
+                        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                          Remembered your password?{' '}
+                          <button type="button" onClick={() => switchTab('login')} className="text-green-600 font-semibold hover:underline">Login here</button>
+                        </p>
+                      </form>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ── SIGNUP: step email ── */}
+                {authTab === 'signup' && step === 'email' && (
+                  <motion.div key="signup-email" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Account</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Verify your email to get started</p>
+                    </div>
+                    <form onSubmit={handleSendOtp} className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email address"
+                            className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                        </div>
+                      </div>
+                      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                      <motion.button type="submit" disabled={isLoading || !email.includes('@')}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...</> : <>Send OTP to Email <ArrowRight className="w-5 h-5" /></>}
+                      </motion.button>
+                      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                        Already have an account?{' '}
+                        <button type="button" onClick={() => switchTab('login')} className="text-green-600 font-semibold hover:underline">Login here</button>
+                      </p>
+                    </form>
+                  </motion.div>
+                )}
+
+                {/* ── SIGNUP: step otp ── */}
+                {authTab === 'signup' && step === 'otp' && (
+                  <motion.div key="signup-otp" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                    <div className="text-center mb-8">
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Verify Email</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">OTP sent to <span className="font-semibold text-green-600">{email}</span></p>
+                    </div>
+                    <form onSubmit={handleVerifyOtp} className="space-y-6">
+                      <input type="text" inputMode="numeric" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,'').slice(0,6))}
+                        placeholder="• • • • • •" autoFocus maxLength={6}
+                        className="w-full px-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-3xl tracking-widest dark:bg-gray-700 dark:text-white transition-all" />
+                      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                      <motion.button type="submit" disabled={isLoading || otp.length !== 6}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : <>Verify OTP <CheckCircle className="w-5 h-5" /></>}
+                      </motion.button>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <button type="button" disabled={timer > 0 || isLoading} onClick={handleResendOtp}
+                          className="text-green-600 dark:text-green-400 text-sm hover:underline disabled:text-gray-400 font-medium">
+                          {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+                        </button>
+                        <button type="button" onClick={() => { setStep('email'); setOtp(''); setError(''); }} className="text-gray-500 text-sm hover:underline">
+                          ← Change Email
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                )}
+
+                {/* ── SIGNUP: step setpassword ── */}
+                {authTab === 'signup' && step === 'setpassword' && (
+                  <motion.div key="signup-password" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                    <div className="text-center mb-8">
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Set Password</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Create a password you'll use to login next time</p>
+                    </div>
+                    <form onSubmit={handleSetPassword} className="space-y-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 6 characters"
+                            className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all" />
+                          <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input type={showConfirm ? 'text' : 'password'} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Re-enter your password"
+                            className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all" />
+                          <button type="button" onClick={() => setShowConfirm(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+                      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                      <motion.button type="submit" disabled={password.length < 6 || password !== confirmPass}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
+                        Continue <ArrowRight className="w-5 h-5" />
+                      </motion.button>
+                    </form>
+                  </motion.div>
+                )}
+
+                {/* ── SIGNUP: step role ── */}
+                {authTab === 'signup' && step === 'role' && (
+                  <motion.div key="signup-role" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
-                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Select Your Role
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Choose how you'll use SAGRI
-                      </p>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Select Your Role</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Choose how you'll use SAGRI</p>
                     </div>
-
                     <div className="space-y-4">
-                      <motion.button
-                        onClick={() => handleRoleSelect('farmer')}
-                        whileHover={{ scale: 1.02, x: 5 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full p-6 border-2 border-gray-200 dark:border-gray-600 rounded-2xl hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                            <Wheat className="w-7 h-7 text-white" />
+                      {[
+                        { r: 'farmer' as UserRole, label: 'Farmer', desc: 'Access farming tools, AI insights, and expert guidance', icon: <Wheat className="w-7 h-7 text-white" />, grad: 'from-green-500 to-emerald-600' },
+                        { r: 'admin'  as UserRole, label: 'Admin',  desc: 'View analytics, manage users, and monitor platform',     icon: <TrendingUp className="w-7 h-7 text-white" />, grad: 'from-blue-500 to-cyan-600' },
+                      ].map(item => (
+                        <motion.button key={String(item.r)} onClick={() => handleRoleSelect(item.r)}
+                          whileHover={{ scale: 1.02, x: 5 }} whileTap={{ scale: 0.98 }}
+                          className="w-full p-6 border-2 border-gray-200 dark:border-gray-600 rounded-2xl hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group text-left">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-14 h-14 bg-gradient-to-br ${item.grad} rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>{item.icon}</div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">{item.label}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{item.desc}</p>
+                            </div>
+                            <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-green-500 transition-colors" />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
-                              Farmer
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Access farming tools, AI insights, and expert guidance
-                            </p>
-                          </div>
-                          <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-green-500 transition-colors" />
-                        </div>
-                      </motion.button>
-
-                      <motion.button
-                        onClick={() => handleRoleSelect('admin')}
-                        whileHover={{ scale: 1.02, x: 5 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full p-6 border-2 border-gray-200 dark:border-gray-600 rounded-2xl hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                            <TrendingUp className="w-7 h-7 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
-                              Admin
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              View analytics, manage users, and monitor platform
-                            </p>
-                          </div>
-                          <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-green-500 transition-colors" />
-                        </div>
-                      </motion.button>
+                        </motion.button>
+                      ))}
                     </div>
                   </motion.div>
                 )}
 
-                {/* Step 4: Details Form */}
-                {step === 'details' && (
-                  <motion.div
-                    key="details"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="max-h-[70vh] overflow-y-auto pr-2"
-                  >
+                {/* ── SIGNUP: step details ── */}
+                {authTab === 'signup' && step === 'details' && (
+                  <motion.div key="signup-details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}
+                    className="max-h-[65vh] overflow-y-auto pr-2">
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        Complete Your Profile
-                      </h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Help us personalize your experience
-                      </p>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Complete Your Profile</h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Help us personalize your SAGRI experience</p>
                     </div>
-
                     <form onSubmit={handleDetailsSubmit} className="space-y-4">
-                      {/* Name */}
+                      {[
+                        { label: 'Your Name',          val: name,     set: setName,     ph: 'Enter your full name' },
+                        { label: 'District',           val: district, set: setDistrict, ph: 'Enter your district' },
+                        { label: 'Village',            val: village,  set: setVillage,  ph: 'Enter your village' },
+                        { label: 'Pincode',            val: pincode,  set: (v: string) => setPincode(v.replace(/\D/g,'').slice(0,6)), ph: '6-digit pincode' },
+                        { label: 'Land Size (acres)',  val: landSize, set: (v: string) => setLandSize(v.replace(/\D/g,'')), ph: 'Size in acres' },
+                      ].map(f => (
+                        <div key={f.label}>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{f.label}</label>
+                          <input type="text" value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph}
+                            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all" />
+                        </div>
+                      ))}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Your Name
-                        </label>
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Enter your name"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        />
-                      </div>
-
-                      {/* State */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          State
-                        </label>
-                        <select
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        >
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State</label>
+                        <select value={state} onChange={e => setState(e.target.value)}
+                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all">
                           <option value="">Select a state</option>
-                          {INDIAN_STATES.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
+                          {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
-
-                      {/* District */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          District
-                        </label>
-                        <input
-                          type="text"
-                          value={district}
-                          onChange={(e) => setDistrict(e.target.value)}
-                          placeholder="Enter your district"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        />
-                      </div>
-
-                      {/* Village */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Village
-                        </label>
-                        <input
-                          type="text"
-                          value={village}
-                          onChange={(e) => setVillage(e.target.value)}
-                          placeholder="Enter your village"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        />
-                      </div>
-
-                      {/* Pincode */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Pincode
-                        </label>
-                        <input
-                          type="text"
-                          value={pincode}
-                          onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="Enter your pincode"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                          maxLength={6}
-                        />
-                      </div>
-
-                      {/* Land Size */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Land Size (in acres)
-                        </label>
-                        <input
-                          type="text"
-                          value={landSize}
-                          onChange={(e) => setLandSize(e.target.value.replace(/\D/g, ''))}
-                          placeholder="Enter your land size"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        />
-                      </div>
-
-                      {/* Primary Crop */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Primary Crop
-                        </label>
-                        <select
-                          value={primaryCrop}
-                          onChange={(e) => setPrimaryCrop(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all"
-                        >
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Crop</label>
+                        <select value={primaryCrop} onChange={e => setPrimaryCrop(e.target.value)}
+                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white transition-all">
                           <option value="">Select a crop</option>
-                          {CROP_TYPES.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
+                          {CROP_TYPES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
-
-                      {error && (
-                        <p className="text-red-500 text-sm text-center">{error}</p>
-                      )}
-
-                      <motion.button
-                        type="submit"
-                        disabled={!name.trim() || !state || !district || !village || !pincode || !landSize || !primaryCrop}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2 mt-6"
-                      >
-                        Complete Registration
-                        <Sparkles className="w-5 h-5" />
+                      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                      <motion.button type="submit"
+                        disabled={isLoading || !name.trim() || !state || !district || !village || !pincode || !landSize || !primaryCrop}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2 mt-4">
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Registering...</> : <>Complete Registration <Sparkles className="w-5 h-5" /></>}
                       </motion.button>
                     </form>
                   </motion.div>
                 )}
-              </AnimatePresence>
-            </div>
 
-            {/* Progress Indicator */}
-            <div className="mt-6 flex items-center justify-center gap-2">
-              {['phone', 'otp', 'role', 'details'].map((s, index) => (
-                <div
-                  key={s}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    ['phone', 'otp', 'role', 'details'].indexOf(step) >= index
-                      ? 'w-8 bg-green-500'
-                      : 'w-1 bg-white/30'
-                  }`}
-                />
-              ))}
+              </AnimatePresence>
+
+              {/* Progress dots — signup only */}
+              {authTab === 'signup' && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  {signupSteps.map((s, i) => (
+                    <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${currentStepIndex >= i ? 'w-8 bg-green-500' : 'w-2 bg-gray-300 dark:bg-gray-600'}`} />
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
+
         </div>
       </div>
     </div>

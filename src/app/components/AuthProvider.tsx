@@ -41,6 +41,8 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => Promise<void>;
   updatePoints: (points: number) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -54,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check for existing Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        loadUserProfile(session.access_token);
+        loadUserProfile(session);
       } else {
         setLoading(false);
       }
@@ -65,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await loadUserProfile(session.access_token);
+        await loadUserProfile(session);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
@@ -74,50 +76,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (accessToken: string) => {
+  const loadUserProfile = async (passedSession?: any) => {
     try {
-      const response = await api.getProfile(accessToken);
-      const profile = response.user;
-      
-      setUser({
-        id: profile.id,
-        email: profile.email,
-        phone: profile.phone,
-        name: profile.name || profile.user_metadata?.name,
-        role: profile.role || profile.user_metadata?.role,
-        state: profile.state,
-        district: profile.district,
-        village: profile.village,
-        pincode: profile.pincode,
-        landSize: profile.landSize,
-        primaryCrop: profile.primaryCrop,
-        location: profile.location,
-        points: profile.points,
-        accessToken,
-      });
-    } catch (error) {
-      console.error('Failed to load user profile from API, falling back to Supabase session:', error);
-      // FALLBACK: read role directly from the Supabase session user_metadata
-      // This ensures the user is always set even if the edge function is down
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const meta = session.user.user_metadata;
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            phone: meta?.phone,
-            name: meta?.name || session.user.email?.split('@')[0] || 'User',
-            role: (meta?.role as UserRole) || 'farmer', // default to farmer if unknown
-            state: meta?.state,
-            district: meta?.district,
-            location: meta?.location,
-            accessToken,
-          });
-        }
-      } catch (fallbackError) {
-        console.error('Fallback profile load also failed:', fallbackError);
+      let session = passedSession;
+      if (!session) {
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
       }
+      
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          phone: meta?.phone,
+          name: meta?.name || session.user.email?.split('@')[0] || 'User',
+          role: (meta?.role as UserRole) || 'farmer',
+          state: meta?.state,
+          district: meta?.district,
+          village: meta?.village,
+          pincode: meta?.pincode,
+          landSize: meta?.landSize,
+          primaryCrop: meta?.primaryCrop,
+          location: meta?.location,
+          points: meta?.points || 0,
+          accessToken: session.access_token,
+        });
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Fast local profile load failed:', error);
     } finally {
       setLoading(false);
     }
@@ -138,24 +127,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     primaryCrop?: string
   ) => {
     try {
-      const locationString = village && district && state 
-        ? `${village}, ${district}, ${state}` 
+      const locationString = village && district && state
+        ? `${village}, ${district}, ${state}`
         : state || 'India';
 
-      // Sign up via backend API
-      await api.signup(email, password, name, role!, phone, locationString);
-
-      // Now sign in with Supabase to get session
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Step 1: Sign up directly with Supabase (no edge function needed)
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            name,
+            role,
+            phone,
+            state,
+            district,
+            village,
+            pincode,
+            landSize,
+            primaryCrop,
+            location: locationString,
+            points: 0,
+          },
+        },
       });
 
+      if (signUpError) {
+        // Email already registered with a different password (e.g. from old auth system)
+        if (signUpError.message?.toLowerCase().includes('already registered') ||
+            signUpError.message?.toLowerCase().includes('already exists')) {
+          throw new Error('This email is already registered. Please delete your old account from Supabase and try again, or contact support.');
+        }
+        throw signUpError;
+      }
+
+      // Step 2: Sign in to get a proper session
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Load user profile
+      // Step 3: Load user profile from the session
       if (data.session) {
-        await loadUserProfile(data.session.access_token);
+        const meta = data.session.user.user_metadata;
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || email,
+          phone: meta?.phone,
+          name: meta?.name || name,
+          role: (meta?.role as UserRole) || role,
+          state: meta?.state,
+          district: meta?.district,
+          village: meta?.village,
+          pincode: meta?.pincode,
+          landSize: meta?.landSize,
+          primaryCrop: meta?.primaryCrop,
+          location: meta?.location,
+          points: meta?.points || 0,
+          accessToken: data.session.access_token,
+        });
       }
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -165,17 +193,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Load user profile
       if (data.session) {
-        await loadUserProfile(data.session.access_token);
+        const meta = data.session.user.user_metadata;
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || email,
+          phone: meta?.phone,
+          name: meta?.name || data.session.user.email?.split('@')[0] || 'User',
+          role: (meta?.role as UserRole) || 'farmer',
+          state: meta?.state,
+          district: meta?.district,
+          village: meta?.village,
+          pincode: meta?.pincode,
+          landSize: meta?.landSize,
+          primaryCrop: meta?.primaryCrop,
+          location: meta?.location,
+          points: meta?.points || 0,
+          accessToken: data.session.access_token,
+        });
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -210,8 +248,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updatePoints, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updatePoints, resetPassword, updatePassword, loading }}>
       {children}
     </AuthContext.Provider>
   );
