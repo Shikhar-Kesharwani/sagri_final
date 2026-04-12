@@ -10,6 +10,7 @@ import { useAuth, UserRole } from './AuthProvider';
 import { useNavigate } from 'react-router';
 import { WelcomeOverview } from './WelcomeOverview';
 import { Logo } from './Logo';
+import { supabase } from '../lib/supabase';
 
 const EMAILJS_SERVICE_ID  = 'service_zlm6dfd';
 const EMAILJS_TEMPLATE_ID = 'template_gkmqa1l';
@@ -114,9 +115,13 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     setIsLoading(true); setError('');
     try {
       // ── Step 0: Check if email already registered (before wasting an OTP) ──
-      const checkRes  = await fetch(`${BACKEND_URL}/api/check-email-registered?email=${encodeURIComponent(email)}`);
-      const checkData = await checkRes.json();
-      if (checkData.exists) {
+      const { data: existData } = await supabase
+        .from('registered_emails')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
+
+      if (existData) {
         setError('⚠️ This email is already registered. Please use the Login tab to sign in.');
         setIsLoading(false);
         return;
@@ -184,12 +189,10 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     setIsLoading(true); setError('');
     try {
       await signup(email, password, name, role, undefined, state, district, village, pincode, landSize, primaryCrop);
-      // Mark this email as registered so duplicate signups are blocked next time
-      await fetch(`${BACKEND_URL}/api/mark-email-registered`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      
+      // Mark this email as registered inside Supabase so duplicate signups globally are blocked next time
+      await supabase.from('registered_emails').insert([{ email: email.toLowerCase() }]);
+      
       setShowWelcome(true);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

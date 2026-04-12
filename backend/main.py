@@ -16,22 +16,6 @@ from pydantic import BaseModel
 # --- API Keys ---
 FAST2SMS_API_KEY = "e8ngMPO4d1ctybvp2IomN3iTkUYuZVWzaFKfE6LqRBXDSQjwx0TNE8wlHfO15rnBIuLzcvdhX439VZmG"
 
-# --- Registered Emails Store (JSON file for persistence across restarts) ---
-_EMAILS_FILE = Path(__file__).parent / "registered_emails.json"
-
-def _load_registered_emails() -> set:
-    if _EMAILS_FILE.exists():
-        try:
-            return set(json.loads(_EMAILS_FILE.read_text()))
-        except Exception:
-            return set()
-    return set()
-
-def _mark_email_registered(email: str) -> None:
-    emails = _load_registered_emails()
-    emails.add(email.strip().lower())
-    _EMAILS_FILE.write_text(json.dumps(list(emails)))
-
 app = FastAPI(title="Sagri ML Backend API")
 logger = logging.getLogger("sagri.backend")
 
@@ -178,22 +162,6 @@ class VerifyOtpInput(BaseModel):
 @app.get("/")
 def read_root():
     return {"status": "online", "message": "Sagri ML Backend API is running!"}
-
-
-# ------ Registered Email Check Endpoints ------
-
-@app.get("/api/check-email-registered")
-def check_email_registered(email: str):
-    """Check if an email is already registered. Called BEFORE sending OTP."""
-    exists = email.strip().lower() in _load_registered_emails()
-    return {"exists": exists}
-
-
-@app.post("/api/mark-email-registered")
-def mark_email_registered(data: SendEmailOtpInput):
-    """Persist email as registered after successful signup. Called AFTER signup completes."""
-    _mark_email_registered(data.email)
-    return {"success": True}
 
 
 # ------ OTP Endpoints ------
