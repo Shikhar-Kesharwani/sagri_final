@@ -42,3 +42,9 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# --- Sagri Excludes ---
+.gemini/
+backend/data/
+*.pkl
+scratch_*.tsx

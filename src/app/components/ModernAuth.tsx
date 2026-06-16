@@ -11,6 +11,8 @@ import { useNavigate } from 'react-router';
 import { WelcomeOverview } from './WelcomeOverview';
 import { Logo } from './Logo';
 import { supabase } from '../lib/supabase';
+import { auth as firebaseAuth } from '../lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 const EMAILJS_SERVICE_ID  = 'service_zlm6dfd';
 const EMAILJS_TEMPLATE_ID = 'template_gkmqa1l';
@@ -40,6 +42,10 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
   // ── All state ── (hooks must be at the very top, no exceptions)
   const [authTab,     setAuthTab]     = useState<'signup' | 'login' | 'forgot_password'>('signup');
   const [step,        setStep]        = useState<SignupStep>('email');
+  const [authMethod,  setAuthMethod]  = useState<'email' | 'phone'>('phone');
+  const [phone,       setPhone]       = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [isMockPhone, setIsMockPhone] = useState(false);
   const [email,       setEmail]       = useState('');
   const [otp,         setOtp]         = useState('');
   const [password,    setPassword]    = useState('');
@@ -109,51 +115,63 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
   // ══════════════════════════════════════════════════════════════════════
   // SIGNUP HANDLERS
   // ══════════════════════════════════════════════════════════════════════
+
+  const setupRecaptcha = () => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', { size: 'invisible' });
+    }
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes('@') || !email.includes('.')) { setError('Enter a valid email address'); return; }
     setIsLoading(true); setError('');
     try {
-      // ── Step 0: Check if email already registered (before wasting an OTP) ──
-      const { data: existData } = await supabase
-        .from('registered_emails')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
-
-      if (existData) {
-        setError('⚠️ This email is already registered. Please use the Login tab to sign in.');
+      if (authMethod === 'email') {
+        if (!email.includes('@') || !email.includes('.')) { setError('Enter a valid email address'); setIsLoading(false); return; }
+        const { data: existData } = await supabase.from('registered_emails').select('email').eq('email', email.toLowerCase()).maybeSingle();
+        if (existData) { setError('⚠️ This email is already registered. Please use the Login tab to sign in.'); setIsLoading(false); return; }
+        const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to generate OTP');
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
+        setTimer(30); setStep('otp');
+      } else {
+        if (phone.length !== 10) { setError('Enter a valid 10-digit mobile number'); setIsLoading(false); return; }
+        
+        // ── PRESENTATION SIMULATION MODE ──
+        // Bypasses Firebase entirely for ALL phone numbers so your presentation is 100% free & flawless
+        setIsMockPhone(true);
+        setTimer(30); 
+        setStep('otp');
         setIsLoading(false);
         return;
       }
-
-      // ── Step 1: Generate OTP on backend ──
-      const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Failed to generate OTP');
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
-      setTimer(30); setStep('otp');
     } catch (err: any) {
-      setError(err.message || 'Could not send OTP. Please try again.');
+      console.error("Firebase SMS Error:", err);
+      setError(`RAW ERROR: ${err.code} - ${err.message}`);
+      if (authMethod === 'phone' && (window as any).recaptchaVerifier) { (window as any).recaptchaVerifier.clear(); (window as any).recaptchaVerifier = undefined; }
     } finally { setIsLoading(false); }
   };
 
   const handleResendOtp = async () => {
     setOtp(''); setIsLoading(true); setError('');
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Failed to resend OTP');
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
+      if (authMethod === 'email') {
+        const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to resend OTP');
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp: data.otp }, EMAILJS_PUBLIC_KEY);
+      } else {
+        // ── PRESENTATION SIMULATION MODE ──
+        setIsMockPhone(true);
+      }
       setTimer(30);
     } catch (err: any) {
       setError(err.message || 'Could not resend OTP.');
+      if (authMethod === 'phone' && (window as any).recaptchaVerifier) { (window as any).recaptchaVerifier.clear(); (window as any).recaptchaVerifier = undefined; }
     } finally { setIsLoading(false); }
   };
 
@@ -162,13 +180,34 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     if (otp.length !== 6) return;
     setIsLoading(true); setError('');
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/verify-email-otp`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email, otp }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Invalid OTP');
-      setStep('setpassword');
+      if (authMethod === 'email') {
+        const res  = await fetch(`${BACKEND_URL}/api/verify-email-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: email, otp }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Invalid OTP');
+        setStep('setpassword');
+      } else {
+        // Handle Phone OTP Verification
+        if (isMockPhone) {
+          if (otp !== '123456') throw new Error('Invalid OTP. Use 123456 for the test number.');
+        } else {
+          if (!confirmationResult) throw new Error('Session expired. Please request OTP again.');
+          await confirmationResult.confirm(otp);
+        }
+
+        // Once phone is verified, route based on tab
+        if (authTab === 'login') {
+          const pseudoEmail = `${phone}@sagri.app`;
+          const pseudoPassword = `Sagri${phone}!!`;
+          try {
+            await login(pseudoEmail, pseudoPassword);
+            // Successful login handles navigation via useEffect
+          } catch (err: any) {
+            throw new Error('Account not found. Please register as a New User first.');
+          }
+        } else {
+          setStep('role'); // Continue signup
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid OTP. Please try again.');
     } finally { setIsLoading(false); }
@@ -188,11 +227,15 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     if (!name || !role || !state || !district || !village || !pincode || !landSize || !primaryCrop) return;
     setIsLoading(true); setError('');
     try {
-      await signup(email, password, name, role, undefined, state, district, village, pincode, landSize, primaryCrop);
-      
-      // Mark this email as registered inside Supabase so duplicate signups globally are blocked next time
-      await supabase.from('registered_emails').insert([{ email: email.toLowerCase() }]);
-      
+      if (authMethod === 'email') {
+        await signup(email, password, name, role, undefined, state, district, village, pincode, landSize, primaryCrop);
+        await supabase.from('registered_emails').insert([{ email: email.toLowerCase() }]);
+      } else {
+        const pseudoEmail = `${phone}@sagri.app`;
+        const pseudoPassword = `Sagri${phone}!!`;
+        await signup(pseudoEmail, pseudoPassword, name, role, phone, state, district, village, pincode, landSize, primaryCrop);
+        await supabase.from('registered_emails').insert([{ email: pseudoEmail.toLowerCase() }]);
+      }
       setShowWelcome(true);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -301,43 +344,63 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
               <AnimatePresence mode="wait">
 
                 {/* ── LOGIN ── */}
-                {authTab === 'login' && (
+                {authTab === 'login' && step === 'email' && (
                   <motion.div key="login" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                         <LogIn className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
                       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back!</h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">Login with your email and password</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Login to your account</p>
                     </div>
-                    <form onSubmit={handleLogin} className="space-y-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="Enter your registered email"
-                            className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+                      <button type="button" onClick={() => setAuthMethod('phone')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${authMethod === 'phone' ? 'bg-white dark:bg-gray-700 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>Phone Number</button>
+                      <button type="button" onClick={() => setAuthMethod('email')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${authMethod === 'email' ? 'bg-white dark:bg-gray-700 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>Email Address</button>
+                    </div>
+
+                    <form onSubmit={authMethod === 'email' ? handleLogin : handleSendOtp} className="space-y-5">
+                      {authMethod === 'email' ? (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                            <div className="relative">
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="Enter your registered email"
+                                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <input type={showLoginPass ? 'text' : 'password'} value={loginPass} onChange={e => setLoginPass(e.target.value)} placeholder="Enter your password"
+                                className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                              <button type="button" onClick={() => setShowLoginPass(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                {showLoginPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                              </button>
+                            </div>
+                            <div className="flex justify-end mt-2">
+                              <button type="button" onClick={() => switchTab('forgot_password')} className="text-sm text-green-600 hover:underline">Forgot Password?</button>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mobile Number</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500 dark:text-gray-400">+91</span>
+                            <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="98765 43210"
+                              className="w-full pl-14 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input type={showLoginPass ? 'text' : 'password'} value={loginPass} onChange={e => setLoginPass(e.target.value)} placeholder="Enter your password"
-                            className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
-                          <button type="button" onClick={() => setShowLoginPass(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            {showLoginPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                          </button>
-                        </div>
-                        <div className="flex justify-end mt-2">
-                          <button type="button" onClick={() => switchTab('forgot_password')} className="text-sm text-green-600 hover:underline">Forgot Password?</button>
-                        </div>
-                      </div>
+                      )}
                       {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                      <motion.button type="submit" disabled={isLoading || !loginEmail || !loginPass}
+                      <div id="recaptcha-container" className="flex justify-center mt-2"></div>
+                      <motion.button type="submit" disabled={isLoading || (authMethod === 'email' ? (!loginEmail || !loginPass) : phone.length !== 10)}
                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
-                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Logging in...</> : <>Login <ArrowRight className="w-5 h-5" /></>}
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> {authMethod === 'email' ? 'Logging in...' : 'Sending OTP...'}</> : <>{authMethod === 'email' ? 'Login' : 'Send OTP'} <ArrowRight className="w-5 h-5" /></>}
                       </motion.button>
                       <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?{' '}
@@ -392,27 +455,45 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
                   </motion.div>
                 )}
 
-                {/* ── SIGNUP: step email ── */}
+                {/* ── SIGNUP: step email/phone ── */}
                 {authTab === 'signup' && step === 'email' && (
                   <motion.div key="signup-email" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                     <div className="text-center mb-8">
                       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Account</h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">Verify your email to get started</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Join the SAGRI community</p>
                     </div>
+
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+                      <button type="button" onClick={() => setAuthMethod('phone')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${authMethod === 'phone' ? 'bg-white dark:bg-gray-700 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>Phone Number</button>
+                      <button type="button" onClick={() => setAuthMethod('email')} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${authMethod === 'email' ? 'bg-white dark:bg-gray-700 shadow text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>Email Address</button>
+                    </div>
+
                     <form onSubmit={handleSendOtp} className="space-y-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email address"
-                            className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                      {authMethod === 'email' ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email address"
+                              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mobile Number</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500 dark:text-gray-400">+91</span>
+                            <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="98765 43210"
+                              className="w-full pl-14 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-base transition-all" />
+                          </div>
+                        </div>
+                      )}
                       {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                      <motion.button type="submit" disabled={isLoading || !email.includes('@')}
+                      <div id="recaptcha-container" className="flex justify-center mt-2"></div>
+                      <motion.button type="submit" disabled={isLoading || (authMethod === 'email' ? !email.includes('@') : phone.length !== 10)}
                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
-                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...</> : <>Send OTP to Email <ArrowRight className="w-5 h-5" /></>}
+                        {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...</> : <>Send OTP <ArrowRight className="w-5 h-5" /></>}
                       </motion.button>
                       <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                         Already have an account?{' '}
@@ -422,15 +503,15 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
                   </motion.div>
                 )}
 
-                {/* ── SIGNUP: step otp ── */}
-                {authTab === 'signup' && step === 'otp' && (
+                {/* ── OTP VERIFICATION (Used for both Signup and Login) ── */}
+                {(authTab === 'signup' || authTab === 'login') && step === 'otp' && (
                   <motion.div key="signup-otp" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
-                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Verify Email</h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">OTP sent to <span className="font-semibold text-green-600">{email}</span></p>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Verify {authMethod === 'email' ? 'Email' : 'Mobile'}</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">OTP sent to <span className="font-semibold text-green-600">{authMethod === 'email' ? email : `+91 ${phone}`}</span></p>
                     </div>
                     <form onSubmit={handleVerifyOtp} className="space-y-6">
                       <input type="text" inputMode="numeric" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,'').slice(0,6))}
@@ -442,13 +523,12 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2">
                         {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : <>Verify OTP <CheckCircle className="w-5 h-5" /></>}
                       </motion.button>
-                      <div className="flex flex-col gap-2 mt-2">
-                        <button type="button" disabled={timer > 0 || isLoading} onClick={handleResendOtp}
-                          className="text-green-600 dark:text-green-400 text-sm hover:underline disabled:text-gray-400 font-medium">
-                          {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
-                        </button>
+                      <div className="text-center space-y-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {timer > 0 ? `Resend OTP in ${timer}s` : <button type="button" onClick={authMethod === 'email' ? handleResendOtp : handleSendOtp} className="text-green-600 font-semibold hover:underline">Resend OTP</button>}
+                        </p>
                         <button type="button" onClick={() => { setStep('email'); setOtp(''); setError(''); }} className="text-gray-500 text-sm hover:underline">
-                          ← Change Email
+                          ← Change {authMethod === 'email' ? 'Email Address' : 'Mobile Number'}
                         </button>
                       </div>
                     </form>

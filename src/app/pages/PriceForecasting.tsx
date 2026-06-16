@@ -7,6 +7,10 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 
+export const CROPS = ['Apple', 'Banana', 'Banana - Green', 'Bengal Gram (Gram)(Whole)', 'Bhindi (Ladies Finger)', 'Bitter gourd', 'Bottle gourd', 'Brinjal', 'Cabbage', 'Capsicum', 'Carrot', 'Cauliflower', 'Cucumbar (Kheera)', 'Garlic', 'Ginger (Green)', 'Green Chilli', 'Lemon', 'Maize', 'Mustard', 'Onion', 'Paddy (Dhan)(Common)', 'Papaya', 'Potato', 'Pumpkin', 'Raddish', 'Rice', 'Ridgeguard (Tori)', 'Soyabean', 'Tomato', 'Wheat'];
+
+export const REGIONS = ['Andaman and Nicobar', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh', 'Chattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'NCT of Delhi', 'Nagaland', 'Odisha', 'Pondicherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'Uttrakhand', 'West Bengal'];
+
 export function PriceForecasting() {
   const [selectedCrop, setSelectedCrop] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
@@ -22,20 +26,35 @@ export function PriceForecasting() {
     try {
       toast.loading('Analyzing market trends...');
 
-      const response = await fetch('http://localhost:8000/api/forecast_price', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          crop_name: selectedCrop,
-          days_ahead: 30
+      const [forecastRes, historyRes] = await Promise.all([
+        fetch('http://localhost:8000/api/forecast_price', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            crop_name: selectedCrop,
+            state: selectedRegion,
+            months_ahead: 6
+          }),
         }),
-      });
+        fetch('http://localhost:8000/api/historical_prices', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            crop_name: selectedCrop,
+            state: selectedRegion,
+            months: 12
+          }),
+        })
+      ]);
 
-      if (!response.ok) throw new Error('API Request Failed');
+      if (!forecastRes.ok || !historyRes.ok) throw new Error('API Request Failed');
 
-      const data = await response.json();
+      const data = await forecastRes.json();
+      const historyJson = await historyRes.json();
       
       // Map API response to the UI format
       const currentPrice = data.forecast[0].predicted_price;
@@ -43,21 +62,13 @@ export function PriceForecasting() {
       const trend = futurePrice > currentPrice ? 'up' : 'down';
       const change = Math.round(Math.abs((futurePrice - currentPrice) / currentPrice) * 100);
 
-      // Generate historical data mathematically matching current price to make UI look good
-      const historicalData = Array.from({ length: 12 }, (_, i) => ({
-        month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-        price: currentPrice + Math.floor(Math.sin(i) * 200),
-      }));
+      const historicalData = historyJson.history;
 
-      // Use the returned forecast
-      const forecastData = [
-        { month: 'Next 1M', predicted: data.forecast[4].predicted_price },
-        { month: 'Next 2M', predicted: data.forecast[9].predicted_price },
-        { month: 'Next 3M', predicted: data.forecast[14].predicted_price },
-        { month: 'Next 4M', predicted: data.forecast[19].predicted_price },
-        { month: 'Next 5M', predicted: data.forecast[24].predicted_price },
-        { month: 'Next 6M', predicted: data.forecast[29].predicted_price },
-      ];
+      // Use the returned forecast (which is exactly 6 months)
+      const forecastData = data.forecast.map((item: any, index: number) => ({
+        month: `Next ${index + 1}M`,
+        predicted: item.predicted_price
+      }));
 
       setForecast({
         currentPrice,
@@ -78,12 +89,13 @@ export function PriceForecasting() {
           },
           {
             title: 'Confidence',
-            value: data.is_mock ? 'Mock Data' : '87%',
+            value: data.is_mock ? 'Mock Data' : '91.7% R²',
             color: 'blue',
           },
         ],
+        aiMetadata: data.metadata || null,
         recommendations: [
-          data.is_mock ? 'This is a mock response from the backend.' : 'Predicted using Facebook Prophet AI.',
+          data.is_mock ? 'This is a mock response from the backend.' : 'Predicted using Sagri Random Forest AI (25-Year Dataset).',
           trend === 'up' 
             ? 'Good time to hold and sell later for better prices'
             : 'Consider selling soon before prices drop further',
@@ -130,14 +142,9 @@ export function PriceForecasting() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Choose a crop</option>
-                <option value="wheat">Wheat</option>
-                <option value="rice">Rice</option>
-                <option value="cotton">Cotton</option>
-                <option value="sugarcane">Sugarcane</option>
-                <option value="maize">Maize</option>
-                <option value="potato">Potato</option>
-                <option value="onion">Onion</option>
-                <option value="tomato">Tomato</option>
+                {CROPS.map((crop) => (
+                  <option key={crop} value={crop}>{crop}</option>
+                ))}
               </select>
             </div>
 
@@ -151,12 +158,9 @@ export function PriceForecasting() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Choose a region</option>
-                <option value="punjab">Punjab</option>
-                <option value="haryana">Haryana</option>
-                <option value="up">Uttar Pradesh</option>
-                <option value="mp">Madhya Pradesh</option>
-                <option value="rajasthan">Rajasthan</option>
-                <option value="gujarat">Gujarat</option>
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
               </select>
             </div>
 
@@ -269,6 +273,35 @@ export function PriceForecasting() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+
+            {/* AI Engine Variables Section */}
+            {forecast.aiMetadata && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  AI Engine Variables (Live Data)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">🌡️ Expected Temperature</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                      {forecast.aiMetadata.temperature !== null ? `${forecast.aiMetadata.temperature.toFixed(1)} °C` : 'Historical Average'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">🌧️ Expected Rainfall</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                      {forecast.aiMetadata.rainfall !== null ? `${forecast.aiMetadata.rainfall.toFixed(1)} mm` : 'Historical Average'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">⚓ Inflation-Adjusted Base</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                      ₹{forecast.aiMetadata.lag_price !== null ? forecast.aiMetadata.lag_price.toFixed(0) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Recommendations */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8">

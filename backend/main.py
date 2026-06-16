@@ -60,22 +60,29 @@ if DISEASE_MODEL_PATH.exists() and DISEASE_CLASSES_PATH.exists():
 else:
     logger.warning("No disease model found.")
 
-PRICE_MODEL_PATH = MODEL_DIR / "price_prophet_model.json"
-price_model = None
+PRICE_MODEL_PATH = MODEL_DIR / "price_forecast_model.pkl"
+price_model_data = None
 
 if PRICE_MODEL_PATH.exists():
     try:
-        from prophet.serialize import model_from_json
-
-        with open(PRICE_MODEL_PATH, "r", encoding="utf-8") as fin:
-            price_model = model_from_json(fin.read())
-        logger.info("Loaded trained Prophet price forecasting model.")
-    except ImportError:
-        logger.warning("Found price model, but prophet is not installed.")
+        price_model_data = joblib.load(PRICE_MODEL_PATH)
+        logger.info("Loaded trained Random Forest price forecasting model.")
     except Exception as e:
         logger.exception("Could not load price model: %s", e)
 else:
     logger.warning("No price model found.")
+
+HISTORICAL_DATA_PATH = BASE_DIR / "data" / "clean_prices_final_inflation.csv"
+historical_prices_df = None
+
+@app.on_event("startup")
+def load_historical_data():
+    global historical_prices_df
+    logger.info("Loading clean_prices_final_inflation.csv for historical trends...")
+    try:
+        historical_prices_df = pd.read_csv(HISTORICAL_DATA_PATH)
+    except Exception as e:
+        logger.exception("Could not load historical data: %s", e)
 
 RISK_MODEL_PATH = MODEL_DIR / "crop_risk_model.pkl"
 risk_model_data = None
@@ -130,7 +137,13 @@ class CropInput(BaseModel):
 
 class PriceForecastInput(BaseModel):
     crop_name: str
-    days_ahead: int = 30
+    state: str = "Maharashtra"  # Default fallback if frontend doesn't send it
+    months_ahead: int = 6
+
+class HistoricalPriceInput(BaseModel):
+    crop_name: str
+    state: str = "Maharashtra"
+    months: int = 12
 
 
 class RiskInput(BaseModel):
@@ -253,46 +266,159 @@ def predict_crop(data: CropInput):
     }
 
 
+STATE_COORDS = {
+    "Andhra Pradesh": (15.9129, 79.7400), "Arunachal Pradesh": (28.2180, 94.7278),
+    "Assam": (26.2006, 92.9376), "Bihar": (25.0961, 85.3131),
+    "Chhattisgarh": (21.2787, 81.8661), "Goa": (15.2993, 74.1240),
+    "Gujarat": (22.2587, 71.1924), "Haryana": (29.0588, 76.0856),
+    "Himachal Pradesh": (31.1048, 77.1665), "Jharkhand": (23.6102, 85.2799),
+    "Karnataka": (15.3173, 75.7139), "Kerala": (10.8505, 76.2711),
+    "Madhya Pradesh": (22.9734, 78.6569), "Maharashtra": (19.7515, 75.7139),
+    "Manipur": (24.6637, 93.9063), "Meghalaya": (25.4670, 91.3662),
+    "Mizoram": (23.1645, 92.9376), "Nagaland": (26.1584, 94.5624),
+    "Odisha": (20.9517, 85.0985), "Punjab": (31.1471, 75.3412),
+    "Rajasthan": (27.0238, 74.2179), "Sikkim": (27.5330, 88.5122),
+    "Tamil Nadu": (11.1271, 78.6569), "Telangana": (18.1124, 79.0193),
+    "Tripura": (23.9408, 91.9882), "Uttar Pradesh": (26.8467, 80.9462),
+    "Uttarakhand": (30.0668, 79.0193), "West Bengal": (22.9868, 87.8550),
+    "Andaman and Nicobar": (11.7401, 92.6586), "Chandigarh": (30.7333, 76.7794),
+    "Delhi": (28.7041, 77.1025), "Jammu and Kashmir": (33.7782, 76.5762),
+    "Puducherry": (11.9416, 79.8083)
+}
+
 @app.post("/api/forecast_price")
 def forecast_price(data: PriceForecastInput):
     import datetime
+    import requests
 
-    if price_model:
+    if price_model_data:
         try:
-            future = price_model.make_future_dataframe(periods=data.days_ahead)
-            forecast_df = price_model.predict(future)
-            future_predictions = forecast_df.tail(data.days_ahead)
-
+            model = price_model_data['model']
+            features = price_model_data['features']
+            
+            # --- LIVE WEATHER FORECAST FETCH ---
+            live_temp = None
+            live_rain = None
+            recent_price = None
+            
+            lat_lon = None
+            for s_name, coords in STATE_COORDS.items():
+                if s_name.lower() in data.state.lower() or data.state.lower() in s_name.lower():
+                    lat_lon = coords
+                    break
+            
+            if lat_lon:
+                try:
+                    lat, lon = lat_lon
+                    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FKolkata&forecast_days=14"
+                    resp = requests.get(url, timeout=3.0)
+                    if resp.status_code == 200:
+                        weather_data = resp.json()['daily']
+                        max_temps = weather_data['temperature_2m_max']
+                        min_temps = weather_data['temperature_2m_min']
+                        mean_temps = [(mx+mn)/2 for mx, mn in zip(max_temps, min_temps)]
+                        live_temp = sum(mean_temps) / len(mean_temps)
+                        
+                        total_14_day_rain = sum(weather_data['precipitation_sum'])
+                        live_rain = total_14_day_rain * (30/14)
+                        logger.info(f"Live Weather Loaded for {data.state}: {live_temp:.1f}C, {live_rain:.1f}mm rain")
+                except Exception as e:
+                    logger.warning(f"Live Weather API failed: {e}")
+            
+            # Predict for the next N months (Autoregressive)
+            today = datetime.date.today()
             forecast = []
-            for _, row in future_predictions.iterrows():
-                multiplier = 1.0
-                if data.crop_name.lower() == "wheat":
-                    multiplier = 1.1
-                elif data.crop_name.lower() == "cotton":
-                    multiplier = 1.5
-                elif data.crop_name.lower() == "sugarcane":
-                    multiplier = 0.8
-                elif data.crop_name.lower() == "rice":
-                    multiplier = 1.0
-
-                final_price = float(row["yhat"]) * multiplier
+            
+            # Get the initial real-world lag price from database
+            initial_lag_price = 1000.0
+            if historical_prices_df is not None:
+                try:
+                    mask = (historical_prices_df['State'].str.lower() == data.state.lower()) & \
+                           (historical_prices_df['Commodity'].str.lower() == data.crop_name.lower())
+                    if not historical_prices_df[mask].empty:
+                        initial_lag_price = historical_prices_df[mask]['Adjusted_Price'].iloc[-1]
+                except Exception as e:
+                    logger.warning(f"Could not fetch initial lag price: {e}")
+            
+            recent_price = initial_lag_price
+            
+            for i in range(data.months_ahead):
+                # Jump forward exactly 1 month at a time
+                target_month = (today.month + i - 1) % 12 + 1
+                target_year = today.year + (today.month + i - 1) // 12
+                # Create a fake date just for ISO string
+                target_date = datetime.date(target_year, target_month, 1)
+                
+                df = pd.DataFrame(columns=features)
+                df.loc[0] = 0 # Initialize with 0
+                
+                # Set time features (Monthly model)
+                if "Year" in features: df.loc[0, "Year"] = target_year
+                if "Month" in features: df.loc[0, "Month"] = target_month
+                
+                # Set expected weather (Live API preferred ONLY for the current month i=0)
+                if "Temperature" in features and "Rainfall" in features:
+                    if i == 0 and live_temp is not None and live_rain is not None:
+                        df.loc[0, "Temperature"] = live_temp
+                        df.loc[0, "Rainfall"] = live_rain
+                    elif historical_prices_df is not None:
+                        try:
+                            mask = (historical_prices_df['State'].str.lower() == data.state.lower()) & (historical_prices_df['Month'] == target_month)
+                            avg_weather = historical_prices_df[mask][['Temperature', 'Rainfall']].mean()
+                            df.loc[0, "Temperature"] = avg_weather['Temperature'] if not pd.isna(avg_weather['Temperature']) else 25.0
+                            df.loc[0, "Rainfall"] = avg_weather['Rainfall'] if not pd.isna(avg_weather['Rainfall']) else 50.0
+                        except:
+                            df.loc[0, "Temperature"] = 25.0
+                            df.loc[0, "Rainfall"] = 50.0
+                
+                # Set Autoregressive Lag Feature
+                # For month 0, this is the real history. For month 1-5, this is the prediction from the PREVIOUS loop!
+                if "Adjusted_Price_1_Month_Ago" in features:
+                    df.loc[0, "Adjusted_Price_1_Month_Ago"] = recent_price
+                
+                # Set commodity feature
+                crop_col = f"Commodity_{data.crop_name.title()}"
+                if crop_col in features:
+                    df.loc[0, crop_col] = 1
+                
+                # Set state feature
+                state_col = f"State_{data.state.title()}"
+                if state_col in features:
+                    df.loc[0, state_col] = 1
+                
+                prediction = model.predict(df)[0]
+                
+                # UPDATE THE ANCHOR FOR THE NEXT LOOP (Autoregressive step)
+                recent_price = prediction
+                
                 forecast.append(
                     {
-                        "date": row["ds"].strftime("%Y-%m-%d"),
-                        "predicted_price": round(final_price, 2),
+                        "date": target_date.isoformat(),
+                        "predicted_price": round(prediction, 2),
                     }
                 )
 
-            return {"crop": data.crop_name, "forecast": forecast, "is_mock": False}
+            return {
+                "crop": data.crop_name,
+                "forecast": forecast,
+                "is_mock": False,
+                "metadata": {
+                    "temperature": live_temp,
+                    "rainfall": live_rain,
+                    "lag_price": initial_lag_price
+                }
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
     forecast = []
     base_price = 2000 if data.crop_name.lower() == "rice" else 1500
     today = datetime.date.today()
-    for i in range(data.days_ahead):
-        target_date = today + datetime.timedelta(days=i)
-        projected_price = base_price + (i * 2.5) + random.uniform(-50, 50)
+    for i in range(data.months_ahead):
+        target_month = (today.month + i - 1) % 12 + 1
+        target_year = today.year + (today.month + i - 1) // 12
+        target_date = datetime.date(target_year, target_month, 1)
+        projected_price = base_price + (i * 25.0) + random.uniform(-50, 50)
         forecast.append(
             {
                 "date": target_date.isoformat(),
@@ -301,6 +427,51 @@ def forecast_price(data: PriceForecastInput):
         )
 
     return {"crop": data.crop_name, "forecast": forecast, "is_mock": True}
+
+@app.post("/api/historical_prices")
+def get_historical_prices(data: HistoricalPriceInput):
+    if historical_prices_df is not None:
+        try:
+            # Filter by commodity and state
+            mask = (historical_prices_df['Commodity'].str.lower() == data.crop_name.lower()) & \
+                   (historical_prices_df['State'].str.lower() == data.state.lower())
+            
+            filtered_df = historical_prices_df[mask].copy()
+            
+            if filtered_df.empty:
+                return {"crop": data.crop_name, "state": data.state, "history": []}
+                
+            # Sort by Year and Month ascending
+            filtered_df = filtered_df.sort_values(by=['Year', 'Month'], ascending=True)
+            
+            # Take the last N months
+            recent_data = filtered_df.tail(data.months)
+            
+            history = []
+            month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            
+            for _, row in recent_data.iterrows():
+                m_idx = int(row['Month']) - 1
+                month_label = f"{month_names[m_idx]} '{str(row['Year'])[-2:]}"
+                history.append({
+                    "month": month_label,
+                    "price": round(row['Modal_Price'], 2)
+                })
+                
+            return {"crop": data.crop_name, "state": data.state, "history": history, "is_mock": False}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+            
+    # Mock fallback
+    history = []
+    base_price = 2000
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    for i in range(data.months):
+        history.append({
+            "month": month_names[i % 12],
+            "price": base_price + (i * 50) + random.randint(-100, 100)
+        })
+    return {"crop": data.crop_name, "state": data.state, "history": history, "is_mock": True}
 
 
 @app.post("/api/predict_risk")

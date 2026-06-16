@@ -1,32 +1,33 @@
-import requests
-import base64
-from PIL import Image
-from io import BytesIO
+import urllib.request
+import json
 
-# Create a dummy 224x224 green image (like a healthy leaf)
-img = Image.new('RGB', (224, 224), color = (34, 139, 34))
-buffered = BytesIO()
-img.save(buffered, format="JPEG")
-img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+# Your secret key
+API_KEY = "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b"
 
-base64_string = f"data:image/jpeg;base64,{img_str}"
+# We are asking for just 5 records to test it out
+URL = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={API_KEY}&format=json&limit=5"
 
-# Test the FastAPI endpoint
-url = "http://localhost:8000/api/detect_disease"
-payload = {"image_data": base64_string}
+print("Fetching data from Government Server...")
 
 try:
-    print("Testing connection to your local AI model...")
-    response = requests.post(url, json=payload)
-    if response.status_code == 200:
-        data = response.json()
-        print("✅ SUCCESS! The API is working perfectly.")
-        print("Response from your own ML Model:")
-        print(f"Disease: {data.get('disease')}")
-        print(f"Confidence: {data.get('confidence')}%")
-        print(f"Is Mock: {data.get('is_mock')}")
-    else:
-        print(f"❌ ERROR: Status Code {response.status_code}")
-        print(response.text)
-except requests.exceptions.ConnectionError:
-    print("❌ ERROR: The backend server is not running on port 8000.")
+    # 1. Open the URL
+    response = urllib.request.urlopen(URL)
+    
+    # 2. Read the raw data
+    data = response.read()
+    
+    # 3. Convert it into a Python Dictionary
+    json_data = json.loads(data)
+    
+    # 4. Print out the prices!
+    print("\nSUCCESS! Here are the 5 latest prices:\n")
+    for record in json_data.get('records', []):
+        state = record.get('state')
+        market = record.get('market')
+        commodity = record.get('commodity')
+        modal_price = record.get('modal_price')
+        
+        print(f"🌾 {commodity} in {market}, {state} is ₹{modal_price}")
+
+except Exception as e:
+    print("❌ ERROR:", e)
