@@ -5,6 +5,7 @@ import { AlertTriangle, Droplet, Cloud, ThermometerSun, TrendingUp } from 'lucid
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
+import { supabase } from '../lib/supabase';
 
 export function RiskPrediction() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,7 @@ export function RiskPrediction() {
   });
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { updatePoints } = useAuth();
+  const { user, updatePoints } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +80,15 @@ export function RiskPrediction() {
       setLoading(false);
       updatePoints(15);
       toast.success(data.is_mock ? 'Mock assessment complete!' : 'AI Risk assessment complete! +15 points');
+
+      if (user?.email) {
+        await supabase.from('prediction_history').insert([{
+          user_email: user.email,
+          prediction_type: 'Risk Assessment',
+          input_data: formData,
+          result: `${risk.level} Risk`,
+        }]);
+      }
     } catch (error) {
       setLoading(false);
       toast.error('Could not reach backend API.');

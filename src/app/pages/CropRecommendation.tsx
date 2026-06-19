@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Header } from '../components/Header';
 import { VoiceAssistant } from '../components/VoiceAssistant';
-import { Leaf, Droplet, ThermometerSun, Wind, CheckCircle } from 'lucide-react';
+import { Leaf, Droplet, ThermometerSun, Wind, CheckCircle, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
+import { supabase } from '../lib/supabase';
 
 export function CropRecommendation() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,51 @@ export function CropRecommendation() {
     ph: '',
   });
   const [recommendations, setRecommendations] = useState<any>(null);
-  const { updatePoints } = useAuth();
+  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
+  const { user, updatePoints } = useAuth();
+
+  const handleAutoFillWeather = async () => {
+    setIsFetchingWeather(true);
+    
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      setIsFetchingWeather(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        toast.loading("Fetching live weather data for your location...");
+        
+        // Use free Open-Meteo API
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation`);
+        if (!response.ok) throw new Error("Failed to fetch weather");
+        
+        const data = await response.json();
+        const current = data.current;
+        
+        setFormData(prev => ({
+          ...prev,
+          temperature: current.temperature_2m.toString(),
+          humidity: current.relative_humidity_2m.toString(),
+          rainfall: current.precipitation.toString(),
+        }));
+        
+        toast.dismiss();
+        toast.success("Weather data auto-filled successfully!");
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Could not fetch live weather data. Please enter manually.");
+      } finally {
+        setIsFetchingWeather(false);
+      }
+    }, (error) => {
+      toast.error("Location access denied. Please enter weather manually.");
+      setIsFetchingWeather(false);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +111,16 @@ export function CropRecommendation() {
       updatePoints(15);
       toast.success(data.is_mock ? 'Mock recommendation generated!' : 'AI Recommendation generated! +15 points');
       
+      // Save to prediction history
+      if (user?.email) {
+        await supabase.from('prediction_history').insert([{
+          user_email: user.email,
+          prediction_type: 'Crop Recommendation',
+          input_data: formData,
+          result: crops[0].name,
+        }]);
+      }
+
     } catch (error) {
       toast.dismiss();
       toast.error('Could not reach AI backend. Is the FastAPI server running?');
@@ -151,6 +206,27 @@ export function CropRecommendation() {
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   required
                 />
+              </div>
+
+              {/* Weather Section Header */}
+              <div className="col-span-full mt-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <ThermometerSun className="w-5 h-5 text-orange-500" />
+                  Environmental Data
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleAutoFillWeather}
+                  disabled={isFetchingWeather}
+                  className="flex items-center gap-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  {isFetchingWeather ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <MapPin className="w-4 h-4" />
+                  )}
+                  Auto-fill via GPS
+                </button>
               </div>
 
               <div>

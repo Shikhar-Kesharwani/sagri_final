@@ -12,6 +12,7 @@ import requests as http_requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from supabase import create_client, Client
 
 # --- API Keys ---
 FAST2SMS_API_KEY = "e8ngMPO4d1ctybvp2IomN3iTkUYuZVWzaFKfE6LqRBXDSQjwx0TNE8wlHfO15rnBIuLzcvdhX439VZmG"
@@ -21,6 +22,11 @@ logger = logging.getLogger("sagri.backend")
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
+
+# --- Supabase Configuration ---
+SUPABASE_URL = "https://tnaoasoznlzmbkennoiy.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuYW9hc296bmx6bWJrZW5ub2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTc5OTYsImV4cCI6MjA5MDI5Mzk5Nn0.HabEUgqqzrGx7ng76dnaeKLLF_dvVTek8djPZOmYzU0"
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app.add_middleware(
     CORSMiddleware,
@@ -94,34 +100,48 @@ else:
     logger.warning("No trained crop risk model found.")
 
 
-# --- 2. In-Memory OTP Store ---
-# Structure: { identifier(phone/email): { "otp": "123456", "expires": <unix_timestamp> } }
-_otp_store: dict = {}
+# --- 2. Supabase OTP Store ---
+# Using the `otp_sessions` table in Supabase instead of memory
 OTP_TTL_SECONDS = 300  # 5 minutes
-
 
 def _generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
-
 def _store_otp(identifier: str, otp: str) -> None:
-    _otp_store[identifier] = {
-        "otp": otp,
-        "expires": time.time() + OTP_TTL_SECONDS,
-    }
-
+    expires_at = time.time() + OTP_TTL_SECONDS
+    # Upsert the OTP session into Supabase
+    try:
+        supabase_client.table("otp_sessions").upsert({
+            "identifier": identifier,
+            "otp": otp,
+            "expires_at": expires_at
+        }).execute()
+    except Exception as e:
+        logger.error(f"Failed to store OTP in Supabase: {e}")
+        raise HTTPException(status_code=500, detail="Database error while saving OTP.")
 
 def _verify_stored_otp(identifier: str, otp: str) -> tuple[bool, str]:
-    entry = _otp_store.get(identifier)
-    if not entry:
-        return False, "No OTP found. Please request a new one."
-    if time.time() > entry["expires"]:
-        _otp_store.pop(identifier, None)
-        return False, "OTP has expired. Please request a new one."
-    if entry["otp"] != otp:
-        return False, "Invalid OTP. Please try again."
-    _otp_store.pop(identifier, None)  # One-time use — delete after success
-    return True, "OTP verified successfully."
+    try:
+        response = supabase_client.table("otp_sessions").select("*").eq("identifier", identifier).execute()
+        data = response.data
+        if not data:
+            return False, "No OTP found. Please request a new one."
+        
+        entry = data[0]
+        
+        if time.time() > entry["expires_at"]:
+            supabase_client.table("otp_sessions").delete().eq("identifier", identifier).execute()
+            return False, "OTP has expired. Please request a new one."
+            
+        if str(entry["otp"]) != str(otp):
+            return False, "Invalid OTP. Please try again."
+            
+        # One-time use — delete after success
+        supabase_client.table("otp_sessions").delete().eq("identifier", identifier).execute()
+        return True, "OTP verified successfully."
+    except Exception as e:
+        logger.error(f"Failed to verify OTP from Supabase: {e}")
+        return False, "Database error while verifying OTP."
 
 
 # --- 3. Request Models ---
@@ -209,14 +229,14 @@ def send_sms_otp(data: SendSmsOtpInput):
         )
         result = resp.json()
         if not result.get("return", False):
-            _otp_store.pop(phone, None)
+            supabase_client.table("otp_sessions").delete().eq("identifier", phone).execute()
             raise HTTPException(
                 status_code=502,
                 detail=f"Fast2SMS error: {result.get('message', 'Unknown error')}",
             )
         return {"success": True, "message": f"OTP sent to +91{phone}"}
     except http_requests.RequestException as e:
-        _otp_store.pop(phone, None)
+        supabase_client.table("otp_sessions").delete().eq("identifier", phone).execute()
         raise HTTPException(status_code=502, detail=f"SMS service unreachable: {str(e)}")
 
 

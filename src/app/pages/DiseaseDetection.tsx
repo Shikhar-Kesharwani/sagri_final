@@ -5,6 +5,7 @@ import { Camera, Upload, X, CheckCircle, AlertTriangle, Loader2 } from 'lucide-r
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
+import { supabase } from '../lib/supabase';
 
 const API_BASE_URL =
   (import.meta as any).env?.VITE_BACKEND_URL?.trim() || 'http://127.0.0.1:8000';
@@ -13,7 +14,7 @@ export function DiseaseDetection() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const { updatePoints } = useAuth();
+  const { user, updatePoints } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +70,16 @@ export function DiseaseDetection() {
       setResult(safeResult);
       updatePoints(10);
       toast.success('AI Analysis complete! +10 points');
+
+      if (user?.email) {
+        await supabase.from('prediction_history').insert([{
+          user_email: user.email,
+          prediction_type: 'Disease Detection',
+          input_data: { image: 'uploaded_image' },
+          result: safeResult.disease,
+        }]);
+      }
+
     } catch (error: any) {
       console.error('AI error:', error);
       if (error.message.includes('Failed to fetch')) {

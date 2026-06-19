@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
+import { supabase } from '../lib/supabase';
 
 export const CROPS = ['Apple', 'Banana', 'Banana - Green', 'Bengal Gram (Gram)(Whole)', 'Bhindi (Ladies Finger)', 'Bitter gourd', 'Bottle gourd', 'Brinjal', 'Cabbage', 'Capsicum', 'Carrot', 'Cauliflower', 'Cucumbar (Kheera)', 'Garlic', 'Ginger (Green)', 'Green Chilli', 'Lemon', 'Maize', 'Mustard', 'Onion', 'Paddy (Dhan)(Common)', 'Papaya', 'Potato', 'Pumpkin', 'Raddish', 'Rice', 'Ridgeguard (Tori)', 'Soyabean', 'Tomato', 'Wheat'];
 
@@ -15,7 +16,7 @@ export function PriceForecasting() {
   const [selectedCrop, setSelectedCrop] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [forecast, setForecast] = useState<any>(null);
-  const { updatePoints } = useAuth();
+  const { user, updatePoints } = useAuth();
 
   const handlePredict = async () => {
     if (!selectedCrop || !selectedRegion) {
@@ -106,6 +107,16 @@ export function PriceForecasting() {
       toast.dismiss();
       updatePoints(12);
       toast.success(data.is_mock ? 'Mock forecast generated!' : 'AI forecast generated! +12 points');
+
+      // Save to prediction history
+      if (user?.email) {
+        await supabase.from('prediction_history').insert([{
+          user_email: user.email,
+          prediction_type: 'Price Forecast',
+          input_data: { crop: selectedCrop, state: selectedRegion },
+          result: `₹${currentPrice}/quintal -> ₹${futurePrice}/quintal`,
+        }]);
+      }
 
     } catch (error) {
       toast.dismiss();

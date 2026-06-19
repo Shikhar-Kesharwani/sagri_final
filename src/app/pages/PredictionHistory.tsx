@@ -1,77 +1,84 @@
+import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { VoiceAssistant } from '../components/VoiceAssistant';
 import { BackButton } from '../components/BackButton';
 import { History, Camera, TrendingUp, AlertTriangle, Sprout, Calendar } from 'lucide-react';
+import { useAuth } from '../components/AuthProvider';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 export function PredictionHistory() {
-  const history = [
-    {
-      type: 'Disease Detection',
-      icon: <Camera className="w-6 h-6" />,
-      date: 'Mar 24, 2026',
-      time: '10:30 AM',
-      result: 'Healthy Crop',
-      status: 'success',
-      details: 'Wheat crop analysis - No disease detected',
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      type: 'Price Forecast',
-      icon: <TrendingUp className="w-6 h-6" />,
-      date: 'Mar 23, 2026',
-      time: '03:15 PM',
-      result: '₹2,450/quintal',
-      status: 'info',
-      details: 'Wheat price prediction for next month',
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      type: 'Risk Assessment',
-      icon: <AlertTriangle className="w-6 h-6" />,
-      date: 'Mar 22, 2026',
-      time: '11:45 AM',
-      result: 'Low Risk',
-      status: 'success',
-      details: 'Crop failure risk prediction',
-      color: 'from-yellow-500 to-orange-500',
-    },
-    {
-      type: 'Crop Recommendation',
-      icon: <Sprout className="w-6 h-6" />,
-      date: 'Mar 20, 2026',
-      time: '09:20 AM',
-      result: 'Rice - 92% Match',
-      status: 'success',
-      details: 'Based on soil and climate conditions',
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      type: 'Disease Detection',
-      icon: <Camera className="w-6 h-6" />,
-      date: 'Mar 18, 2026',
-      time: '02:30 PM',
-      result: 'Leaf Blight Detected',
-      status: 'warning',
-      details: 'Wheat crop - Medium severity',
-      color: 'from-red-500 to-orange-500',
-    },
-    {
-      type: 'Price Forecast',
-      icon: <TrendingUp className="w-6 h-6" />,
-      date: 'Mar 15, 2026',
-      time: '04:00 PM',
-      result: '₹3,200/quintal',
-      status: 'info',
-      details: 'Rice price prediction',
-      color: 'from-blue-500 to-cyan-500',
-    },
-  ];
+  const { user } = useAuth();
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([
+    { label: 'Total Predictions', value: '0', icon: <History className="w-5 h-5" /> },
+    { label: 'This Month', value: '0', icon: <Calendar className="w-5 h-5" /> },
+    { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
+  ]);
 
-  const stats = [
-    { label: 'Total Predictions', value: '48', icon: <History className="w-5 h-5" /> },
-    { label: 'This Month', value: '12', icon: <Calendar className="w-5 h-5" /> },
-    { label: 'Success Rate', value: '94%', icon: <TrendingUp className="w-5 h-5" /> },
-  ];
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!user?.email) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('prediction_history')
+          .select('*')
+          .eq('user_email', user.email)
+          .order('timestamp', { ascending: false });
+
+        if (error) throw error;
+
+        if (data) {
+          const formatted = data.map((item: any) => {
+            const dateObj = new Date(item.timestamp);
+            let icon = <Sprout className="w-6 h-6" />;
+            let color = 'from-purple-500 to-pink-500';
+            
+            if (item.prediction_type === 'Price Forecast') {
+              icon = <TrendingUp className="w-6 h-6" />;
+              color = 'from-blue-500 to-cyan-500';
+            }
+
+            return {
+              type: item.prediction_type,
+              icon,
+              date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              result: item.result,
+              status: 'success',
+              details: JSON.stringify(item.input_data),
+              color,
+            };
+          });
+
+          setHistory(formatted);
+
+          // Update stats
+          const thisMonth = data.filter((item: any) => {
+            const d = new Date(item.timestamp);
+            const now = new Date();
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          }).length;
+
+          setStats([
+            { label: 'Total Predictions', value: formatted.length.toString(), icon: <History className="w-5 h-5" /> },
+            { label: 'This Month', value: thisMonth.toString(), icon: <Calendar className="w-5 h-5" /> },
+            { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
+          ]);
+        }
+      } catch (err) {
+        console.error("Error fetching history", err);
+        toast.error("Could not load prediction history");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchHistory();
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -106,69 +113,76 @@ export function PredictionHistory() {
         </div>
 
         {/* History List */}
-        <div className="space-y-4">
-          {history.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className={`w-14 h-14 bg-gradient-to-r ${item.color} rounded-xl flex items-center justify-center text-white flex-shrink-0`}
-                >
-                  {item.icon}
-                </div>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          </div>
+        ) : history.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700">
+            <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Predictions Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Go to Crop Recommendation or Price Forecasting to get started!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {history.map((item, index) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`w-14 h-14 bg-gradient-to-r ${item.color} rounded-xl flex items-center justify-center text-white flex-shrink-0`}
+                  >
+                    {item.icon}
+                  </div>
 
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                        {item.type}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {item.date} at {item.time}
-                      </p>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {item.type}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {item.date} at {item.time}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          item.status === 'success'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : item.status === 'warning'
+                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        item.status === 'success'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                          : item.status === 'warning'
-                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                          : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Result</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{item.result}</p>
-                  </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Result</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{item.result}</p>
+                    </div>
 
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{item.details}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 overflow-hidden text-ellipsis whitespace-nowrap">Input: {item.details}</p>
 
-                  <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                      View Details
-                    </button>
-                    <button className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
-                      Download Report
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button className="text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 transition-colors">
+                        View Full Analysis
+                      </button>
+                      <button className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                        Share Report
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Load More */}
-        <div className="mt-8 text-center">
-          <button className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl">
-            Load More History
-          </button>
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
