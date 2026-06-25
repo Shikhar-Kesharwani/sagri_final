@@ -1,4 +1,7 @@
 <div align="center">
+  <img src="docs/assets/sagri_banner.png" alt="SAGRI Banner" width="100%">
+  <br><br>
+  
   <img src="https://img.shields.io/badge/Status-Active-success.svg" alt="Status">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue" alt="Python">
@@ -12,20 +15,41 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [About The Project](#-about-the-project)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [System Architecture](#-system-architecture)
+- [UI Sneak Peek](#-ui-sneak-peek)
+- [Directory Structure](#-directory-structure)
+- [Getting Started](#-getting-started)
+- [Machine Learning Models](#-machine-learning-models)
+- [Contributors](#-contributors)
+- [License](#-license)
+
+---
+
 ## 📖 About The Project
 
 **SAGRI (Krishi Shayak)** brings modern technology to the roots of agriculture. By leveraging cutting-edge Artificial Intelligence and Machine Learning, SAGRI provides actionable insights to farmers, helping them mitigate risks, prevent crop diseases, and make informed financial decisions. 
 
 Whether it's identifying a plant disease from a single photo or predicting market prices for the next harvest, SAGRI is designed to be the ultimate digital companion for the modern farmer.
 
-## ✨ Core Features
+---
 
-*   **🔬 Crop Disease Detection:** Instant diagnosis of plant health through advanced computer vision image analysis.
-*   **⚠️ Risk Prediction:** AI-driven assessment of crop failure risks based on real-time environmental and soil data.
-*   **📈 Price Forecasting:** Market trend analysis and future price predictions to maximize profitability.
-*   **🌱 Smart Recommendations:** Tailored crop suggestions optimized for specific soil health and weather conditions.
-*   **🌍 Multi-language Support:** Completely accessible in English, Hindi, and Punjabi to bridge the language barrier.
-*   **🎙️ Voice Assistant:** Integrated voice navigation for hands-free and improved accessibility.
+## ✨ Key Features
+
+| Feature | Description | Status |
+| :--- | :--- | :---: |
+| **🔬 Disease Detection** | Instant diagnosis of plant health through advanced computer vision image analysis. | ✅ |
+| **⚠️ Risk Prediction** | AI-driven assessment of crop failure risks based on real-time environmental data. | ✅ |
+| **📈 Price Forecasting** | Market trend analysis and 6-month future price predictions to maximize profitability. | ✅ |
+| **🌱 Smart Recommendations**| Tailored crop suggestions optimized for specific soil health and weather conditions. | ✅ |
+| **🌍 Multi-language** | Completely accessible in English, Hindi, and Punjabi to bridge the language barrier. | ✅ |
+| **🎙️ Voice Assistant** | Integrated voice navigation for hands-free and improved accessibility. | ✅ |
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -91,6 +115,18 @@ graph TD
 
 ---
 
+## 📸 UI Sneak Peek
+
+*(Add your beautiful screenshots here by replacing the placeholder links!)*
+
+<p align="center">
+  <img src="https://via.placeholder.com/400x250/000000/FFFFFF?text=Dashboard+Screenshot" alt="Dashboard View" width="45%">
+  &nbsp;&nbsp;
+  <img src="https://via.placeholder.com/400x250/000000/FFFFFF?text=Disease+Scanner+Screenshot" alt="Disease Scanner" width="45%">
+</p>
+
+---
+
 ## 📦 Directory Structure
 
 ```text
@@ -100,13 +136,14 @@ SAGRI/
 │   ├── routers/              # API Route definitions
 │   ├── core/                 # App configurations and security
 │   └── main.py               # FastAPI application entry point
+├── docs/                     # Detailed technical guides and assets
+│   └── assets/               # Banners, images, and diagrams
 ├── src/                      # React Frontend Source (Vite)
 │   ├── components/           # Reusable UI components
 │   ├── pages/                # Application views (Dashboard, Login, etc.)
 │   ├── contexts/             # React Contexts (Language, Auth)
-│   └── assets/               # Images, icons, and styles
+│   └── assets/               # Frontend images, icons, and styles
 ├── ml_training_scripts/      # Jupyter notebooks & Python scripts for model training
-├── docs/                     # Detailed technical guides and API documentation
 └── setup_all.py              # Automated unified installation script
 ```
 
@@ -184,15 +221,15 @@ SAGRI relies on several sophisticated ML models:
 
 ---
 
-## 🤝 Contributing
+## 👥 Contributors
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+This project was built by an amazing team. 
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+<a href="https://github.com/AyushGU12/sagri_final/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=AyushGU12/sagri_final" />
+</a>
+
+*Click the image above to see all contributors.*
 
 ---
 
