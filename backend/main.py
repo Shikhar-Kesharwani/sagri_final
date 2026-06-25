@@ -5,14 +5,21 @@ import json
 import logging
 import random
 import time
+import sys
+import os
 
 import joblib
+import numpy as np
 import pandas as pd
 import requests as http_requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
+
+# Import geographic exclusions
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from geo_exclusions import HARD_EXCLUSIONS
 
 # --- API Keys ---
 FAST2SMS_API_KEY = "e8ngMPO4d1ctybvp2IomN3iTkUYuZVWzaFKfE6LqRBXDSQjwx0TNE8wlHfO15rnBIuLzcvdhX439VZmG"
@@ -38,33 +45,68 @@ app.add_middleware(
 
 # --- 1. Load Models ---
 CROP_MODEL_PATH = MODEL_DIR / "crop_random_forest.pkl"
+CROP_FEATURES_PATH = MODEL_DIR / "model_features.json"
 crop_model = None
+crop_model_meta = None
 
-if CROP_MODEL_PATH.exists():
-    logger.info("Loaded trained Random Forest crop model.")
+if CROP_MODEL_PATH.exists() and CROP_FEATURES_PATH.exists():
+    logger.info("Loaded trained Random Forest crop model and features.")
     crop_model = joblib.load(CROP_MODEL_PATH)
+    with open(CROP_FEATURES_PATH, "r") as f:
+        crop_model_meta = json.load(f)
 else:
     logger.warning("No trained crop model found. API will use a fallback mock response.")
 
+# --- 1b. Load State Profiles (ICAR/IMD data) ---
+STATE_PROFILES_PATH = BASE_DIR / "data" / "state_profiles.csv"
+STATE_PROFILES = {}
+if STATE_PROFILES_PATH.exists():
+    profiles_df = pd.read_csv(STATE_PROFILES_PATH)
+    for _, row in profiles_df.iterrows():
+        STATE_PROFILES[row["State"]] = {
+            "N":           round((row["N_min"]        + row["N_max"])        / 2),
+            "P":           round((row["P_min"]        + row["P_max"])        / 2),
+            "K":           round((row["K_min"]        + row["K_max"])        / 2),
+            "ph":          round((row["pH_min"]       + row["pH_max"])       / 2, 1),
+            "temperature": round((row["Temp_min"]     + row["Temp_max"])     / 2, 1),
+            "humidity":    round((row["Humidity_min"] + row["Humidity_max"]) / 2, 1),
+            "rainfall":    round((row["Rain_min"]     + row["Rain_max"])     / 2, 1),
+        }
+    logger.info(f"Loaded state profiles for {len(STATE_PROFILES)} states.")
+else:
+    logger.warning("No state_profiles.csv found. State profile endpoint will be unavailable.")
+
+DISEASE_ONNX_PATH = MODEL_DIR / "disease_model.onnx"
+DISEASE_CLASSES_JSON_PATH = MODEL_DIR / "class_names.json"
 DISEASE_MODEL_PATH = MODEL_DIR / "disease_mobilenet.keras"
 DISEASE_CLASSES_PATH = MODEL_DIR / "disease_classes.txt"
-disease_model = None
+
+disease_model_onnx = None
+disease_model_keras = None
 disease_classes = []
 
-if DISEASE_MODEL_PATH.exists() and DISEASE_CLASSES_PATH.exists():
+if DISEASE_ONNX_PATH.exists() and DISEASE_CLASSES_JSON_PATH.exists():
+    try:
+        import onnxruntime as ort
+        disease_model_onnx = ort.InferenceSession(str(DISEASE_ONNX_PATH))
+        with open(DISEASE_CLASSES_JSON_PATH, "r", encoding="utf-8") as f:
+            disease_classes = json.load(f)
+        logger.info("Loaded trained ONNX Disease Detection model.")
+    except Exception as e:
+        logger.exception("Could not load ONNX disease model: %s", e)
+elif DISEASE_MODEL_PATH.exists() and DISEASE_CLASSES_PATH.exists():
     try:
         import tensorflow as tf
-
-        disease_model = tf.keras.models.load_model(DISEASE_MODEL_PATH)
+        disease_model_keras = tf.keras.models.load_model(DISEASE_MODEL_PATH)
         with open(DISEASE_CLASSES_PATH, "r", encoding="utf-8") as f:
             disease_classes = [line.strip() for line in f if line.strip()]
-        logger.info("Loaded trained Disease Detection model.")
+        logger.info("Loaded trained Keras Disease Detection model.")
     except ImportError:
-        logger.warning("Found disease model, but TensorFlow is not installed.")
+        logger.warning("Found Keras disease model, but TensorFlow is not installed.")
     except Exception as e:
-        logger.exception("Could not load disease model: %s", e)
+        logger.exception("Could not load Keras disease model: %s", e)
 else:
-    logger.warning("No disease model found.")
+    logger.warning("No disease model found (neither ONNX nor Keras).")
 
 PRICE_MODEL_PATH = MODEL_DIR / "price_forecast_model.pkl"
 price_model_data = None
@@ -153,6 +195,11 @@ class CropInput(BaseModel):
     humidity: float
     ph: float
     rainfall: float
+    state: str = ""  # Optional: used for geographic filtering (not model input)
+    season: str = "Kharif"
+    soil_texture: str = "Loamy"
+    irrigation: int = 0
+    is_controlled_env: bool = False
 
 
 class PriceForecastInput(BaseModel):
@@ -172,6 +219,11 @@ class RiskInput(BaseModel):
     rainfall: float
     temperature: float
     humidity: float
+    windspeed: float = 2.5
+    nitrogen: float = 60.0
+    phosphate: float = 30.0
+    potash: float = 20.0
+    season: str = ""
 
 
 class DiseaseInput(BaseModel):
@@ -270,11 +322,149 @@ def verify_email_otp(data: VerifyOtpInput):
 
 @app.post("/api/predict_crop")
 def predict_crop(data: CropInput):
+    # Biological Guardrails
+    if data.temperature > 45 or data.temperature < 5:
+        return {"error": True, "message": f"Lethal Conditions: A temperature of {data.temperature}°C exceeds the biological survival threshold for standard crops (causes severe protein denaturation or freezing). No recommendation possible."}
+    if data.ph > 9.0 or data.ph < 4.0:
+        return {"error": True, "message": f"Lethal Conditions: A soil pH of {data.ph} is toxic. It will cause severe root damage or micronutrient lockout. No recommendation possible."}
+    if data.N > 300 or data.P > 300 or data.K > 300:
+        return {"error": True, "message": "Lethal Conditions: Nutrient levels exceeding 300 kg/ha will cause severe osmotic stress and fertilizer burn. No recommendation possible."}
+    if data.humidity < 10:
+        return {"error": True, "message": f"Lethal Conditions: {data.humidity}% humidity is too low. Plants will suffer acute desiccation and stomatal closure. No recommendation possible."}
+
     if crop_model:
         try:
-            input_df = pd.DataFrame([data.model_dump()])
-            prediction = crop_model.predict(input_df)[0]
-            return {"recommended_crop": prediction, "is_mock": False}
+            if crop_model_meta:
+                import numpy as np
+                
+                # Mathematical derivatives
+                svp = 0.61078 * np.exp((17.27 * data.temperature) / (data.temperature + 237.3))
+                vpd = svp * (1 - (data.humidity / 100))
+                
+                n_p_ratio = data.N / data.P if data.P > 0 else data.N
+                n_k_ratio = data.N / data.K if data.K > 0 else data.N
+
+                IDEAL_NPK = {
+                    "apple": (21, 134, 200),
+                    "banana": (100, 82, 50),
+                    "blackgram": (40, 67, 19),
+                    "chickpea": (40, 68, 80),
+                    "coconut": (22, 17, 31),
+                    "coffee": (101, 29, 30),
+                    "cotton": (118, 46, 20),
+                    "grapes": (23, 133, 200),
+                    "jute": (78, 47, 40),
+                    "kidneybeans": (21, 68, 20),
+                    "lentil": (19, 68, 19),
+                    "maize": (78, 48, 20),
+                    "mango": (20, 27, 30),
+                    "mothbeans": (21, 48, 20),
+                    "mungbean": (21, 47, 20),
+                    "muskmelon": (100, 18, 50),
+                    "orange": (20, 17, 10),
+                    "papaya": (50, 59, 50),
+                    "pigeonpeas": (21, 68, 20),
+                    "pomegranate": (19, 19, 40),
+                    "rice": (80, 48, 40),
+                    "watermelon": (99, 17, 50)
+                }
+
+                def get_prescription(crop_name):
+                    ideal_n, ideal_p, ideal_k = IDEAL_NPK.get(crop_name.lower(), (50, 50, 50))
+                    msg = []
+                    if data.N < ideal_n - 10: msg.append(f"+{int(ideal_n - data.N)}kg/ha N")
+                    if data.P < ideal_p - 10: msg.append(f"+{int(ideal_p - data.P)}kg/ha P")
+                    if data.K < ideal_k - 10: msg.append(f"+{int(ideal_k - data.K)}kg/ha K")
+                    if not msg: return "Soil nutrients are optimal!"
+                    return "Add " + ", ".join(msg)
+
+                # Soil physical mapping
+                SOIL_PHYSICS = {
+                    "Sandy": (85, 10, 5),
+                    "Loamy": (40, 40, 20),
+                    "Clay": (15, 15, 70),
+                    "Laterite": (20, 20, 60),
+                    "Black": (15, 20, 65),
+                    "Red": (50, 25, 25),
+                    "Silt": (10, 80, 10)
+                }
+                sand_pct, silt_pct, clay_pct = SOIL_PHYSICS.get(data.soil_texture, (40, 40, 20))
+
+                feat_dict = {
+                    "N": data.N,
+                    "P": data.P,
+                    "K": data.K,
+                    "temperature": data.temperature,
+                    "humidity": data.humidity,
+                    "ph": data.ph,
+                    "Sand_Pct": sand_pct,
+                    "Silt_Pct": silt_pct,
+                    "Clay_Pct": clay_pct,
+                    "VPD": round(vpd, 3),
+                    "N_P_Ratio": round(n_p_ratio, 3),
+                    "N_K_Ratio": round(n_k_ratio, 3)
+                }
+
+                simulated_rainfalls = [data.rainfall]
+                if data.irrigation == 1:
+                    simulated_rainfalls.append(data.rainfall + 400)
+                    simulated_rainfalls.append(data.rainfall + 1000)
+
+                combined_probs = {}
+                for rain in simulated_rainfalls:
+                    feat_dict["rainfall"] = rain
+                    features = [[feat_dict.get(f, 0) for f in crop_model_meta["features"]]]
+                    probs = crop_model.predict_proba(features)[0]
+                    for crop, prob in zip(crop_model.classes_, probs):
+                        combined_probs[crop] = max(combined_probs.get(crop, 0), prob)
+
+                crop_probs = sorted(combined_probs.items(), key=lambda x: x[1], reverse=True)
+
+            else:
+                # Fallback for old model
+                features = [[data.N, data.P, data.K, data.temperature, data.humidity, data.ph, data.rainfall]]
+                probs = crop_model.predict_proba(features)[0]
+                all_crops = crop_model.classes_
+                crop_probs = sorted(zip(all_crops, probs), key=lambda x: x[1], reverse=True)
+
+            # Apply geographic exclusions if state is provided and NOT in controlled environment
+            excluded_crops = []
+            if data.state and not data.is_controlled_env:
+                for crop_name, exclusion_states in HARD_EXCLUSIONS.items():
+                    if data.state in exclusion_states:
+                        excluded_crops.append(crop_name)
+
+            results       = []
+            crops_removed = []
+
+            for crop, prob in crop_probs:
+                if crop in excluded_crops:
+                    crops_removed.append(crop)
+                    continue
+                if len(results) >= 3:
+                    break
+
+                if prob >= 0.70:
+                    note = "Strong match - soil conditions closely suit this crop."
+                elif prob >= 0.40:
+                    note = "Good match - most soil conditions are suitable."
+                else:
+                    note = "Possible - conditions are marginal, consider soil amendment."
+
+                results.append({
+                    "crop": crop,
+                    "confidence": round(float(prob) * 100, 1),
+                    "note": note,
+                    "prescription": get_prescription(crop)
+                })
+
+            return {
+                "recommended_crop": results[0]["crop"] if results else "unknown",
+                "top3": results,
+                "state_used": data.state if data.state else "not specified",
+                "crops_excluded": crops_removed,
+                "is_mock": False,
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
@@ -283,6 +473,27 @@ def predict_crop(data: CropInput):
         "recommended_crop": random.choice(mock_crops),
         "is_mock": True,
         "warning": "Actual model not found. Upload crop_random_forest.pkl",
+    }
+
+
+@app.get("/api/states")
+def list_states():
+    """Return list of all available Indian states for the crop recommendation dropdown."""
+    return {"states": sorted(STATE_PROFILES.keys())}
+
+
+@app.get("/api/state-profile/{state_name}")
+def get_state_profile(state_name: str):
+    """Return ICAR average soil/weather values for a state to pre-fill the form."""
+    if state_name not in STATE_PROFILES:
+        return {
+            "error": f"State '{state_name}' not found.",
+            "available_states": sorted(STATE_PROFILES.keys()),
+        }
+    return {
+        "state": state_name,
+        "profile": STATE_PROFILES[state_name],
+        "note": "These are ICAR average values for this state. Replace with your actual soil test results for better accuracy.",
     }
 
 
@@ -498,43 +709,97 @@ def get_historical_prices(data: HistoricalPriceInput):
 def predict_risk(data: RiskInput):
     if risk_model_data:
         try:
-            model = risk_model_data["model"]
-            features = risk_model_data["features"]
+            model          = risk_model_data["model"]
+            features       = risk_model_data["features"]
+            model_type     = risk_model_data.get("model_type", "unknown")
+            crop_encoder   = risk_model_data.get("crop_encoder")
+            season_encoder = risk_model_data.get("season_encoder")
 
             input_dict = data.model_dump()
-            crop = input_dict.pop("cropType").lower()
+            crop_name  = input_dict.get("cropType", "rice").strip().upper()
 
-            df = pd.DataFrame(columns=features)
-            df.loc[0] = 0
-            df.loc[0, "soilPh"] = input_dict["soilPh"]
-            df.loc[0, "rainfall"] = input_dict["rainfall"]
-            df.loc[0, "temperature"] = input_dict["temperature"]
-            df.loc[0, "humidity"] = input_dict["humidity"]
+            # Build a zero-filled feature row matching training columns
+            import numpy as np
+            row = {f: 0.0 for f in features}
 
-            crop_col = f"cropType_{crop}"
-            if crop_col in features:
-                df.loc[0, crop_col] = 1
+            # --- Map frontend inputs to model features ---
+            temperature = float(input_dict.get("temperature", 25))
+            rainfall    = float(input_dict.get("rainfall", 100))
 
-            prediction = model.predict(df)[0]
-            return {"riskLevel": round(prediction, 1), "is_mock": False}
+            row["temp_mean"]       = temperature
+            row["temp_rainy_max"]  = temperature + 3.0
+            row["temp_summer_max"] = temperature + 5.0
+            row["temp_rainy_min"]  = temperature - 4.0
+            row["temp_summer_min"] = temperature - 4.0
+            row["temp_range"]      = 10.0              # typical diurnal range India
+            row["total_rainfall"]  = rainfall
+            row["rainfall_rainy"]  = rainfall * 0.7
+            row["rainfall_summer"] = rainfall * 0.3
+            row["evapotranspiration"] = rainfall * 0.4
+            row["drought_stress"]  = temperature / max(rainfall, 1.0)  # heat/rain ratio
+            row["rain_efficiency"] = (rainfall * 0.4) / max(rainfall * 0.7, 1.0)
+            row["windspeed"]       = float(input_dict.get("windspeed", 2.5))
+            row["nitrogen"]        = float(input_dict.get("nitrogen", 60.0))
+            row["phosphate"]       = float(input_dict.get("phosphate", 30.0))
+            row["potash"]          = float(input_dict.get("potash", 20.0))
+            
+            # Avoid division by zero
+            phos = row["phosphate"] if row["phosphate"] > 0 else 1.0
+            row["np_ratio"]        = row["nitrogen"] / phos
+
+            row["irrigated_area"]  = 5.0
+            row["log_area"]        = 2.0
+            row["Crop_Year"]       = 2020
+            row["decade"]          = 2020
+            
+            season_val = input_dict.get("season", "").strip().title()
+            row["season_enc"] = 0
+            if season_encoder is not None and season_val:
+                known_seasons = list(season_encoder.classes_)
+                if season_val in known_seasons:
+                    row["season_enc"] = int(season_encoder.transform([season_val])[0])
+
+            # Encode crop name
+            if crop_encoder is not None:
+                known = list(crop_encoder.classes_)
+                if crop_name in known:
+                    row["crop_enc"] = int(crop_encoder.transform([crop_name])[0])
+                else:
+                    # Find closest match
+                    match = next((c for c in known if crop_name in c or c in crop_name), known[0])
+                    row["crop_enc"] = int(crop_encoder.transform([match])[0])
+
+            df_input = pd.DataFrame([row])[features]
+
+            if model_type == "xgboost_classifier":
+                # Returns probability of crop failure (0.0 – 1.0)
+                failure_prob = float(model.predict_proba(df_input)[0][1])
+                risk_level   = round(failure_prob * 100, 1)
+            else:
+                # Legacy regressor fallback
+                risk_level = round(float(model.predict(df_input)[0]), 1)
+
+            return {"riskLevel": risk_level, "is_mock": False}
         except Exception as e:
+            logger.exception("Risk prediction error: %s", e)
             raise HTTPException(status_code=500, detail=str(e))
 
     return {"riskLevel": random.randint(10, 90), "is_mock": True}
 
 
+
 @app.post("/api/detect_disease")
 def detect_disease(data: DiseaseInput):
-    if not disease_model or not disease_classes:
+    if not (disease_model_onnx or disease_model_keras) or not disease_classes:
         logger.error("Disease model not loaded.")
         raise HTTPException(
             status_code=503,
-            detail="Disease model not loaded. Ensure disease_mobilenet.keras is in backend/models and TensorFlow is installed.",
+            detail="Disease model not loaded. Ensure disease_model.onnx or disease_mobilenet.keras is present.",
         )
 
     try:
         import numpy as np
-        from PIL import Image
+        from PIL import Image, ImageEnhance
 
         logger.info("Received image for disease detection (payload length: %s)", len(data.image_data))
 
@@ -547,46 +812,111 @@ def detect_disease(data: DiseaseInput):
         logger.info("Decoded base64 bytes (size: %s)", len(img_bytes))
 
         try:
-            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-            pil_img = pil_img.resize((224, 224))
-            img_array = np.array(pil_img, dtype=np.float32)
-            img_array = np.expand_dims(img_array, axis=0)
-            logger.info("Preprocessed image array shape: %s", img_array.shape)
-        except Exception as decode_err:
-            logger.warning("Image decoding error: %s", decode_err)
-            raise HTTPException(status_code=400, detail="Invalid image format. Please upload a valid JPG/PNG.")
+            base_pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            
+            # --- TTA (Test-Time Augmentation) Generation ---
+            augmented_images = [
+                base_pil_img,                                                # Original
+                base_pil_img.transpose(Image.FLIP_LEFT_RIGHT),               # Flipped
+                ImageEnhance.Brightness(base_pil_img).enhance(1.2),          # Brightened
+                ImageEnhance.Brightness(base_pil_img).enhance(0.8),          # Darkened
+                ImageEnhance.Contrast(base_pil_img).enhance(1.2),            # High Contrast
+            ]
+            
+            if disease_model_onnx:
+                all_probs = []
+                def softmax(x):
+                    e_x = np.exp(x - np.max(x))
+                    return e_x / e_x.sum(axis=1, keepdims=True)
+                    
+                input_name = disease_model_onnx.get_inputs()[0].name
+                mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+                std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
-        predictions = disease_model.predict(img_array)
-        class_idx = int(np.argmax(predictions[0]))
-        confidence = float(predictions[0][class_idx]) * 100
+                for aug_img in augmented_images:
+                    aug_img = aug_img.resize((224, 224))
+                    img_array = np.array(aug_img, dtype=np.float32)
+                    
+                    img_array = img_array / 255.0
+                    img_array = (img_array - mean) / std
+                    
+                    img_array = np.transpose(img_array, (2, 0, 1))
+                    img_array = np.expand_dims(img_array, axis=0)
+                    
+                    predictions = disease_model_onnx.run(None, {input_name: img_array})[0]
+                    probs = softmax(predictions)[0]
+                    all_probs.append(probs)
+                
+                # Mathematical Averaging of all 5 passes
+                avg_probs = np.mean(all_probs, axis=0)
+                class_idx = int(np.argmax(avg_probs))
+                confidence = float(avg_probs[class_idx]) * 100
+                logger.info("Averaged probabilities over 5 TTA passes.")
+                
+            else:
+                # Fallback to Keras model
+                pil_img = base_pil_img.resize((224, 224))
+                img_array = np.array(pil_img, dtype=np.float32)
+                img_array = np.expand_dims(img_array, axis=0)
+                logger.info("Preprocessed Keras image array shape: %s", img_array.shape)
+                predictions = disease_model_keras.predict(img_array)
+                class_idx = int(np.argmax(predictions[0]))
+                confidence = float(predictions[0][class_idx]) * 100
+
+        except Exception as decode_err:
+            logger.warning("Image processing error: %s", decode_err)
+            raise HTTPException(status_code=400, detail="Invalid image format or preprocessing failed.")
+
         disease_name = disease_classes[class_idx]
         is_healthy = "healthy" in disease_name.lower()
 
         logger.info("Disease prediction: %s (%.2f%%)", disease_name, confidence)
-
+        
+        # Load the treatment database
+        treatment_path = MODEL_DIR / "treatment_db.json"
+        treatment_info = None
+        if treatment_path.exists():
+            with open(treatment_path, "r") as f:
+                db = json.load(f)
+                treatment_info = db.get(str(class_idx))
+                
+        if not treatment_info:
+            # Fallback if DB is missing or class not found
+            return {
+                "disease": disease_name.replace("_", " "),
+                "confidence": round(confidence, 1),
+                "severity": "None" if is_healthy else ("High" if confidence > 80 else "Medium"),
+                "recommendation": (
+                    "Crop looks great! No disease detected."
+                    if is_healthy
+                    else f"AI identified possible {disease_name.replace('_', ' ')}. Please take action."
+                ),
+                "treatment": (
+                    []
+                    if is_healthy
+                    else [
+                        "Isolate the affected plants immediately.",
+                        "Consult a local agricultural expert.",
+                        "Consider appropriate fungicide/pesticide treatment.",
+                        "Remove and destroy severely affected leaves.",
+                    ]
+                ),
+                "color": "green" if is_healthy else "red",
+            }
+            
         return {
             "disease": disease_name.replace("_", " "),
             "confidence": round(confidence, 1),
-            "severity": "None" if is_healthy else ("High" if confidence > 80 else "Medium"),
-            "recommendation": (
-                "Crop looks great! No disease detected."
-                if is_healthy
-                else f"AI identified possible {disease_name.replace('_', ' ')}. Please take action."
-            ),
-            "treatment": (
-                []
-                if is_healthy
-                else [
-                    "Isolate the affected plants immediately.",
-                    "Consult a local agricultural expert.",
-                    "Consider appropriate fungicide/pesticide treatment.",
-                    "Remove and destroy severely affected leaves.",
-                ]
-            ),
-            "color": "green" if is_healthy else "red",
+            "severity": treatment_info["severity"],
+            "immediate_action": treatment_info["immediate_action"],
+            "chemical_treatment": treatment_info["chemical"],
+            "organic_treatment": treatment_info["organic"],
+            "recheck_days": treatment_info["recheck_days"],
+            "color": "green" if is_healthy else ("yellow" if treatment_info["severity"] == "Medium" else "red")
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("Backend error during disease detection: %s", e)
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+

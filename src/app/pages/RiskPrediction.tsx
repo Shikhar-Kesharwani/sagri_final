@@ -16,6 +16,10 @@ export function RiskPrediction() {
     temperature: '',
     humidity: '',
     season: '',
+    windspeed: '',
+    nitrogen: '',
+    phosphate: '',
+    potash: '',
   });
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +39,11 @@ export function RiskPrediction() {
           rainfall: Number(formData.rainfall),
           temperature: Number(formData.temperature),
           humidity: Number(formData.humidity),
+          windspeed: Number(formData.windspeed) || 2.5,
+          nitrogen: Number(formData.nitrogen) || 60,
+          phosphate: Number(formData.phosphate) || 30,
+          potash: Number(formData.potash) || 20,
+          season: formData.season,
         }),
       });
 
@@ -205,6 +214,59 @@ export function RiskPrediction() {
                   placeholder="60"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Wind Speed (m/s)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.windspeed}
+                  onChange={(e) => setFormData({ ...formData, windspeed: e.target.value })}
+                  placeholder="2.5"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nitrogen (tons)
+                </label>
+                <input
+                  type="number"
+                  value={formData.nitrogen}
+                  onChange={(e) => setFormData({ ...formData, nitrogen: e.target.value })}
+                  placeholder="60"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Phosphate (tons)
+                </label>
+                <input
+                  type="number"
+                  value={formData.phosphate}
+                  onChange={(e) => setFormData({ ...formData, phosphate: e.target.value })}
+                  placeholder="30"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Potash (tons)
+                </label>
+                <input
+                  type="number"
+                  value={formData.potash}
+                  onChange={(e) => setFormData({ ...formData, potash: e.target.value })}
+                  placeholder="20"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 

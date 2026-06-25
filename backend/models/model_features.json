@@ -1,0 +1,32 @@
+{
+  "features": [
+    "N",
+    "P",
+    "K",
+    "temperature",
+    "humidity",
+    "ph",
+    "rainfall",
+    "Sand_Pct",
+    "Silt_Pct",
+    "Clay_Pct",
+    "VPD",
+    "N_P_Ratio",
+    "N_K_Ratio"
+  ],
+  "seasons": [
+    "Kharif",
+    "Rabi",
+    "Zaid",
+    "Perennial"
+  ],
+  "soil_textures": [
+    "Sandy",
+    "Loamy",
+    "Clay",
+    "Laterite",
+    "Black",
+    "Red",
+    "Silt"
+  ]
+}

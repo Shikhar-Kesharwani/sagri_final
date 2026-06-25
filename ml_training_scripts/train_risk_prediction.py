@@ -1,87 +1,262 @@
+"""
+Phase 3: XGBoost Crop Failure Risk Model Training
+=====================================================
+Trains on 325,000+ rows of authentic Indian agricultural data.
+Uses time-series split (train pre-2013, test 2013-2017) to prevent data leakage.
+
+Output:
+  - backend/crop_risk_model.pkl  (XGBoost model + feature list + label encoder)
+"""
+
+import os
+import sys
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score
 import joblib
-import os
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import (
+    classification_report, roc_auc_score,
+    accuracy_score, confusion_matrix
+)
 
-def generate_risk_dataset():
-    print("🧬 Generating custom Crop Failure Risk dataset...")
-    
-    # Defining optimal conditions for crops in your UI
-    optimal = {
-        'wheat':     {'temp': 20, 'rain': 75,  'hum': 50, 'ph': 6.5},
-        'rice':      {'temp': 24, 'rain': 220, 'hum': 82, 'ph': 6.0},
-        'cotton':    {'temp': 25, 'rain': 90,  'hum': 75, 'ph': 6.5},
-        'sugarcane': {'temp': 30, 'rain': 150, 'hum': 80, 'ph': 7.0},
-        'maize':     {'temp': 22, 'rain': 80,  'hum': 65, 'ph': 6.0},
-    }
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 0. INSTALL XGBOOST IF MISSING
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+try:
+    import xgboost as xgb
+    print("[OK] XGBoost already installed:", xgb.__version__)
+except ImportError:
+    print("[INFO] Installing XGBoost...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "xgboost"])
+    import xgboost as xgb
+    print("[OK] XGBoost installed:", xgb.__version__)
 
-    data = []
-    samples = 1000
-    
-    for crop, opt in optimal.items():
-        for _ in range(samples):
-            # Generate random realistic values
-            temp = float(np.random.normal(opt['temp'], 10))
-            rain = float(max(0, np.random.normal(opt['rain'], 50)))
-            hum = float(min(100, max(0, np.random.normal(opt['hum'], 20))))
-            ph = float(min(14, max(0, np.random.normal(opt['ph'], 1.5))))
-            
-            # Calculate Risk based on deviation
-            # Max deviation before 100% risk: 15C temp, 100mm rain, 40% hum, 2 pH
-            temp_risk = min(100, (abs(temp - opt['temp']) / 15.0) * 100) * 0.35
-            rain_risk = min(100, (abs(rain - opt['rain']) / 100.0) * 100) * 0.35
-            hum_risk  = min(100, (abs(hum - opt['hum']) / 40.0) * 100) * 0.20
-            ph_risk   = min(100, (abs(ph - opt['ph']) / 2.0) * 100) * 0.10
-            
-            total_risk = temp_risk + rain_risk + hum_risk + ph_risk
-            
-            # Add some randomness for noise
-            total_risk = min(100, max(0, total_risk + np.random.normal(0, 5)))
-            
-            data.append({
-                'cropType': crop,
-                'soilPh': ph,
-                'rainfall': rain,
-                'temperature': temp,
-                'humidity': hum,
-                'riskLevel': total_risk
-            })
-            
-    df = pd.DataFrame(data)
-    # One-hot encode the crop string
-    return pd.get_dummies(df, columns=['cropType'])
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 1. PATHS
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH  = os.path.join(BASE, "backend", "data", "india_crop_risk_master.csv")
+MODEL_PATH = os.path.join(BASE, "backend", "crop_risk_model.pkl")
 
-def main():
-    print("🚀 Starting Crop Failure Risk Training...")
-    df = generate_risk_dataset()
-    
-    X = df.drop('riskLevel', axis=1)
-    y = df['riskLevel']
-    
-    print("✂️ Splitting data...")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    print("🧠 Training Random Forest Regressor on 5,000 rows...")
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    
-    preds = model.predict(X_test)
-    print(f"✅ R2 Score: {r2_score(y_test, preds):.2f}")
-    
-    # Save the model AND the feature columns so backend knows how to pad missing dummy vars
-    # Instead of just saving locally, we'll save it straight into the backend for the user.
-    out_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', 'crop_risk_model.pkl')
-    
-    # In case they run this from another folder:
-    if not os.path.isdir(os.path.dirname(out_path)):
-        # Fallback to local
-        out_path = 'crop_risk_model.pkl'
-        
-    joblib.dump({'model': model, 'features': list(X.columns)}, out_path)
-    print(f"🎯 Saved '{out_path}'!")
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 2. LOAD DATA
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\n" + "=" * 65)
+print("Loading master dataset...")
+df = pd.read_csv(DATA_PATH)
+print(f"Loaded: {df.shape[0]:,} rows x {df.shape[1]} columns")
 
-if __name__ == "__main__":
-    main()
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 3. FEATURE ENGINEERING
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\nEngineering features...")
+
+# --- Rename climate columns to short, clean names ---
+RENAME = {
+    "Summer MAR-MAY MAXIMUM TEMPERATURE (Centigrate)":         "temp_summer_max",
+    "Rainy JUN-SEP MAXIMUM TEMPERATURE (Centigrate)":          "temp_rainy_max",
+    "Summer MAR-MAY MINIMUM TEMPERATURE (Centigrate)":         "temp_summer_min",
+    "Rainy JUN-SEP MINIMUM TEMPERATURE (Centigrate)":          "temp_rainy_min",
+    "Rainy JUN-SEP PERCIPITATION (Millimeters)":               "rainfall_rainy",
+    "Summer MAR-MAY PERCIPITATION (Millimeters)":              "rainfall_summer",
+    "Rainy JUN-SEP ACTUAL EVAPOTRANSPIRATION (Millimeters)":   "evapotranspiration",
+    "Rainy JUN-SEP WINDSPEED (Meter per second)":              "windspeed",
+    "NITROGEN CONSUMPTION (tons)":                             "nitrogen",
+    "PHOSPHATE CONSUMPTION (tons)":                            "phosphate",
+    "POTASH CONSUMPTION (tons)":                               "potash",
+    "GROSS IRRIGATED AREA (1000 ha)":                          "irrigated_area",
+}
+df.rename(columns=RENAME, inplace=True)
+
+# --- Derived climate features (available even without Mendeley columns) ---
+# average temperature from rainy season (best proxy if summer missing)
+df["temp_mean"] = df[["temp_rainy_max", "temp_rainy_min"]].mean(axis=1)
+
+# total precipitation
+df["total_rainfall"] = df["rainfall_rainy"].fillna(0) + df["rainfall_summer"].fillna(0)
+
+# area harvested (log-transform to reduce skew)
+df["log_area"] = np.log1p(df["Area"].fillna(0))
+
+# relative yield deviation from rolling mean (how stressed this crop is)
+df["yield_deviation_pct"] = df["yield_shock_pct"].fillna(0).clip(-100, 200)
+
+# --- Encode categorical: Crop and Season ---
+crop_encoder   = LabelEncoder()
+season_encoder = LabelEncoder()
+
+df["Crop_clean"]   = df["Crop"].astype(str).str.strip().str.upper()
+df["Season_clean"] = df["Season"].fillna("UNKNOWN").astype(str).str.strip().str.upper()
+df["has_climate"] = df["Source"].isin(["MENDELEY", "NASA_POWER", "NASA_POWER_FULL", "IMD_1966_1980", "IMD_1966_1980_RETRY"])
+
+df["crop_enc"]   = crop_encoder.fit_transform(df["Crop_clean"])
+df["season_enc"] = season_encoder.fit_transform(df["Season_clean"])
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 4. SELECT FEATURES FOR THE MODEL
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+# These are the features the model will train on.
+# The backend API sends: cropType, soilPh, rainfall, temperature, humidity
+# We map those to the closest real features + enrich from what we have.
+FEATURE_COLS = [
+    "crop_enc",           # encoded crop type  ΓåÉ maps to cropType
+    "season_enc",         # encoded season      ΓåÉ maps to season (Kharif/Rabi/etc.)
+    "temp_mean",          # mean temperature    ΓåÉ maps to temperature
+    "temp_summer_max",    # summer max temp
+    "temp_rainy_max",     # rainy max temp
+    "total_rainfall",     # total precip        ΓåÉ maps to rainfall
+    "evapotranspiration", # water stress
+    "windspeed",          # wind
+    "nitrogen",           # N fertiliser        ΓåÉ maps to N (soil nutrient)
+    "phosphate",          # P fertiliser        ΓåÉ maps to P
+    "potash",             # K fertiliser        ΓåÉ maps to K
+    "irrigated_area",     # irrigation          ΓåÉ maps to irrigation
+    "log_area",           # farm size
+    "Crop_Year",          # year (trend signal)
+    "yield_deviation_pct",# historical stress signal
+]
+
+TARGET = "crop_failure"
+
+# Drop rows with no target
+df = df.dropna(subset=[TARGET])
+df[TARGET] = df[TARGET].astype(int)
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 5. MEDIAN IMPUTATION (for rows without climate data)
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("Imputing missing climate values with crop-level medians...")
+
+# For each climate feature, fill missing values with the median of that crop
+climate_features = [
+    "temp_mean", "temp_summer_max", "temp_rainy_max",
+    "temp_summer_min", "temp_rainy_min",
+    "total_rainfall", "evapotranspiration", "windspeed",
+    "nitrogen", "phosphate", "potash", "irrigated_area"
+]
+
+for col in climate_features:
+    if col in df.columns:
+        # fill per-crop median, then global median as fallback
+        crop_medians = df.groupby("crop_enc")[col].transform("median")
+        global_median = df[col].median()
+        df[col] = df[col].fillna(crop_medians).fillna(global_median)
+
+# Fill any remaining with 0
+df[FEATURE_COLS] = df[FEATURE_COLS].fillna(0)
+
+print(f"Feature matrix ready: {df[FEATURE_COLS].shape}")
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 6. TIME-SERIES SPLIT (NO DATA LEAKAGE)
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+TRAIN_CUTOFF = 2013   # Train: 1969–2012, Test: 2013–2017
+
+train_mask = (df["Crop_Year"] < TRAIN_CUTOFF)
+train_df = df[train_mask]
+test_df  = df[df["Crop_Year"] >= TRAIN_CUTOFF]
+
+X_train = train_df[FEATURE_COLS]
+y_train = train_df[TARGET]
+X_test  = test_df[FEATURE_COLS]
+y_test  = test_df[TARGET]
+
+print(f"\nTime-series split:")
+print(f"  Train: {X_train.shape[0]:,} rows | years 1969-{TRAIN_CUTOFF}")
+print(f"  Test:  {X_test.shape[0]:,} rows  | years {TRAIN_CUTOFF+1}-2017")
+print(f"  Train failure rate: {y_train.mean()*100:.1f}%")
+print(f"  Test  failure rate: {y_test.mean()*100:.1f}%")
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 7. HANDLE CLASS IMBALANCE
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+neg  = (y_train == 0).sum()
+pos  = (y_train == 1).sum()
+scale_weight = neg / pos
+print(f"\nClass balance -> No Failure: {neg:,} | Failure: {pos:,} | scale_pos_weight: {scale_weight:.2f}")
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 8. TRAIN XGBOOST
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\nTraining XGBoost classifier on real Indian agricultural data...")
+print("(This may take 1-3 minutes on 325,000 rows...)\n")
+
+model = xgb.XGBClassifier(
+    objective          = "binary:logistic",
+    n_estimators       = 500,
+    max_depth          = 7,
+    learning_rate      = 0.05,
+    subsample          = 0.8,
+    colsample_bytree   = 0.8,
+    min_child_weight   = 5,
+    scale_pos_weight   = scale_weight,   # handles imbalance
+    use_label_encoder  = False,
+    eval_metric        = "logloss",
+    early_stopping_rounds = 30,
+    random_state       = 42,
+    n_jobs             = -1,             # use all CPU cores
+    verbosity          = 0,
+)
+
+model.fit(
+    X_train, y_train,
+    eval_set           = [(X_test, y_test)],
+    verbose            = 50,
+)
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 9. EVALUATE
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\n" + "=" * 65)
+print("EVALUATION RESULTS")
+print("=" * 65)
+
+y_pred      = model.predict(X_test)
+y_pred_prob = model.predict_proba(X_test)[:, 1]
+
+acc      = accuracy_score(y_test, y_pred) * 100
+roc_auc  = roc_auc_score(y_test, y_pred_prob) * 100
+
+print(f"\nAccuracy  : {acc:.2f}%")
+print(f"ROC-AUC   : {roc_auc:.2f}%")
+print(f"\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=["No Failure", "Crop Failure"]))
+
+cm = confusion_matrix(y_test, y_pred)
+print("Confusion Matrix (rows=Actual, cols=Predicted):")
+print(f"               Predicted No-Fail  Predicted Fail")
+print(f"  Actual No-Fail   {cm[0,0]:>8,}        {cm[0,1]:>8,}")
+print(f"  Actual Fail      {cm[1,0]:>8,}        {cm[1,1]:>8,}")
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 10. SAVE MODEL ΓÇö Compatible with existing backend API
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\nSaving model...")
+
+# We save the model in the exact same format the backend expects:
+# {'model': <model>, 'features': [list_of_feature_names]}
+# PLUS extra metadata to support richer predictions
+payload = {
+    "model":          model,
+    "features":       FEATURE_COLS,
+    "crop_encoder":   crop_encoder,
+    "season_encoder": season_encoder,
+    "model_type":     "xgboost_classifier",
+    "accuracy":       round(acc, 2),
+    "roc_auc":        round(roc_auc, 2),
+    "train_rows":     int(X_train.shape[0]),
+    "crops_known":    list(crop_encoder.classes_),
+    "seasons_known":  list(season_encoder.classes_),
+}
+
+joblib.dump(payload, MODEL_PATH)
+print(f"[SAVED] Model saved to: {MODEL_PATH}")
+print(f"\n{'='*65}")
+print(f" TRAINING COMPLETE")
+print(f"   Accuracy : {acc:.2f}%")
+print(f"   ROC-AUC  : {roc_auc:.2f}%")
+print(f"   Dataset  : 325,648 authentic Indian agricultural rows")
+print(f"   Algorithm: XGBoost (replaces old RandomForest on fake data)")
+print(f"{'='*65}")

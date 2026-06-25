@@ -48,3 +48,8 @@ yarn-error.log*
 backend/data/
 *.pkl
 scratch_*.tsx
+*.pth
+*.keras
+*.onnx
+*.data
+transcript_*.txt
