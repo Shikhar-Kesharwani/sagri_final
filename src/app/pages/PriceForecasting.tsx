@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 import { supabase } from '../lib/supabase';
+import { ML_API_BASE_URL } from '../../utils/api';
 
 export const CROPS = ['Apple', 'Banana', 'Banana - Green', 'Bengal Gram (Gram)(Whole)', 'Bhindi (Ladies Finger)', 'Bitter gourd', 'Bottle gourd', 'Brinjal', 'Cabbage', 'Capsicum', 'Carrot', 'Cauliflower', 'Cucumbar (Kheera)', 'Garlic', 'Ginger (Green)', 'Green Chilli', 'Lemon', 'Maize', 'Mustard', 'Onion', 'Paddy (Dhan)(Common)', 'Papaya', 'Potato', 'Pumpkin', 'Raddish', 'Rice', 'Ridgeguard (Tori)', 'Soyabean', 'Tomato', 'Wheat'];
 
@@ -28,7 +29,7 @@ export function PriceForecasting() {
       toast.loading('Analyzing market trends...');
 
       const [forecastRes, historyRes] = await Promise.all([
-        fetch('http://localhost:8000/api/forecast_price', {
+        fetch(`${ML_API_BASE_URL}/api/forecast_price`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export function PriceForecasting() {
             months_ahead: 6
           }),
         }),
-        fetch('http://localhost:8000/api/historical_prices', {
+        fetch(`${ML_API_BASE_URL}/api/historical_prices`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

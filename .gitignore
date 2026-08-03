@@ -1,20 +1,30 @@
-# --- Node.js ---
-node_modules/
-dist/
-dist-ssr/
-*.local
-.vite/
+# ── Secrets ───────────────────────────────────────────
 .env
 .env.*
 !.env.example
+infra/docker/.env
 
-# --- Python ---
+# ── Node.js ───────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+.next/
+.nuxt/
+.vite/
+*.tsbuildinfo
+
+# ── Python ────────────────────────────────────────────
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
 *$py.class
 *.so
 .Python
 env/
+venv/
+.venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -30,26 +40,42 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-venv/
-ENV/
 
-# --- OS ---
-.DS_Store
-Thumbs.db
+# ── Local databases and indexes ───────────────────────
+*.db
+*.sqlite
+*.sqlite3
+faiss_index*/
+chroma_db/
+*.index
 
-# --- Log files ---
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# ── ML model weights & large artifacts ────────────────
+*.h5
+*.pkl
+*.pt
+*.pth
+*.onnx
+*.joblib
+*.bin
+*.safetensors
+*.keras
+*.data
+weights/
+checkpoints/
 
-# --- Sagri Excludes ---
+# ── SAGRI & Editor Excludes ───────────────────────────
 .gemini/
 backend/data/
-*.pkl
 scratch_*.tsx
-*.pth
-*.keras
-*.onnx
-*.data
 transcript_*.txt
+*.log
+logs/
+backend_server.log
+frontend_server.log
+
+# ── OS and Editors ────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

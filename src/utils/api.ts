@@ -1,6 +1,7 @@
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-267f669b`;
+export const ML_API_BASE_URL = (import.meta as any).env?.VITE_BACKEND_URL?.trim() || 'http://127.0.0.1:8000';
 
 // Helper to get auth token from localStorage
 function getAuthToken(): string | null {
@@ -211,4 +212,47 @@ export const loanApplicationsApi = {
   getMy: async (): Promise<{ applications: LoanApplication[] }> => {
     return apiRequest('/marketplace/loan-applications');
   },
+};
+
+// Community API
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  author_name: string;
+  content: string;
+  location: string;
+  likes_count: number;
+  comments_count: number;
+  image_url: string | null;
+  created_at: string;
+}
+
+export const communityApi = {
+  getPosts: async (): Promise<{ posts: CommunityPost[] }> => {
+    return apiRequest('/community/posts');
+  },
+  createPost: async (data: { content: string, location: string, author_name: string }): Promise<{ post: CommunityPost }> => {
+    return apiRequest('/community/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+};
+
+// Expert Chat API
+export const expertApi = {
+  chat: async (data: { message: string, expert_name: string, expert_specialty: string }): Promise<{ response: string }> => {
+    const response = await fetch(`${ML_API_BASE_URL}/api/expert-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  }
 };

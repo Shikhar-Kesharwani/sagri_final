@@ -6,9 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 import { supabase } from '../lib/supabase';
-
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_BACKEND_URL?.trim() || 'http://127.0.0.1:8000';
+import { ML_API_BASE_URL } from '../../utils/api';
 
 export function DiseaseDetection() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -34,7 +32,7 @@ export function DiseaseDetection() {
     setAnalyzing(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/detect_disease`, {
+      const response = await fetch(`${ML_API_BASE_URL}/api/detect_disease`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +86,7 @@ export function DiseaseDetection() {
     } catch (error: any) {
       console.error('AI error:', error);
       if (error.message.includes('Failed to fetch')) {
-        toast.error(`Cannot connect to AI backend at ${API_BASE_URL}. Make sure FastAPI is running.`);
+        toast.error(`Cannot connect to AI backend at ${ML_API_BASE_URL}. Make sure FastAPI is running.`);
       } else {
         toast.error(`AI Error: ${error.message}`);
       }

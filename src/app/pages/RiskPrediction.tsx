@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 import { supabase } from '../lib/supabase';
+import { ML_API_BASE_URL } from '../../utils/api';
 
 export function RiskPrediction() {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ export function RiskPrediction() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/predict_risk', {
+      const response = await fetch(`${ML_API_BASE_URL}/api/predict_risk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

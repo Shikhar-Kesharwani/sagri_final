@@ -69,97 +69,6 @@ export function ExpertConnect() {
     scrollToBottom();
   }, [chatMessages]);
 
-  // AI response generator based on expert's specialty
-  const generateAIResponse = (userMessage: string, expert: typeof experts[0]): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    // Greet responses
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
-      return `Hello! ${expert.name} here. ${expert.greeting}`;
-    }
-
-    // Disease-related (Dr. Rajesh Verma)
-    if (expert.name === 'Dr. Rajesh Verma') {
-      if (lowerMessage.includes('spot') || lowerMessage.includes('brown') || lowerMessage.includes('yellow')) {
-        return 'Based on the symptoms you described, this could be a fungal infection or nutrient deficiency. Can you tell me: 1) Which crop is affected? 2) When did you first notice these spots? 3) What\'s the weather like in your area? This will help me provide a more accurate diagnosis.';
-      }
-      if (lowerMessage.includes('wheat') || lowerMessage.includes('rice') || lowerMessage.includes('cotton')) {
-        return 'I see you\'re asking about crop health. To give you the best advice, could you describe the symptoms you\'re seeing? Are there any visible spots, discoloration, or unusual growth patterns? Also, have you noticed any pests?';
-      }
-      if (lowerMessage.includes('pest') || lowerMessage.includes('insect')) {
-        return 'For pest management, I recommend an integrated approach: 1) Identify the specific pest (can you describe it?), 2) Use neem-based organic pesticides initially, 3) Implement crop rotation, 4) Maintain field hygiene. What type of pest are you dealing with?';
-      }
-      if (lowerMessage.includes('treatment') || lowerMessage.includes('cure') || lowerMessage.includes('spray')) {
-        return 'Treatment depends on the specific disease. Generally: 1) Remove and destroy infected plants, 2) Apply appropriate fungicide or pesticide, 3) Improve drainage and air circulation, 4) Follow up with preventive measures. Can you tell me what disease you\'re treating?';
-      }
-    }
-
-    // Soil-related (Dr. Sunita Sharma)
-    if (expert.name === 'Dr. Sunita Sharma') {
-      if (lowerMessage.includes('test') || lowerMessage.includes('testing')) {
-        return 'Soil testing is crucial! I recommend getting your soil tested every 2-3 years. The test will check pH, NPK levels, organic matter, and micronutrients. You can get it done at your nearest agricultural office or through our SAGRI Soil Health feature. Would you like guidance on collecting soil samples?';
-      }
-      if (lowerMessage.includes('fertilizer') || lowerMessage.includes('npk')) {
-        return 'Fertilizer recommendations depend on your soil test results and crop. Generally for Punjab soils: For Wheat - Use 120kg N, 60kg P2O5, 40kg K2O per hectare. For Rice - 150kg N, 60kg P2O5, 40kg K2O. But I strongly recommend soil testing first. What crop are you planning to grow?';
-      }
-      if (lowerMessage.includes('ph') || lowerMessage.includes('acidic') || lowerMessage.includes('alkaline')) {
-        return 'Soil pH is very important! Most crops prefer pH 6.0-7.5. If your soil is too acidic (below 6), add lime. If too alkaline (above 8), add gypsum or sulfur. What\'s your current pH level? If you don\'t know, I can guide you on how to test it.';
-      }
-      if (lowerMessage.includes('organic') || lowerMessage.includes('compost')) {
-        return 'Organic matter is excellent for soil health! I recommend: 1) Add compost (5-10 tons per hectare), 2) Use green manure crops like dhaincha, 3) Apply farmyard manure, 4) Practice crop rotation. This improves soil structure, water retention, and nutrient availability. How much land are you working with?';
-      }
-    }
-
-    // Irrigation-related (Dr. Vikram Singh)
-    if (expert.name === 'Dr. Vikram Singh') {
-      if (lowerMessage.includes('drip') || lowerMessage.includes('irrigation')) {
-        return 'Drip irrigation is highly efficient! Benefits: 1) Saves 40-60% water, 2) Better crop yield, 3) Reduced labor cost, 4) Prevents weed growth. Initial investment is ₹50,000-₹1 lakh per acre, but you\'ll recover it in 2-3 years. Subsidy of 50-80% is available under government schemes. Interested in setting it up?';
-      }
-      if (lowerMessage.includes('water') || lowerMessage.includes('schedule')) {
-        return 'Watering schedule depends on crop and season. For wheat: 5-6 irrigations needed. For rice: Keep 2-3 inches standing water. For cotton: Irrigate every 15-20 days. Best time is early morning or evening. Avoid midday watering. What crop are you irrigating?';
-      }
-      if (lowerMessage.includes('sprinkler')) {
-        return 'Sprinkler systems are great for uniform water distribution! Best for: 1) Wheat, 2) Vegetables, 3) Uneven land. Water saving: 30-40%. Cost: ₹30,000-₹60,000 per acre. Government provides 50% subsidy. Would you like to know about installation process?';
-      }
-    }
-
-    // Organic farming (Dr. Priya Patel)
-    if (expert.name === 'Dr. Priya Patel') {
-      if (lowerMessage.includes('organic') || lowerMessage.includes('certification')) {
-        return 'Organic certification is a great move! Process: 1) 3-year conversion period, 2) Stop all chemical inputs, 3) Maintain detailed records, 4) Annual inspections. Cost: ₹15,000-₹30,000 yearly. But organic products fetch 20-50% premium price! Shall I guide you through the certification process?';
-      }
-      if (lowerMessage.includes('pesticide') || lowerMessage.includes('natural')) {
-        return 'Natural pest control options: 1) Neem oil spray (very effective!), 2) Garlic-chili spray for aphids, 3) Tobacco extract for caterpillars, 4) Cow urine fermentation, 5) Release beneficial insects like ladybugs. These are safe and effective! Which pest problem are you facing?';
-      }
-      if (lowerMessage.includes('compost') || lowerMessage.includes('vermi')) {
-        return 'Composting is the heart of organic farming! Methods: 1) Vermicompost (best quality) - ready in 45-60 days, 2) Pit composting - 3-4 months, 3) NADEP composting - 90 days. Use kitchen waste, crop residue, animal manure. 1 ton of compost replaces 5-6 bags of chemical fertilizer! Want to start composting?';
-      }
-    }
-
-    // General responses
-    if (lowerMessage.includes('thank') || lowerMessage.includes('thanks')) {
-      return `You're welcome! I'm always here to help. Feel free to ask if you have more questions about ${expert.specialty.toLowerCase()}. Happy farming! 🌾`;
-    }
-
-    if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-      return 'For pricing and cost-related queries, I recommend checking the Market Price section in SAGRI app. It shows real-time mandi prices. For input costs, I can guide you based on your specific needs. What would you like to know about?';
-    }
-
-    if (lowerMessage.includes('weather') || lowerMessage.includes('rain')) {
-      return 'Weather is crucial for farming! I recommend checking the Weather Intelligence dashboard in SAGRI for accurate forecasts. Based on weather, I can advise on: 1) Irrigation scheduling, 2) Pest prevention, 3) Harvesting timing. What\'s your specific weather-related concern?';
-    }
-
-    // Default helpful response
-    const defaultResponses = [
-      `That's an interesting question about ${expert.specialty.toLowerCase()}. Could you provide more details so I can give you specific advice? For example: your crop type, current conditions, and what you're trying to achieve.`,
-      `As a ${expert.specialty}, I'd be happy to help with that. To give you the best advice, could you tell me more about your specific situation? What crop are you growing and what exactly are you observing?`,
-      `I have ${expert.experience} of experience in ${expert.specialty.toLowerCase()}. I can definitely help you with this. Can you provide more context? What symptoms or issues are you seeing?`,
-      `Good question! In my experience, the solution depends on several factors. Could you share: 1) Your crop type, 2) Current growth stage, 3) Any visible symptoms? This will help me provide tailored advice.`,
-    ];
-
-    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-  };
-
   const handleExpertSelect = (index: number) => {
     setSelectedExpert(index);
     // Start with expert's greeting
@@ -173,30 +82,46 @@ export function ExpertConnect() {
     ]);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim() || selectedExpert === null) return;
 
+    const currentExpert = experts[selectedExpert];
     const newUserMessage: Message = {
       sender: 'user',
       message: message.trim(),
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setChatMessages([...chatMessages, newUserMessage]);
+    setChatMessages((prev) => [...prev, newUserMessage]);
     setMessage('');
     setIsTyping(true);
 
-    // Simulate AI thinking delay
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(newUserMessage.message, experts[selectedExpert]);
-      const newExpertMessage: Message = {
+    try {
+      // Import the api dynamically or assume it's imported at the top
+      // Wait, we need to import expertApi. Let's do that at the top of the file!
+      const { expertApi } = await import('../../utils/api');
+      
+      const res = await expertApi.chat({
+        message: newUserMessage.message,
+        expert_name: currentExpert.name,
+        expert_specialty: currentExpert.specialty
+      });
+      
+      setChatMessages((prev) => [...prev, {
         sender: 'expert',
-        message: aiResponse,
+        message: res.response,
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setChatMessages((prev) => [...prev, newExpertMessage]);
+      }]);
+    } catch (err) {
+      console.error(err);
+      setChatMessages((prev) => [...prev, {
+        sender: 'expert',
+        message: "I'm having trouble connecting to my knowledge base right now. Please try again later.",
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1500 + Math.random() * 1000); // Random delay 1.5-2.5 seconds for realistic feel
+    }
   };
 
   return (

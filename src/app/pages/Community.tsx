@@ -1,44 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { VoiceAssistant } from '../components/VoiceAssistant';
-import { Users, MessageSquare, ThumbsUp, Share2, Send } from 'lucide-react';
+import { Users, MessageSquare, ThumbsUp, Share2, Send, Loader2 } from 'lucide-react';
 import { BackButton } from '../components/BackButton';
-
+import { communityApi, CommunityPost } from '../../utils/api';
+import { useAuth } from '../components/AuthProvider';
 export function Community() {
+  const { user } = useAuth();
   const [newPost, setNewPost] = useState('');
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const posts = [
-    {
-      author: 'Rajesh Kumar',
-      location: 'Ludhiana, Punjab',
-      time: '2 hours ago',
-      content:
-        'Just harvested my wheat crop! Got excellent yield this season. Happy to share my experience with anyone interested. Used organic fertilizers and proper irrigation timing.',
-      likes: 24,
-      comments: 8,
-      image: true,
-    },
-    {
-      author: 'Suresh Patel',
-      location: 'Amritsar, Punjab',
-      time: '5 hours ago',
-      content:
-        'Anyone facing issues with leaf blight in wheat? Need advice on treatment. Noticed some brown spots on leaves yesterday.',
-      likes: 12,
-      comments: 15,
-      image: false,
-    },
-    {
-      author: 'Mahesh Singh',
-      location: 'Jalandhar, Punjab',
-      time: '1 day ago',
-      content:
-        'Market prices are looking good for rice this week. Amritsar mandi offering best rates. Planning to sell my produce tomorrow.',
-      likes: 18,
-      comments: 6,
-      image: false,
-    },
-  ];
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      const response = await communityApi.getPosts();
+      setPosts(response.posts || []);
+    } catch (error) {
+      console.error('Failed to load posts:', error);
+      toast.error('Failed to load community posts');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPost.trim() || !user) {
+      if (!user) toast.error('Please log in to post');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const response = await communityApi.createPost({
+        content: newPost,
+        location: user.location || 'Unknown Location',
+        author_name: user.name || 'Anonymous Farmer'
+      });
+      setPosts([response.post, ...posts]);
+      setNewPost('');
+      toast.success('Post created successfully!');
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      toast.error('Failed to create post');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const nearbyFarmers = [
     { name: 'Ramesh Yadav', distance: '2 km', crop: 'Wheat' },
@@ -99,10 +111,11 @@ export function Community() {
                       </button>
                     </div>
                     <button
-                      disabled={!newPost.trim()}
+                      onClick={handleCreatePost}
+                      disabled={!newPost.trim() || isSubmitting}
                       className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 transition-all flex items-center gap-2"
                     >
-                      <Send className="w-4 h-4" />
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       Post
                     </button>
                   </div>
@@ -111,47 +124,57 @@ export function Community() {
             </div>
 
             {/* Posts */}
-            {posts.map((post, index) => (
-              <div
-                key={index}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6"
-              >
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-                    {post.author.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{post.author}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {post.location} • {post.time}
-                    </p>
-                  </div>
-                </div>
-
-                <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
-
-                {post.image && (
-                  <div className="mb-4 h-64 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">Crop Image</p>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                    <ThumbsUp className="w-5 h-5" />
-                    <span>{post.likes}</span>
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                    <MessageSquare className="w-5 h-5" />
-                    <span>{post.comments}</span>
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                    <Share2 className="w-5 h-5" />
-                    <span>Share</span>
-                  </button>
-                </div>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-green-500" />
               </div>
-            ))}
+            ) : posts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No posts yet. Be the first to share!
+              </div>
+            ) : (
+              posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6"
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                      {post.author_name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{post.author_name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {post.location} • {new Date(post.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
+
+                  {post.image_url && (
+                    <div className="mb-4 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden">
+                      <img src={post.image_url} alt="Post attachment" className="w-full h-auto max-h-96 object-cover" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                      <ThumbsUp className="w-5 h-5" />
+                      <span>{post.likes_count || 0}</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                      <MessageSquare className="w-5 h-5" />
+                      <span>{post.comments_count || 0}</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                      <Share2 className="w-5 h-5" />
+                      <span>Share</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Sidebar */}

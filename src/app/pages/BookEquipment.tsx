@@ -5,6 +5,8 @@ import { BackButton } from '../components/BackButton';
 import { Tractor, Calendar, MapPin, User, Clock, DollarSign, Star, CheckCircle, Phone } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+import { useAuth } from '../components/AuthProvider';
+import { equipmentBookingsApi } from '../../utils/api';
 
 const EQUIPMENT = [
   {
@@ -145,6 +147,8 @@ const CATEGORIES = [
 ];
 
 export function BookEquipment() {
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedEquipment, setSelectedEquipment] = useState<number | null>(null);
   const [bookingDate, setBookingDate] = useState('');
@@ -160,15 +164,43 @@ export function BookEquipment() {
     setShowBookingModal(true);
   };
 
-  const confirmBooking = () => {
+  const confirmBooking = async () => {
     if (!bookingDate) {
       toast.error('Please select a booking date');
       return;
     }
-    toast.success('🎉 Equipment booked successfully!');
-    setShowBookingModal(false);
-    setBookingDate('');
-    setBookingHours('8');
+    if (!user) {
+      toast.error('Please log in to book equipment');
+      return;
+    }
+
+    const selectedEq = EQUIPMENT.find((eq) => eq.id === selectedEquipment);
+    if (!selectedEq) return;
+
+    setIsSubmitting(true);
+    try {
+      const estimatedCost = parseInt(bookingHours) * selectedEq.pricePerHour;
+      await equipmentBookingsApi.create({
+        equipmentId: selectedEq.id,
+        equipmentName: selectedEq.name,
+        startDate: bookingDate,
+        endDate: bookingDate,
+        duration: parseInt(bookingHours),
+        totalCost: estimatedCost,
+        deliveryAddress: "Farm Address",
+        contactPhone: "N/A"
+      });
+
+      toast.success('🎉 Equipment booked successfully!');
+      setShowBookingModal(false);
+      setBookingDate('');
+      setBookingHours('8');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to book equipment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedEq = EQUIPMENT.find((eq) => eq.id === selectedEquipment);
@@ -429,9 +461,10 @@ export function BookEquipment() {
                 </button>
                 <button
                   onClick={confirmBooking}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all shadow-lg"
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all shadow-lg disabled:opacity-50"
                 >
-                  Confirm Booking
+                  {isSubmitting ? 'Booking...' : 'Confirm Booking'}
                 </button>
               </div>
             </motion.div>

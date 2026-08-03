@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../components/AuthProvider';
 import { BackButton } from '../components/BackButton';
 import { supabase } from '../lib/supabase';
+import { ML_API_BASE_URL } from '../../utils/api';
 
 export function CropRecommendation() {
   const [formData, setFormData] = useState({
@@ -33,7 +34,7 @@ export function CropRecommendation() {
   const { user, updatePoints } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:8001/api/states')
+    fetch(`${ML_API_BASE_URL}/api/states`)
       .then(res => res.json())
       .then(data => {
         if (data.states) {
@@ -51,7 +52,7 @@ export function CropRecommendation() {
     setIsLoadingProfile(true);
     toast.loading(`Fetching ICAR profile for ${newState}...`);
     try {
-      const res = await fetch(`http://localhost:8001/api/state-profile/${newState}`);
+      const res = await fetch(`${ML_API_BASE_URL}/api/state-profile/${newState}`);
       if (!res.ok) throw new Error("Failed to fetch state profile");
       const data = await res.json();
       
@@ -158,7 +159,7 @@ export function CropRecommendation() {
 
     try {
       toast.loading('Analyzing soil data...');
-      const response = await fetch('http://localhost:8001/api/predict_crop', {
+      const response = await fetch(`${ML_API_BASE_URL}/api/predict_crop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +211,7 @@ export function CropRecommendation() {
       // Asynchronously fetch prices
       crops.forEach(async (c: any, index: number) => {
         try {
-          const pRes = await fetch('http://localhost:8001/api/forecast_price', {
+          const pRes = await fetch(`${ML_API_BASE_URL}/api/forecast_price`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ crop_name: c.name.toLowerCase(), state: formData.state || 'Maharashtra' }),

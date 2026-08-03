@@ -7,6 +7,9 @@ import random
 import time
 import sys
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import joblib
 import numpy as np
@@ -22,22 +25,40 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from geo_exclusions import HARD_EXCLUSIONS
 
 # --- API Keys ---
-FAST2SMS_API_KEY = "e8ngMPO4d1ctybvp2IomN3iTkUYuZVWzaFKfE6LqRBXDSQjwx0TNE8wlHfO15rnBIuLzcvdhX439VZmG"
+FAST2SMS_API_KEY = os.getenv("FAST2SMS_API_KEY")
 
 app = FastAPI(title="Sagri ML Backend API")
 logger = logging.getLogger("sagri.backend")
+
+_start_time = time.time()
+
+# --- Health Check Endpoints ---
+@app.get("/health")
+async def health():
+    return {"status": "ok", "uptime": round(time.time() - _start_time, 2)}
+
+@app.get("/ready")
+async def ready():
+    return {"status": "ready"}
+
+@app.get("/live")
+async def live():
+    return {"status": "alive"}
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
 # --- Supabase Configuration ---
-SUPABASE_URL = "https://tnaoasoznlzmbkennoiy.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuYW9hc296bmx6bWJrZW5ub2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTc5OTYsImV4cCI6MjA5MDI5Mzk5Nn0.HabEUgqqzrGx7ng76dnaeKLLF_dvVTek8djPZOmYzU0"
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -918,5 +939,33 @@ def detect_disease(data: DiseaseInput):
         raise
     except Exception as e:
         logger.exception("Backend error during disease detection: %s", e)
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during detection.")
 
+class ExpertChatRequest(BaseModel):
+    message: str
+    expert_name: str
+    expert_specialty: str
+
+@app.post("/api/expert-chat")
+async def expert_chat(req: ExpertChatRequest):
+    # This simulates a backend LLM integration for the Expert Connect feature.
+    # In a real-world scenario, you would call OpenAI, Gemini, or Claude here.
+    logger.info(f"Received chat for {req.expert_name}: {req.message}")
+    
+    # Simple simulated LLM logic
+    msg_lower = req.message.lower()
+    
+    response = ""
+    if "hello" in msg_lower or "hi" in msg_lower or "namaste" in msg_lower:
+        response = f"Hello! I am {req.expert_name}. How can I assist you with {req.expert_specialty.lower()} today?"
+    elif "test" in msg_lower or "soil" in msg_lower:
+        response = f"As a specialist in {req.expert_specialty}, I recommend checking your local agricultural center. They can provide detailed analysis based on our latest models."
+    elif "disease" in msg_lower or "spot" in msg_lower or "pest" in msg_lower:
+        response = "Please use our Disease Detection tool for an accurate AI diagnosis. If you have already done so, share the results with me!"
+    elif "price" in msg_lower or "sell" in msg_lower:
+        response = "I suggest looking at our Market Price forecasting tool. It uses historical trends to help you time your sales."
+    else:
+        # Fallback simulated generative response
+        response = f"That's a great question about {req.expert_specialty.lower()}. Based on my expertise, I would advise monitoring the situation closely and applying best practices for your specific crop and region. Let me know if you need more specific guidance."
+
+    return {"response": response}

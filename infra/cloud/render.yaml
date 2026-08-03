@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: sagri-ml-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ALLOWED_ORIGINS
+        value: https://sagri.vercel.app,http://localhost:5173
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: FAST2SMS_API_KEY
+        sync: false
+    healthCheckPath: /health
