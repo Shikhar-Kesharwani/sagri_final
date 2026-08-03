@@ -18,7 +18,11 @@ import requests as http_requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except (ImportError, AttributeError):
+    # Handle shadowing or uninstalled supabase gracefully
+    create_client, Client = None, None
 
 # Import geographic exclusions
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -51,7 +55,12 @@ MODEL_DIR = BASE_DIR / "models"
 # --- Supabase Configuration ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase_client = None
+if create_client and SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as err:
+        logger.warning("Could not initialize Supabase client: %s", err)
 
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
 allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
