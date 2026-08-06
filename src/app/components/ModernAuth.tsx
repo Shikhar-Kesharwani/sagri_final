@@ -17,7 +17,7 @@ import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'fi
 const EMAILJS_SERVICE_ID  = 'service_zlm6dfd';
 const EMAILJS_TEMPLATE_ID = 'template_gkmqa1l';
 const EMAILJS_PUBLIC_KEY  = 'buGEM--HOcsCraah1';
-const BACKEND_URL         = 'http://localhost:8000';
+const BACKEND_URL         = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const INDIAN_STATES = [
   'Punjab','Haryana','Uttar Pradesh','Madhya Pradesh','Rajasthan',
