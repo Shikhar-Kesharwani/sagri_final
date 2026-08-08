@@ -79,3 +79,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Massive Models
+backend/models/price_forecast_model.pkl
+!backend/models/price_forecast_model_cloud.pkl
