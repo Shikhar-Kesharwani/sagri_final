@@ -1,0 +1,21 @@
+State,N_min,N_max,P_min,P_max,K_min,K_max,pH_min,pH_max,Rain_min,Rain_max,Temp_min,Temp_max,Humidity_min,Humidity_max,Dominant_Soil,Agro_Zone
+Punjab,180,280,20,40,120,200,6.8,7.5,450,650,10,35,50,70,Loamy,Trans-Gangetic Plains
+Haryana,160,260,18,38,110,190,7.0,8.0,400,600,12,40,40,65,Loamy,Trans-Gangetic Plains
+Uttar Pradesh,130,230,15,35,100,180,6.5,7.8,700,1000,15,40,55,75,Loamy,Middle Gangetic Plains
+West Bengal,120,220,15,35,80,160,5.5,6.5,1500,2000,22,35,70,85,Clay,Lower Gangetic Plains
+Bihar,120,200,12,30,80,150,6.0,7.5,1000,1300,18,38,60,80,Clay,Middle Gangetic Plains
+Rajasthan,40,120,8,20,50,100,7.5,9.0,100,400,18,45,20,50,Sandy,Western Dry Region
+Maharashtra,80,160,10,28,60,130,6.5,8.0,600,1200,22,38,50,75,Loamy,Deccan Plateau
+Gujarat,80,150,10,25,55,120,7.0,8.5,400,900,20,42,40,70,Sandy,Gujarat Plains
+Madhya Pradesh,90,170,10,28,65,130,6.5,7.8,800,1200,18,40,50,72,Loamy,Central Plateau
+Karnataka,80,160,12,30,60,130,5.5,7.5,600,1200,20,35,55,78,Laterite,Southern Plateau
+Andhra Pradesh,90,170,12,30,65,140,5.8,7.5,700,1100,22,38,60,80,Loamy,Eastern Plateau
+Telangana,85,165,11,29,60,135,6.0,7.8,700,1100,22,40,55,78,Loamy,Eastern Plateau
+Tamil Nadu,80,160,10,28,60,130,5.5,7.0,800,1400,24,38,65,85,Clay,Southern Plateau
+Kerala,80,150,10,25,60,120,4.5,5.5,2500,3200,24,34,70,90,Laterite,West Coast
+Odisha,100,180,12,30,70,140,5.5,6.8,1200,1600,22,36,65,82,Clay,Eastern Coastal Plains
+Assam,100,180,12,28,65,130,5.0,6.5,1800,2800,18,32,72,88,Clay,North-Eastern Hills
+Himachal Pradesh,80,160,10,25,60,120,5.5,7.0,900,1500,5,28,55,75,Loamy,Western Himalayas
+Uttarakhand,80,150,10,24,58,115,5.5,7.2,1000,2000,8,30,55,78,Loamy,Western Himalayas
+Jharkhand,90,160,10,26,60,120,5.5,6.8,1000,1400,20,35,60,80,Laterite,Jharkhand Plateau
+Chhattisgarh,90,170,10,28,65,130,5.5,7.0,1000,1500,20,38,60,82,Clay,Eastern Plateau
