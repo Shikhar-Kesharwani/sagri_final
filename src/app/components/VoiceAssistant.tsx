@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from './AuthProvider';
+import { queryAgriAssistant } from '../lib/aiService';
 
 // Language codes for Web Speech API
 const LANGUAGE_CODES: Record<Language, string> = {
@@ -464,7 +465,12 @@ export function VoiceAssistant() {
       
       // Feature pages
       {
-        keywords: ['disease', 'रोग', 'बीमारी', 'ਰੋਗ', 'बिमारी', 'रोग', 'நோய்'],
+        keywords: [
+          'disease', 'रोग', 'बीमारी', 'ਰੋਗ', 'बिमारी', 'रोग', 'நோய்',
+          'फसल की बीमारी जांचो', 'फसल की बीमारी', 'बीमारी जांचो', 'रोग पहचान',
+          'check disease', 'crop disease', 'leaf disease',
+          'ਫਸਲ ਦੀ ਬਿਮਾਰੀ ਜਾਂਚੋ', 'ਫਸਲ ਦੀ ਬਿਮਾਰੀ'
+        ],
         action: () => navigate('/disease-detection'),
         response: {
           en: 'Opening disease detection',
@@ -486,7 +492,12 @@ export function VoiceAssistant() {
         },
       },
       {
-        keywords: ['price', 'मूल्य', 'कीमत', 'भाव', 'दाम', 'ਕੀਮਤ', 'किंमत', 'விலை'],
+        keywords: [
+          'price', 'मूल्य', 'कीमत', 'भाव', 'दाम', 'ਕੀਮਤ', 'किंमत', 'விலை',
+          'mandi', 'मंडी', 'मंडी भाव', 'मंडी भाव दिखाओ', 'भाव दिखाओ',
+          'show market prices', 'market prices', 'mandi price', 'mandi bhav',
+          'ਮੰਡੀ ਭਾਅ ਦਿਖਾਓ', 'ਮੰਡੀ ਭਾਅ'
+        ],
         action: () => navigate('/price-forecasting'),
         response: {
           en: 'Opening price forecasting',
@@ -707,22 +718,30 @@ export function VoiceAssistant() {
         setTimeout(() => setIsOpen(false), 2000);
       }
     } else {
-      // Try farming NLU engine before giving up
+      // Try farming NLU engine first
       const farmingResponse = handleFarmingQuery(lowerText);
       if (farmingResponse) {
         setResponse(farmingResponse);
         speak(farmingResponse);
       } else {
-        // Smart clarifying question — never say "I don't understand"
-        const clarify: Record<Language, string> = {
-          en: 'Are you asking about your crop? Say: pest problem, water issue, market price, or government scheme.',
-          hi: 'क्या आप फसल के बारे में पूछ रहे हैं? कीड़ा, पानी, मंडी भाव या सरकारी योजना बोलें।',
-          pa: 'ਕੀ ਤੁਸੀਂ ਫਸਲ ਬਾਰੇ ਪੁੱਛ ਰਹੇ ਹੋ? ਕੀੜਾ, ਪਾਣੀ, ਮੰਡੀ ਭਾਅ ਜਾਂ ਸਰਕਾਰੀ ਯੋਜਨਾ ਦੱਸੋ।',
-          mr: 'तुम्ही पिकाबद्दल विचारत आहात का? कीड, पाणी, मंडी भाव किंवा सरकारी योजना सांगा.',
-          ta: 'நீங்கள் பயிர் பற்றி கேட்கிறீர்களா? பூச்சி, நீர், சந்தை விலை அல்லது அரசு திட்டம் சொல்லுங்கள்.',
-        };
-        setResponse(clarify[language]);
-        speak(clarify[language]);
+        // Connect to Multimodal & Localized Agricultural AI Assistant
+        const langParam = language === 'pa' ? 'pa' : language === 'hi' ? 'hi' : 'en';
+        queryAgriAssistant(text, langParam)
+          .then((aiResp) => {
+            setResponse(aiResp);
+            speak(aiResp);
+          })
+          .catch(() => {
+            const clarify: Record<Language, string> = {
+              en: 'Are you asking about your crop? Say: pest problem, water issue, market price, or government scheme.',
+              hi: 'क्या आप फसल के बारे में पूछ रहे हैं? कीड़ा, पानी, मंडी भाव या सरकारी योजना बोलें।',
+              pa: 'ਕੀ ਤੁਸੀਂ ਫਸਲ ਬਾਰੇ ਪੁੱਛ ਰਹੇ ਹੋ? ਕੀੜਾ, ਪਾਣੀ, ਮੰਡੀ ਭਾਅ ਜਾਂ ਸਰਕਾਰੀ ਯੋਜਨਾ ਦੱਸੋ।',
+              mr: 'तुम्ही पिकाबद्दल विचारत आहात का? कीड, पाणी, मंडी भाव किंवा सरकारी योजना सांगा.',
+              ta: 'நீங்கள் பயிர் பற்றி கேட்கிறீர்களா? பூச்சி, நீர், சந்தை விலை அல்லது அரசு திட்டம் சொல்லுங்கள்.',
+            };
+            setResponse(clarify[language]);
+            speak(clarify[language]);
+          });
       }
     }
   };
