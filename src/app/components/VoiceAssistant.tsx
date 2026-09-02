@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, X, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mic, MicOff, Volume2, X, Sparkles, AlertCircle, CheckCircle, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from './AuthProvider';
-import { queryAgriAssistant } from '../lib/aiService';
+import { queryAgriAssistant, runAgriAgentLoop, ToolInvocation } from '../lib/aiService';
 
 // Language codes for Web Speech API
 const LANGUAGE_CODES: Record<Language, string> = {
@@ -27,6 +27,7 @@ export function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
+  const [activeTools, setActiveTools] = useState<ToolInvocation[]>([]);
   const [isFloating, setIsFloating] = useState(true);
   const [error, setError] = useState('');
   const [isSupported, setIsSupported] = useState(true);
@@ -724,12 +725,13 @@ export function VoiceAssistant() {
         setResponse(farmingResponse);
         speak(farmingResponse);
       } else {
-        // Connect to Multimodal & Localized Agricultural AI Assistant
+        // Connect to Autonomous Agri-Advisory Agent with Function-Calling
         const langParam = language === 'pa' ? 'pa' : language === 'hi' ? 'hi' : 'en';
-        queryAgriAssistant(text, langParam)
-          .then((aiResp) => {
-            setResponse(aiResp);
-            speak(aiResp);
+        runAgriAgentLoop(text, langParam)
+          .then((agentRes) => {
+            setResponse(agentRes.response);
+            speak(agentRes.response);
+            setActiveTools(agentRes.tools_invoked || []);
           })
           .catch(() => {
             const clarify: Record<Language, string> = {
@@ -741,6 +743,7 @@ export function VoiceAssistant() {
             };
             setResponse(clarify[language]);
             speak(clarify[language]);
+            setActiveTools([]);
           });
       }
     }
@@ -908,6 +911,28 @@ export function VoiceAssistant() {
                       {language === 'ta' && 'நீங்கள் சொன்னீர்கள்:'}
                     </p>
                     <p className="text-white font-medium">{transcript}</p>
+                  </motion.div>
+                )}
+
+                {/* Autonomous Agent Tool Execution Trace */}
+                {activeTools.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-black/40 border border-green-400/40 rounded-2xl p-3 mb-3"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1 text-[11px] font-bold text-green-300">
+                      <Cpu className="w-3.5 h-3.5 text-green-400" />
+                      <span>Autonomous Tools Executed:</span>
+                    </div>
+                    <div className="space-y-1">
+                      {activeTools.map((t, idx) => (
+                        <div key={idx} className="text-[10px] font-mono text-emerald-200 bg-white/5 px-2 py-1 rounded border border-white/10 flex items-center justify-between">
+                          <span>⚡ {t.name}()</span>
+                          <span className="text-[9px] text-green-400 font-semibold uppercase">Executed</span>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 )}
 

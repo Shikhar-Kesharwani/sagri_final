@@ -156,6 +156,12 @@ export function PriceForecasting() {
   const mandiDeductionFee = Math.round(grossValue * 0.02); // 2% APMC cess & handling
   const netPayoutAmount = grossValue - mandiDeductionFee;
 
+  // Delayed storage & agri-credit calculation (45-day warehouse receipt)
+  const holdingCost45Days = Math.round(120 * (payoutQuantity || 0)); // ₹120/Qtl warehouse rent & fumigation
+  const delayedGrossValue = Math.round(mandiRatePerQtl * 1.14 * (payoutQuantity || 0)); // +14% seasonal off-peak recovery
+  const delayedNetPayout = delayedGrossValue - holdingCost45Days - Math.round(delayedGrossValue * 0.02);
+  const netStorageGain = delayedNetPayout - netPayoutAmount;
+
   const handlePredict = async () => {
     if (!selectedCrop || !selectedRegion) {
       toast.error('Please select crop and region');
@@ -332,6 +338,12 @@ export function PriceForecasting() {
       grossAmount: grossValue,
       deduction: mandiDeductionFee,
       netPayout: netPayoutAmount,
+      routeSplit: {
+        farmerAmount: netPayoutAmount,
+        apmcCessAmount: mandiDeductionFee,
+        routeId: `route_sagri_apmc_${Math.random().toString(36).substring(2, 7)}`,
+        settlementRail: 'NPCI UPI Direct Payouts'
+      },
       timestamp: new Date().toLocaleString('en-IN', {
         dateStyle: 'medium',
         timeStyle: 'medium'
@@ -673,6 +685,45 @@ export function PriceForecasting() {
                     </span>
                   </div>
                 </div>
+
+                {/* Immediate Payout vs Delayed Storage Strategy Comparison */}
+                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 flex items-center justify-between">
+                    <span>Fintech Strategy Evaluation: Instant vs Storage Payout</span>
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold lowercase">ai financial advisory</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Option A */}
+                    <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/70 dark:border-blue-800/40 rounded-xl">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-blue-900 dark:text-blue-300">Option A: Immediate Digital Payout</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded font-semibold">Zero Risk</span>
+                      </div>
+                      <p className="text-lg font-black text-green-600 dark:text-green-400">
+                        ₹{netPayoutAmount.toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
+                        Instant RazorpayX UPI transfer in &lt; 5 seconds. Zero storage cost, 0% moisture shrinkage loss.
+                      </p>
+                    </div>
+
+                    {/* Option B */}
+                    <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/40 rounded-xl">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-300">Option B: 45-Day Warehouse Receipt</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded font-semibold">WDRA Pledge</span>
+                      </div>
+                      <p className="text-lg font-black text-amber-600 dark:text-amber-400">
+                        ₹{delayedNetPayout.toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
+                        {netStorageGain > 0 
+                          ? `Projected net gain: +₹${netStorageGain.toLocaleString('en-IN')} after ₹${holdingCost45Days.toLocaleString('en-IN')} storage fee.` 
+                          : `Storage carrying cost exceeds seasonal surge by ₹${Math.abs(netStorageGain).toLocaleString('en-IN')}. Liquidate now.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-6 mt-4 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
@@ -766,6 +817,31 @@ export function PriceForecasting() {
                     <span className="text-gray-500">{receiptData.timestamp}</span>
                   </div>
                 </div>
+
+                {/* Razorpay Route Automated Split Ledger */}
+                {receiptData.routeSplit && (
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-1.5 text-[11px]">
+                    <span className="font-bold text-gray-800 dark:text-gray-200 block uppercase tracking-wider text-[10px]">
+                      Razorpay Route Automated Split Ledger
+                    </span>
+                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                      <span>Farmer Direct Net Credit (98%):</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">
+                        ₹{receiptData.routeSplit.farmerAmount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                      <span>APMC Market Committee Cess (2%):</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">
+                        ₹{receiptData.routeSplit.apmcCessAmount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 text-[10px] pt-1 border-t border-gray-200 dark:border-gray-800">
+                      <span>Route ID: {receiptData.routeSplit.routeId}</span>
+                      <span>Rail: {receiptData.routeSplit.settlementRail}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50 text-[11px] text-blue-800 dark:text-blue-300 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
