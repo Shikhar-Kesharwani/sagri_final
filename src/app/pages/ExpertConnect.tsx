@@ -4,6 +4,7 @@ import { VoiceAssistant } from '../components/VoiceAssistant';
 import { MessageCircle, Send, User, CheckCircle, Bot, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { BackButton } from '../components/BackButton';
+import { expertApi } from '../../utils/api';
 
 interface Message {
   sender: 'expert' | 'user';
@@ -97,10 +98,6 @@ export function ExpertConnect() {
     setIsTyping(true);
 
     try {
-      // Import the api dynamically or assume it's imported at the top
-      // Wait, we need to import expertApi. Let's do that at the top of the file!
-      const { expertApi } = await import('../../utils/api');
-      
       const res = await expertApi.chat({
         message: newUserMessage.message,
         expert_name: currentExpert.name,

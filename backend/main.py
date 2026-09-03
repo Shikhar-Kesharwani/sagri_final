@@ -957,24 +957,139 @@ class ExpertChatRequest(BaseModel):
 
 @app.post("/api/expert-chat")
 async def expert_chat(req: ExpertChatRequest):
-    # This simulates a backend LLM integration for the Expert Connect feature.
-    # In a real-world scenario, you would call OpenAI, Gemini, or Claude here.
-    logger.info(f"Received chat for {req.expert_name}: {req.message}")
-    
-    # Simple simulated LLM logic
-    msg_lower = req.message.lower()
-    
-    response = ""
-    if "hello" in msg_lower or "hi" in msg_lower or "namaste" in msg_lower:
-        response = f"Hello! I am {req.expert_name}. How can I assist you with {req.expert_specialty.lower()} today?"
-    elif "test" in msg_lower or "soil" in msg_lower:
-        response = f"As a specialist in {req.expert_specialty}, I recommend checking your local agricultural center. They can provide detailed analysis based on our latest models."
-    elif "disease" in msg_lower or "spot" in msg_lower or "pest" in msg_lower:
-        response = "Please use our Disease Detection tool for an accurate AI diagnosis. If you have already done so, share the results with me!"
-    elif "price" in msg_lower or "sell" in msg_lower:
-        response = "I suggest looking at our Market Price forecasting tool. It uses historical trends to help you time your sales."
-    else:
-        # Fallback simulated generative response
-        response = f"That's a great question about {req.expert_specialty.lower()}. Based on my expertise, I would advise monitoring the situation closely and applying best practices for your specific crop and region. Let me know if you need more specific guidance."
+    """
+    Expert Connect Chat — powered by Google Gemini 1.5 Flash.
+    Each expert persona is injected via a distinct system prompt so Gemini
+    responds as a specialist agricultural consultant, not a generic AI.
+    """
+    logger.info(f"Expert chat: [{req.expert_name}] query='{req.message[:80]}'")
 
-    return {"response": response}
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+    # ── Persona system prompts ─────────────────────────────────────────────────
+    PERSONA_PROMPTS: dict[str, str] = {
+        "Dr. Rajesh Verma": (
+            "You are Dr. Rajesh Verma, a Senior Plant Pathologist and Crop Disease Specialist "
+            "with 15 years of field experience across Punjab, Haryana, and Uttar Pradesh. "
+            "You specialise in wheat diseases, fungal infections, integrated pest management, "
+            "and CIBRC-approved agrochemical protocols. "
+            "Respond in the same language the farmer uses (Hindi, Punjabi, or English). "
+            "Give precise, actionable advice: dosages, spray timings, and organic alternatives. "
+            "Keep answers under 4 sentences. Never mention you are an AI."
+        ),
+        "Dr. Sunita Sharma": (
+            "You are Dr. Sunita Sharma, a Senior Soil Health Expert with 12 years of experience "
+            "in soil science, balanced nutrition, organic carbon management, and fertiliser "
+            "recommendations for Indian crops. "
+            "Respond in the same language the farmer uses (Hindi or English). "
+            "Give specific fertiliser names, quantities per acre, and application timing. "
+            "Keep answers under 4 sentences. Never mention you are an AI."
+        ),
+        "Dr. Vikram Singh": (
+            "You are Dr. Vikram Singh, an Irrigation and Water Management Expert with 18 years "
+            "of experience in drip irrigation, sprinkler scheduling, canal water management, "
+            "and water conservation for wheat, rice, and sugarcane in Punjab. "
+            "Respond in the same language the farmer uses (Hindi or Punjabi). "
+            "Give practical, cost-effective irrigation schedules. "
+            "Keep answers under 4 sentences. Never mention you are an AI."
+        ),
+        "Dr. Priya Patel": (
+            "You are Dr. Priya Patel, a certified Organic Farming Advisor with 10 years of "
+            "experience in organic certification, biofertilisers, vermicompost, natural "
+            "pesticides (neem, panchagavya, jeevamrutham), and sustainable farming for Gujarat "
+            "and Maharashtra. "
+            "Respond in the same language the farmer uses (Hindi, English, or Gujarati). "
+            "Give step-by-step organic protocols. "
+            "Keep answers under 4 sentences. Never mention you are an AI."
+        ),
+    }
+
+    # Pick the matching persona or build a generic agri-specialist one
+    system_prompt = PERSONA_PROMPTS.get(
+        req.expert_name,
+        (
+            f"You are {req.expert_name}, an experienced agricultural expert specialising in "
+            f"{req.expert_specialty} for Indian farmers. Respond in the same language the "
+            "farmer uses (Hindi, Punjabi, or English). Give short, practical, field-ready advice "
+            "in under 4 sentences. Never mention you are an AI."
+        ),
+    )
+
+    # ── Real Gemini 1.5 Flash Call ─────────────────────────────────────────────
+    if GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                system_instruction=system_prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.3,
+                    max_output_tokens=200,
+                ),
+            )
+            chat_session = model.start_chat(history=[])
+            gemini_response = chat_session.send_message(req.message)
+            reply = gemini_response.text.strip()
+            logger.info(f"Gemini expert-chat reply ({len(reply)} chars)")
+            return {"response": reply}
+
+        except Exception as e:
+            logger.warning(f"Gemini expert-chat failed, using intelligent fallback: {e}")
+
+    # ── Intelligent Fallback (when GEMINI_API_KEY is missing / quota exceeded) ─
+    msg_lower = req.message.lower()
+    specialty_lower = req.expert_specialty.lower()
+
+    if any(w in msg_lower for w in ["hello", "hi", "namaste", "sat sri akal", "kem cho"]):
+        reply = (
+            f"Namaste! I am {req.expert_name}, specialist in {req.expert_specialty}. "
+            "Please describe your farm situation in detail so I can give you precise advice."
+        )
+    elif any(w in msg_lower for w in ["disease", "blight", "rust", "fungus", "spot", "rot", "pest", "insect", "kida"]):
+        reply = (
+            "For accurate disease identification, upload a clear photo of the affected leaf in "
+            "our Disease Detection tool. Once diagnosed, I can suggest the exact CIBRC-approved "
+            "chemical dosage and organic biocontrol protocol for your crop."
+        )
+    elif any(w in msg_lower for w in ["price", "mandi", "sell", "bhav", "rate", "bechna"]):
+        reply = (
+            "Check the Price Forecasting page for live mandi trends and our 6-month price "
+            "trajectory model. The Instant Mandi Payout Calculator there will give you the "
+            "exact net settlement after APMC cess deduction."
+        )
+    elif any(w in msg_lower for w in ["soil", "nitrogen", "phosphorus", "potassium", "ph", "fertilizer", "khad"]):
+        reply = (
+            f"As a {specialty_lower} specialist, I recommend getting a formal soil test from "
+            "your nearest Krishi Vigyan Kendra first. Based on typical deficiencies in your "
+            "region, applying DAP at 50 kg/acre and MOP at 25 kg/acre before sowing is a "
+            "strong starting protocol."
+        )
+    elif any(w in msg_lower for w in ["water", "irrigation", "drip", "sprinkler", "paani", "sinchai"]):
+        reply = (
+            "For wheat, irrigation at CRI (Crown Root Initiation, 21 DAS) and heading stages "
+            "is critical. Drip irrigation can reduce water use by 40% versus flood irrigation. "
+            "Install a soil moisture sensor to avoid overwatering and reduce fungal risk."
+        )
+    elif any(w in msg_lower for w in ["organic", "jeevamrutham", "panchagavya", "neem", "vermicompost", "jaivik"]):
+        reply = (
+            "For organic disease control, spray 5% Neem Seed Kernel Extract (NSKE) every "
+            "10 days. Apply Jeevamrutham (200L/acre) to boost soil microbiome. "
+            "Trichoderma viride mixed with vermicompost at 2.5 kg/acre controls soil-borne pathogens."
+        )
+    else:
+        reply = (
+            f"That's an important question for {specialty_lower}. Based on current ICAR "
+            f"advisory for your crop, monitor the situation closely for the next 5-7 days "
+            "and document any visible changes. If symptoms worsen, use our Disease Detection "
+            "AI for an instant diagnosis. Feel free to share more details!"
+        )
+
+    return {"response": reply}
+
+
+@app.get('/health/deploy')
+def health_deploy(): return {'status': 'ok'}
+@app.get('/ready/deploy')
+def ready_deploy(): return {'status': 'ready'}
