@@ -128,8 +128,10 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     try {
       if (authMethod === 'email') {
         if (!email.includes('@') || !email.includes('.')) { setError('Enter a valid email address'); setIsLoading(false); return; }
-        const { data: existData } = await supabase.from('registered_emails').select('email').eq('email', email.toLowerCase()).maybeSingle();
-        if (existData) { setError('⚠️ This email is already registered. Please use the Login tab to sign in.'); setIsLoading(false); return; }
+        try {
+          const { data: existData } = await supabase.from('registered_emails').select('email').eq('email', email.toLowerCase()).maybeSingle();
+          if (existData) { setError('⚠️ This email is already registered. Please use the Login tab to sign in.'); setIsLoading(false); return; }
+        } catch (_) {}
         const res  = await fetch(`${BACKEND_URL}/api/send-email-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Failed to generate OTP');
@@ -229,12 +231,16 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
     try {
       if (authMethod === 'email') {
         await signup(email, password, name, role, undefined, state, district, village, pincode, landSize, primaryCrop);
-        await supabase.from('registered_emails').insert([{ email: email.toLowerCase() }]);
+        try {
+          await supabase.from('registered_emails').insert([{ email: email.toLowerCase() }]);
+        } catch (_) {}
       } else {
         const pseudoEmail = `${phone}@sagri.app`;
         const pseudoPassword = `Sagri${phone}!!`;
         await signup(pseudoEmail, pseudoPassword, name, role, phone, state, district, village, pincode, landSize, primaryCrop);
-        await supabase.from('registered_emails').insert([{ email: pseudoEmail.toLowerCase() }]);
+        try {
+          await supabase.from('registered_emails').insert([{ email: pseudoEmail.toLowerCase() }]);
+        } catch (_) {}
       }
       setShowWelcome(true);
     } catch (err: any) {
