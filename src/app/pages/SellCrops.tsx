@@ -105,7 +105,7 @@ export function SellCrops() {
     const fetchListings = async () => {
       try {
         const { listings } = await cropListingsApi.getMy();
-        setMyListings(listings);
+        setMyListings(listings || []);
       } catch (error) {
         console.error('Error fetching listings:', error);
         // Fail silently on initial load

@@ -2,6 +2,7 @@ import { Header } from '../components/Header';
 import { VoiceAssistant } from '../components/VoiceAssistant';
 import { Leaf, Droplet, Wind, TestTube } from 'lucide-react';
 import { BackButton } from '../components/BackButton';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 export function SoilHealth() {
   const soilData = [

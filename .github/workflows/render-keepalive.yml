@@ -1,0 +1,47 @@
+name: Render 90-Day Keep-Alive
+
+on:
+  schedule:
+    # Runs on the 1st of every month at 9 AM UTC
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-redeploy:
+    name: Trigger Render Redeployments
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger all Render Deploy Hooks
+        run: |
+          echo "Triggering monthly Render redeployments to prevent 90-day expiry..."
+
+          # Add your Render Deploy Hook URLs as GitHub Secrets:
+          # Go to: Render Dashboard → Service → Settings → Deploy Hooks → Generate
+          # Then add to GitHub: Settings → Secrets → Actions → New secret
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_REVIEWFORGE }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_REVIEWFORGE }}" && \
+            echo "ReviewForge redeployed" || echo "ReviewForge: add RENDER_DEPLOY_HOOK_REVIEWFORGE secret"
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_AGENTFORGE }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_AGENTFORGE }}" && \
+            echo "AgentForge redeployed" || echo "AgentForge: add RENDER_DEPLOY_HOOK_AGENTFORGE secret"
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_NSE }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_NSE }}" && \
+            echo "NSE Intelligence redeployed" || echo "NSE: add RENDER_DEPLOY_HOOK_NSE secret"
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_PLANEXECUTE }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_PLANEXECUTE }}" && \
+            echo "PlanExecute redeployed" || echo "PlanExecute: add RENDER_DEPLOY_HOOK_PLANEXECUTE secret"
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_STOCKLLM }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_STOCKLLM }}" && \
+            echo "StockMarketLLM redeployed" || echo "StockLLM: add RENDER_DEPLOY_HOOK_STOCKLLM secret"
+
+          [ -n "${{ secrets.RENDER_DEPLOY_HOOK_CARDIOAI }}" ] && \
+            curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_CARDIOAI }}" && \
+            echo "CardioAI redeployed" || echo "CardioAI: add RENDER_DEPLOY_HOOK_CARDIOAI secret"
+
+          echo "Monthly Render keep-alive done at $(date -u)"

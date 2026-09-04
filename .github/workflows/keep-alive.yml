@@ -1,0 +1,40 @@
+name: Keep-Alive Pinger
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-all-services:
+    name: Ping All Deployed Services
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Render Backends
+        run: |
+          echo "Pinging Render backends to prevent sleep..."
+          curl -sf --max-time 30 https://reviewforge-backend.onrender.com/health || echo "ReviewForge: waking up"
+          curl -sf --max-time 30 https://agentforge-backend.onrender.com/health || echo "AgentForge: waking up"
+          curl -sf --max-time 30 https://nse-intelligence-backend.onrender.com/health || echo "NSE: waking up"
+          curl -sf --max-time 30 https://plan-execute-agent.onrender.com/health || echo "PlanExecute: waking up"
+          curl -sf --max-time 30 https://stock-market-llm.onrender.com/health || echo "StockLLM: waking up"
+          curl -sf --max-time 30 https://cardio-ai-engine.onrender.com/health || echo "CardioAI: waking up"
+
+      - name: Ping Streamlit Apps
+        run: |
+          echo "Pinging Streamlit apps to prevent 48h sleep..."
+          curl -sf --max-time 30 https://spatial-analysis-app.streamlit.app || echo "SpatialAnalysis: waking"
+          curl -sf --max-time 30 https://spatial-data-app.streamlit.app || echo "SpatialData: waking"
+          curl -sf --max-time 30 https://adaptive-rag.streamlit.app || echo "AdaptiveRAG: waking"
+
+      - name: Ping Vercel Frontends
+        run: |
+          echo "Verifying Vercel frontends are live..."
+          curl -sf --max-time 15 https://sagriai.vercel.app || echo "SAGRI frontend: check Vercel"
+          curl -sf --max-time 15 https://reviewforge.vercel.app || echo "ReviewForge frontend: check Vercel"
+          curl -sf --max-time 15 https://respire.vercel.app || echo "ChestHeart: check Vercel"
+
+      - name: Done
+        run: echo "Keep-alive complete at $(date -u)"

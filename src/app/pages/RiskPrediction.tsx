@@ -92,12 +92,24 @@ export function RiskPrediction() {
       toast.success(data.is_mock ? 'Mock assessment complete!' : 'AI Risk assessment complete! +15 points');
 
       if (user?.email) {
-        await supabase.from('prediction_history').insert([{
-          user_email: user.email,
-          prediction_type: 'Risk Assessment',
-          input_data: formData,
-          result: `${risk.level} Risk`,
-        }]);
+        try {
+          await supabase.from('prediction_history').insert([{
+            user_email: user.email,
+            prediction_type: 'Risk Assessment',
+            input_data: formData,
+            result: `${risk.level} Risk`,
+          }]);
+        } catch (_) {}
+        try {
+          const list = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+          list.unshift({
+            prediction_type: 'Risk Assessment',
+            result: `${risk.level} Risk`,
+            input_data: formData,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('sagri_prediction_history', JSON.stringify(list.slice(0, 50)));
+        } catch (_) {}
       }
     } catch (error) {
       setLoading(false);

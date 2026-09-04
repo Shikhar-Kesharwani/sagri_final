@@ -535,8 +535,29 @@ export async function runAgriAgentLoop(
     q.includes('ਭਾਅ') ||
     q.includes('ਮੰਡੀ')
   ) {
-    const crops = ['wheat', 'rice', 'cotton', 'tomato', 'mustard', 'maize', 'soyabean', 'onion', 'potato'];
-    const detectedCrop = crops.find((c) => q.includes(c)) || 'wheat';
+    const cropAliases: Record<string, string> = {
+      gehu: 'wheat', 'गेहूं': 'wheat', kanak: 'wheat', 'ਕਣਕ': 'wheat',
+      dhan: 'rice', 'चावल': 'rice', chawal: 'rice', 'ਝੋਨਾ': 'rice',
+      kapas: 'cotton', 'कपास': 'cotton', narma: 'cotton',
+      tamatar: 'tomato', 'टमाटर': 'tomato',
+      sarson: 'mustard', 'सरसों': 'mustard', raya: 'mustard',
+      makka: 'maize', 'मक्का': 'maize',
+      soyabean: 'soyabean', 'सोयाबीन': 'soyabean',
+      pyaz: 'onion', 'प्याज': 'onion',
+      aloo: 'potato', 'आलू': 'potato'
+    };
+    let detectedCrop = 'wheat';
+    for (const [alias, crop] of Object.entries(cropAliases)) {
+      if (q.includes(alias)) {
+        detectedCrop = crop;
+        break;
+      }
+    }
+    if (detectedCrop === 'wheat') {
+      const standardCrops = ['wheat', 'rice', 'cotton', 'tomato', 'mustard', 'maize', 'soyabean', 'onion', 'potato'];
+      const matched = standardCrops.find((c) => q.includes(c));
+      if (matched) detectedCrop = matched;
+    }
     const mandiResult = get_mandi_prices(detectedCrop, 'Azadpur APMC Hub');
     toolsInvoked.push({
       name: 'get_mandi_prices',

@@ -29,7 +29,7 @@ def main():
     
     # 1. Load Data
     print("📊 Loading dataset...")
-    df = pd.read_csv('Crop_recommendation.csv')
+    df = pd.read_csv('backend/data/Crop_recommendation.csv')
     
     # 2. Prepare Features and Target
     X = df.drop('label', axis=1) # Nitrogen, Phosphorus, Potassium, temp, etc.
@@ -52,10 +52,14 @@ def main():
     print("\nDetailed Report:\n", classification_report(y_test, predictions))
     
     # 6. Save Model
-    model_filename = 'crop_random_forest.pkl'
-    joblib.dump(model, model_filename)
+    model_filename = 'backend/models/crop_random_forest.pkl'
+    payload = {
+        "model": model,
+        "features": list(X_train.columns),
+        "model_type": "random_forest_classifier"
+    }
+    joblib.dump(payload, model_filename)
     print(f"🎯 Model successfully trained and saved as '{model_filename}'!")
-    print("Now you can download this .pkl file and put it in your backend folder.")
 
 if __name__ == "__main__":
     try:

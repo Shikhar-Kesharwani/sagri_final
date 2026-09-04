@@ -37,7 +37,7 @@ except ImportError:
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH  = os.path.join(BASE, "backend", "data", "india_crop_risk_master.csv")
-MODEL_PATH = os.path.join(BASE, "backend", "crop_risk_model.pkl")
+MODEL_PATH = os.path.join(BASE, "backend", "models", "crop_risk_model.pkl")
 
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 # 2. LOAD DATA
@@ -82,54 +82,46 @@ df["log_area"] = np.log1p(df["Area"].fillna(0))
 # relative yield deviation from rolling mean (how stressed this crop is)
 df["yield_deviation_pct"] = df["yield_shock_pct"].fillna(0).clip(-100, 200)
 
-# --- Encode categorical: Crop and Season ---
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 4. TIME-SERIES SPLIT (NO DATA LEAKAGE)
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+TRAIN_CUTOFF = 2013   # Train: 1969–2012, Test: 2013–2017
+
+train_mask = (df["Crop_Year"] < TRAIN_CUTOFF)
+train_df = df[train_mask].copy()
+test_df  = df[~train_mask].copy()
+
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# 5. ENCODE CATEGORICALS (Fit strictly on Train)
+# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 crop_encoder   = LabelEncoder()
 season_encoder = LabelEncoder()
 
-df["Crop_clean"]   = df["Crop"].astype(str).str.strip().str.upper()
-df["Season_clean"] = df["Season"].fillna("UNKNOWN").astype(str).str.strip().str.upper()
-df["has_climate"] = df["Source"].isin(["MENDELEY", "NASA_POWER", "NASA_POWER_FULL", "IMD_1966_1980", "IMD_1966_1980_RETRY"])
+# Clean raw text
+train_df["Crop_clean"]   = train_df["Crop"].astype(str).str.strip().str.upper()
+train_df["Season_clean"] = train_df["Season"].fillna("UNKNOWN").astype(str).str.strip().str.upper()
+test_df["Crop_clean"]    = test_df["Crop"].astype(str).str.strip().str.upper()
+test_df["Season_clean"]  = test_df["Season"].fillna("UNKNOWN").astype(str).str.strip().str.upper()
 
-df["crop_enc"]   = crop_encoder.fit_transform(df["Crop_clean"])
-df["season_enc"] = season_encoder.fit_transform(df["Season_clean"])
+# Fit only on train
+train_df["crop_enc"]   = crop_encoder.fit_transform(train_df["Crop_clean"])
+train_df["season_enc"] = season_encoder.fit_transform(train_df["Season_clean"])
 
-# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-# 4. SELECT FEATURES FOR THE MODEL
-# ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# Safe transform for test (handle unknown categories gracefully)
+known_crops = set(crop_encoder.classes_)
+known_seasons = set(season_encoder.classes_)
 
-# These are the features the model will train on.
-# The backend API sends: cropType, soilPh, rainfall, temperature, humidity
-# We map those to the closest real features + enrich from what we have.
-FEATURE_COLS = [
-    "crop_enc",           # encoded crop type  ΓåÉ maps to cropType
-    "season_enc",         # encoded season      ΓåÉ maps to season (Kharif/Rabi/etc.)
-    "temp_mean",          # mean temperature    ΓåÉ maps to temperature
-    "temp_summer_max",    # summer max temp
-    "temp_rainy_max",     # rainy max temp
-    "total_rainfall",     # total precip        ΓåÉ maps to rainfall
-    "evapotranspiration", # water stress
-    "windspeed",          # wind
-    "nitrogen",           # N fertiliser        ΓåÉ maps to N (soil nutrient)
-    "phosphate",          # P fertiliser        ΓåÉ maps to P
-    "potash",             # K fertiliser        ΓåÉ maps to K
-    "irrigated_area",     # irrigation          ΓåÉ maps to irrigation
-    "log_area",           # farm size
-    "Crop_Year",          # year (trend signal)
-    "yield_deviation_pct",# historical stress signal
-]
+test_df["Crop_clean"] = test_df["Crop_clean"].apply(lambda x: x if x in known_crops else list(known_crops)[0])
+test_df["Season_clean"] = test_df["Season_clean"].apply(lambda x: x if x in known_seasons else list(known_seasons)[0])
 
-TARGET = "crop_failure"
-
-# Drop rows with no target
-df = df.dropna(subset=[TARGET])
-df[TARGET] = df[TARGET].astype(int)
+test_df["crop_enc"]   = crop_encoder.transform(test_df["Crop_clean"])
+test_df["season_enc"] = season_encoder.transform(test_df["Season_clean"])
 
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-# 5. MEDIAN IMPUTATION (for rows without climate data)
+# 6. MEDIAN IMPUTATION (Calculated strictly on Train)
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-print("Imputing missing climate values with crop-level medians...")
+print("Imputing missing climate values (strictly from train medians)...")
 
-# For each climate feature, fill missing values with the median of that crop
 climate_features = [
     "temp_mean", "temp_summer_max", "temp_rainy_max",
     "temp_summer_min", "temp_rainy_min",
@@ -138,32 +130,42 @@ climate_features = [
 ]
 
 for col in climate_features:
-    if col in df.columns:
-        # fill per-crop median, then global median as fallback
-        crop_medians = df.groupby("crop_enc")[col].transform("median")
-        global_median = df[col].median()
-        df[col] = df[col].fillna(crop_medians).fillna(global_median)
-
-# Fill any remaining with 0
-df[FEATURE_COLS] = df[FEATURE_COLS].fillna(0)
-
-print(f"Feature matrix ready: {df[FEATURE_COLS].shape}")
+    if col in train_df.columns:
+        # Calculate mathematically pure medians from train ONLY
+        crop_medians_map = train_df.groupby("crop_enc")[col].median()
+        global_median = train_df[col].median()
+        
+        # Apply to Train
+        train_df[col] = train_df[col].fillna(train_df["crop_enc"].map(crop_medians_map)).fillna(global_median)
+        # Apply to Test
+        test_df[col]  = test_df[col].fillna(test_df["crop_enc"].map(crop_medians_map)).fillna(global_median)
 
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-# 6. TIME-SERIES SPLIT (NO DATA LEAKAGE)
+# 7. SELECT FEATURES FOR THE MODEL
 # ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-TRAIN_CUTOFF = 2013   # Train: 1969–2012, Test: 2013–2017
+FEATURE_COLS = [
+    "crop_enc", "season_enc", "temp_mean", "temp_summer_max", 
+    "temp_rainy_max", "total_rainfall", "evapotranspiration", 
+    "windspeed", "nitrogen", "phosphate", "potash", 
+    "irrigated_area", "log_area", "Crop_Year", "yield_deviation_pct"
+]
+TARGET = "crop_failure"
 
-train_mask = (df["Crop_Year"] < TRAIN_CUTOFF)
-train_df = df[train_mask]
-test_df  = df[df["Crop_Year"] >= TRAIN_CUTOFF]
+train_df = train_df.dropna(subset=[TARGET])
+test_df  = test_df.dropna(subset=[TARGET])
+
+train_df[TARGET] = train_df[TARGET].astype(int)
+test_df[TARGET]  = test_df[TARGET].astype(int)
+
+train_df[FEATURE_COLS] = train_df[FEATURE_COLS].fillna(0)
+test_df[FEATURE_COLS]  = test_df[FEATURE_COLS].fillna(0)
 
 X_train = train_df[FEATURE_COLS]
 y_train = train_df[TARGET]
 X_test  = test_df[FEATURE_COLS]
 y_test  = test_df[TARGET]
 
-print(f"\nTime-series split:")
+print(f"\nTime-series split summary:")
 print(f"  Train: {X_train.shape[0]:,} rows | years 1969-{TRAIN_CUTOFF}")
 print(f"  Test:  {X_test.shape[0]:,} rows  | years {TRAIN_CUTOFF+1}-2017")
 print(f"  Train failure rate: {y_train.mean()*100:.1f}%")

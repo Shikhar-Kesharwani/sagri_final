@@ -105,7 +105,7 @@ export function BuySeeds() {
         try {
           const { items } = await cartApi.get();
           const cartMap: Record<number, number> = {};
-          items.forEach((item: any) => { cartMap[item.seedId] = item.quantity; });
+          (items || []).forEach((item: any) => { cartMap[item.seedId] = item.quantity; });
           setCart(cartMap);
         } catch (error) { console.error('Error loading cart:', error); }
       }

@@ -5,6 +5,7 @@ import { Users, MessageSquare, ThumbsUp, Share2, Send, Loader2 } from 'lucide-re
 import { BackButton } from '../components/BackButton';
 import { communityApi, CommunityPost } from '../../utils/api';
 import { useAuth } from '../components/AuthProvider';
+import { toast } from 'sonner';
 export function Community() {
   const { user } = useAuth();
   const [newPost, setNewPost] = useState('');

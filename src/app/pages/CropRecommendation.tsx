@@ -248,12 +248,24 @@ export function CropRecommendation() {
       });
       
       if (user?.email && crops.length > 0) {
-        await supabase.from('prediction_history').insert([{
-          user_email: user.email,
-          prediction_type: 'Crop Recommendation',
-          input_data: formData,
-          result: crops[0].name,
-        }]);
+        try {
+          await supabase.from('prediction_history').insert([{
+            user_email: user.email,
+            prediction_type: 'Crop Recommendation',
+            input_data: formData,
+            result: crops[0].name,
+          }]);
+        } catch (_) {}
+        try {
+          const list = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+          list.unshift({
+            prediction_type: 'Crop Recommendation',
+            result: crops[0].name,
+            input_data: formData,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('sagri_prediction_history', JSON.stringify(list.slice(0, 50)));
+        } catch (_) {}
       }
 
     } catch (error) {

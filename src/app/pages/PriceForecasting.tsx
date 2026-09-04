@@ -307,14 +307,26 @@ export function PriceForecasting() {
       toast.success('Market forecasting generated! +12 Krishi points.');
 
       if (user?.email) {
-        await supabase.from('prediction_history').insert([
-          {
-            user_email: user.email,
+        try {
+          await supabase.from('prediction_history').insert([
+            {
+              user_email: user.email,
+              prediction_type: 'Price Forecast',
+              input_data: { crop: selectedCrop, state: selectedRegion },
+              result: `₹${forecast?.currentPrice || 2275}/Qtl target analysis`
+            }
+          ]);
+        } catch (_) {}
+        try {
+          const list = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+          list.unshift({
             prediction_type: 'Price Forecast',
+            result: `₹${forecast?.currentPrice || 2275}/Qtl target analysis`,
             input_data: { crop: selectedCrop, state: selectedRegion },
-            result: `₹${forecast?.currentPrice || 2275}/Qtl target analysis`
-          }
-        ]);
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('sagri_prediction_history', JSON.stringify(list.slice(0, 50)));
+        } catch (_) {}
       }
     }
   };

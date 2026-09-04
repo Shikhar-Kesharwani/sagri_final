@@ -71,8 +71,37 @@ export function PredictionHistory() {
           ]);
         }
       } catch (err) {
-        console.error("Error fetching history", err);
-        toast.error("Could not load prediction history");
+        console.warn("Using local prediction history fallback:", err);
+        try {
+          const local = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+          if (local.length > 0) {
+            const formatted = local.map((item: any) => {
+              const dateObj = new Date(item.timestamp || Date.now());
+              let icon = <Sprout className="w-6 h-6" />;
+              let color = 'from-purple-500 to-pink-500';
+              if (item.prediction_type === 'Price Forecast') {
+                icon = <TrendingUp className="w-6 h-6" />;
+                color = 'from-blue-500 to-cyan-500';
+              }
+              return {
+                type: item.prediction_type,
+                icon,
+                date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                result: item.result,
+                status: 'success',
+                details: JSON.stringify(item.input_data),
+                color,
+              };
+            });
+            setHistory(formatted);
+            setStats([
+              { label: 'Total Predictions', value: formatted.length.toString(), icon: <History className="w-5 h-5" /> },
+              { label: 'This Month', value: formatted.length.toString(), icon: <Calendar className="w-5 h-5" /> },
+              { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
+            ]);
+          }
+        } catch (_) {}
       } finally {
         setLoading(false);
       }

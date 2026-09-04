@@ -75,14 +75,26 @@ export function DiseaseDetection() {
       toast.success('Pathology analysis complete! +10 Krishi points earned.');
 
       if (user?.email) {
-        await supabase.from('prediction_history').insert([
-          {
-            user_email: user.email,
+        try {
+          await supabase.from('prediction_history').insert([
+            {
+              user_email: user.email,
+              prediction_type: 'Disease Detection',
+              input_data: { image: 'leaf_photo_analyzed' },
+              result: diagnosis.disease,
+            }
+          ]);
+        } catch (_) {}
+        try {
+          const list = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+          list.unshift({
             prediction_type: 'Disease Detection',
-            input_data: { image: 'leaf_photo_analyzed' },
             result: diagnosis.disease,
-          }
-        ]);
+            input_data: { image: 'leaf_photo_analyzed' },
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('sagri_prediction_history', JSON.stringify(list.slice(0, 50)));
+        } catch (_) {}
       }
     } catch (error: any) {
       console.error('Diagnostic error:', error);
