@@ -80,12 +80,17 @@ export function CropRecommendation() {
         
         setFormData(prev => ({
           ...prev,
+          nitrogen: prev.nitrogen || String(data.profile.N ?? 60),
+          phosphorus: prev.phosphorus || String(data.profile.P ?? 40),
+          potassium: prev.potassium || String(data.profile.K ?? 40),
+          ph: prev.ph || String(data.profile.ph ?? 6.8),
+          soilType: prev.soilType || 'Loamy',
           temperature: seasonalTemp.toFixed(1),
           humidity: seasonalHumidity.toFixed(1),
           rainfall: seasonalRainfall.toFixed(1),
         }));
         toast.dismiss();
-        toast.success(`Pre-filled climate data for ${newState}. Please enter your exact soil nutrients.`);
+        toast.success(`Pre-filled ICAR soil & climate data for ${newState}.`);
       }
     } catch (error) {
       toast.dismiss();

@@ -79,11 +79,22 @@ CROP_FEATURES_PATH = MODEL_DIR / "model_features.json"
 crop_model = None
 crop_model_meta = None
 
-if CROP_MODEL_PATH.exists() and CROP_FEATURES_PATH.exists():
-    logger.info("Loaded trained Random Forest crop model and features.")
-    crop_model = joblib.load(CROP_MODEL_PATH)
-    with open(CROP_FEATURES_PATH, "r") as f:
-        crop_model_meta = json.load(f)
+if CROP_MODEL_PATH.exists():
+    try:
+        loaded_crop_data = joblib.load(CROP_MODEL_PATH)
+        if isinstance(loaded_crop_data, dict):
+            crop_model = loaded_crop_data.get("model")
+            if "features" in loaded_crop_data:
+                crop_model_meta = {"features": loaded_crop_data["features"]}
+        else:
+            crop_model = loaded_crop_data
+        
+        if not crop_model_meta and CROP_FEATURES_PATH.exists():
+            with open(CROP_FEATURES_PATH, "r") as f:
+                crop_model_meta = json.load(f)
+        logger.info("Loaded trained Random Forest crop model and features.")
+    except Exception as e:
+        logger.exception("Failed to load crop model: %s", e)
 else:
     logger.warning("No trained crop model found. API will use a fallback mock response.")
 
@@ -363,6 +374,7 @@ def predict_crop(data: CropInput):
         return {"error": True, "message": f"Lethal Conditions: {data.humidity}% humidity is too low. Plants will suffer acute desiccation and stomatal closure. No recommendation possible."}
 
     if crop_model:
+        actual_crop_model = crop_model.get("model") if isinstance(crop_model, dict) else crop_model
         try:
             if crop_model_meta:
                 import numpy as np
@@ -444,8 +456,8 @@ def predict_crop(data: CropInput):
                 for rain in simulated_rainfalls:
                     feat_dict["rainfall"] = rain
                     features = [[feat_dict.get(f, 0) for f in crop_model_meta["features"]]]
-                    probs = crop_model.predict_proba(features)[0]
-                    for crop, prob in zip(crop_model.classes_, probs):
+                    probs = actual_crop_model.predict_proba(features)[0]
+                    for crop, prob in zip(actual_crop_model.classes_, probs):
                         combined_probs[crop] = max(combined_probs.get(crop, 0), prob)
 
                 crop_probs = sorted(combined_probs.items(), key=lambda x: x[1], reverse=True)
@@ -453,8 +465,8 @@ def predict_crop(data: CropInput):
             else:
                 # Fallback for old model
                 features = [[data.N, data.P, data.K, data.temperature, data.humidity, data.ph, data.rainfall]]
-                probs = crop_model.predict_proba(features)[0]
-                all_crops = crop_model.classes_
+                probs = actual_crop_model.predict_proba(features)[0]
+                all_crops = actual_crop_model.classes_
                 crop_probs = sorted(zip(all_crops, probs), key=lambda x: x[1], reverse=True)
 
             # Apply geographic exclusions if state is provided and NOT in controlled environment
