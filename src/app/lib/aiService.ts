@@ -445,15 +445,37 @@ Return ONLY a raw JSON object (NO markdown, NO backticks) adhering strictly to t
 
       const profile = matched ? matched[1] : PATHOLOGY_KNOWLEDGE_BASE['Tomato Early Blight'];
 
+      const formatTreatmentItem = (t: any): string => {
+        if (!t) return '';
+        if (typeof t === 'string') return t;
+        if (typeof t === 'object') {
+          const parts = [t.name, t.dosage, t.frequency].filter(Boolean);
+          return parts.length > 0 ? parts.join(' — ') : JSON.stringify(t);
+        }
+        return String(t);
+      };
+
+      const chemicalList: string[] = Array.isArray(data.treatment) && data.treatment.length > 0
+        ? data.treatment.map(formatTreatmentItem)
+        : data.chemical_treatment
+          ? (Array.isArray(data.chemical_treatment)
+              ? data.chemical_treatment.map(formatTreatmentItem)
+              : [formatTreatmentItem(data.chemical_treatment)])
+          : profile.treatment;
+
+      const organicList: string[] = Array.isArray(data.organic_treatment)
+        ? data.organic_treatment.map(formatTreatmentItem)
+        : data.organic_treatment
+          ? [formatTreatmentItem(data.organic_treatment)]
+          : profile.organic_treatment;
+
       return {
         disease: diseaseName,
-        confidence: typeof data.confidence === 'number' ? data.confidence : 0.89,
-        severity: data.severity === 'Critical' ? 'High' : data.severity === 'Moderate' ? 'Medium' : 'Medium',
+        confidence: typeof data.confidence === 'number' ? (data.confidence > 1 ? Number((data.confidence / 100).toFixed(2)) : data.confidence) : 0.89,
+        severity: data.severity === 'Critical' || data.severity === 'High' ? 'High' : data.severity === 'Moderate' || data.severity === 'Medium' ? 'Medium' : 'Low',
         recommendation: data.recommendation || data.immediate_action || profile.recommendation || 'Follow CIBRC university advisory.',
-        treatment: Array.isArray(data.treatment) && data.treatment.length > 0
-          ? data.treatment
-          : data.chemical_treatment ? [data.chemical_treatment] : profile.treatment,
-        organicTreatment: data.organic_treatment ? [data.organic_treatment] : profile.organic_treatment,
+        treatment: chemicalList,
+        organicTreatment: organicList,
         prevention: profile.prevention_tips,
         color: data.color || 'orange',
         zod_validated: true

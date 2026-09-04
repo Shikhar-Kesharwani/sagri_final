@@ -237,15 +237,20 @@ export function DiseaseDetection() {
                         </h3>
                       </div>
                       <ul className="space-y-2.5">
-                        {result.organicTreatment.map((item, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-2 text-sm text-emerald-900 dark:text-emerald-200"
-                          >
-                            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                        {(result.organicTreatment || []).map((item: any, idx) => {
+                          const text = typeof item === 'object' && item !== null
+                            ? [item.name, item.dosage, item.frequency].filter(Boolean).join(' — ') || JSON.stringify(item)
+                            : String(item ?? '');
+                          return (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-sm text-emerald-900 dark:text-emerald-200"
+                            >
+                              <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
@@ -260,15 +265,20 @@ export function DiseaseDetection() {
                         </h3>
                       </div>
                       <ul className="space-y-2.5">
-                        {result.treatment.map((item, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-2 text-sm text-blue-900 dark:text-blue-200"
-                          >
-                            <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                        {(result.treatment || []).map((item: any, idx) => {
+                          const text = typeof item === 'object' && item !== null
+                            ? [item.name, item.dosage, item.frequency].filter(Boolean).join(' — ') || JSON.stringify(item)
+                            : String(item ?? '');
+                          return (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-sm text-blue-900 dark:text-blue-200"
+                            >
+                              <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                              <span>{text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </div>
@@ -281,17 +291,22 @@ export function DiseaseDetection() {
                         Preventive Agronomic Practices
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {result.prevention.map((prev, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2"
-                          >
-                            <span className="w-5 h-5 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0">
-                              {idx + 1}
-                            </span>
-                            <span>{prev}</span>
-                          </div>
-                        ))}
+                        {result.prevention.map((prev: any, idx) => {
+                          const text = typeof prev === 'object' && prev !== null
+                            ? [prev.name, prev.tip, prev.action].filter(Boolean).join(' — ') || JSON.stringify(prev)
+                            : String(prev ?? '');
+                          return (
+                            <div
+                              key={idx}
+                              className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2"
+                            >
+                              <span className="w-5 h-5 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span>{text}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
