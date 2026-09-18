@@ -1,15 +1,24 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+
+const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY || '';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBCh8gQiHjQLyvf_EL8-aiFUTFtfApLjzs",
-  authDomain: "app1-4174e.firebaseapp.com",
-  projectId: "app1-4174e",
-  storageBucket: "app1-4174e.firebasestorage.app",
-  messagingSenderId: "15497476883",
-  appId: "1:15497476883:web:31cd7405ac7a95007c78e6"
+  apiKey: firebaseApiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Initialize Firebase safely only if API key is provided
+let authInstance: Auth;
+if (firebaseApiKey) {
+  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  authInstance = getAuth(app);
+} else {
+  authInstance = {} as Auth;
+}
+
+export const auth = authInstance;

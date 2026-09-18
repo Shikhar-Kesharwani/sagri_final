@@ -117,8 +117,12 @@ export function ModernAuth({ isOpen, onClose }: ModernAuthProps) {
   // ══════════════════════════════════════════════════════════════════════
 
   const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', { size: 'invisible' });
+    if (!(window as any).recaptchaVerifier && firebaseAuth && (firebaseAuth as any).app) {
+      try {
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', { size: 'invisible' });
+      } catch (err) {
+        console.warn("Recaptcha initialization skipped:", err);
+      }
     }
   };
 
