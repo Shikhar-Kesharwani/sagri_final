@@ -11,18 +11,17 @@ Total Evaluation Weight: 12 Marks
 | Field | Details |
 | :--- | :--- |
 | **Project Name** | SAGRI: AI-Based Advisory System for Crop, Disease, and Market Planning |
-| **Group Number / Team ID** | [Insert Group Number, e.g., Group 12] |
-| **College / University** | [Insert Your College Name] |
-| **Department** | Department of Computer Science and Engineering |
-| **Faculty Guide / Evaluator** | [Insert Professor Name] |
+| **Institution** | Bennett University, Greater Noida |
+| **School / Department** | School of Computer Science Engineering and Technology (SCSET) |
+| **Faculty Guide / Evaluator** | Monu Singh |
 
 **Student Team Members and Individual Project Roles:**
 
-| Roll Number | Student Name | Assigned Project Area | Viva Defense Topic |
+| Enrollment No. | Student Name | Assigned Project Area | Viva Defense Topic |
 | :--- | :--- | :--- | :--- |
-| **[Roll No. 1]** | **[Your Name]** | ML Model Development (Lead) | Crop Recommendation (Random Forest), Crop Failure Risk (XGBoost), Data Cleaning, Time-Series Train-Test Split |
-| **[Roll No. 2]** | **[Teammate 2 Name]** | Computer Vision and Image Processing | MobileNetV2 Disease Detection, PlantVillage Preprocessing, ONNX CPU Model Export |
-| **[Roll No. 3]** | **[Teammate 3 Name]** | Full-Stack and API Integration | FastAPI REST Backend, React Web UI, Supabase Database, Docker Setup |
+| **S24CSEU0502** | **Shikhar Kesharwani** | ML Model Development (Lead) | Crop Recommendation (Random Forest), Crop Failure Risk (XGBoost), Data Cleaning, Time-Series Train-Test Split |
+| **S24CSEU0465** | **Santusht Lakhanpal** | Computer Vision and Deep Learning | MobileNetV2 Disease Detection, PlantVillage Preprocessing, ONNX CPU Model Export |
+| **S24CSEU0460** | **Sanchit Jain** | Full-Stack and API Integration | FastAPI REST Backend, React Web UI, Supabase Database, Docker Setup |
 
 ---
 
@@ -247,21 +246,21 @@ All endpoints were tested on `http://localhost:8000` and confirmed working:
 
 ## 8. Division of Work and Team Contributions (For Viva Grading)
 
-### Student 1: [Your Name] - Lead Machine Learning Engineer
+### Student 1: Shikhar Kesharwani (S24CSEU0502) - Lead Machine Learning Engineer
 - Cleaned and organized the 2,200-row ICAR soil dataset and the 325,000-row ICRISAT climate-yield dataset.
 - Built the Random Forest crop recommendation model, tuned tree depth, and configured top-3 probability outputs.
 - Designed the chronological train-test split (pre-2013 vs post-2013) to prevent temporal data leakage.
 - Trained and evaluated the regularized XGBoost crop risk classifier.
 - *Viva defense focus:* Can explain Gini Impurity, why temporal splitting was needed, and how XGBoost avoids overfitting.
 
-### Student 2: [Teammate 2 Name] - Computer Vision Engineer
+### Student 2: Santusht Lakhanpal (S24CSEU0465) - Computer Vision Engineer
 - Downloaded and augmented the 54,000-image PlantVillage dataset for 38 disease categories across 14 crops.
 - Fine-tuned MobileNetV2 using transfer learning.
 - Exported the model to ONNX format so it runs quickly on standard CPUs without GPU dependencies.
 - Created the treatment database (`treatment_db.json`) linking each disease to organic and chemical remedies.
 - *Viva defense focus:* Can explain Depthwise Separable Convolutions, why MobileNetV2 is fast, and how ONNX runtime works.
 
-### Student 3: [Teammate 3 Name] - Full-Stack Developer
+### Student 3: Sanchit Jain (S24CSEU0460) - Full-Stack Developer
 - Wrote the asynchronous FastAPI backend in `backend/main.py` with Pydantic request models.
 - Built the React user interface using Vite and Tailwind CSS across 20 modular pages.
 - Added state profile auto-fill features and dynamic charts for price trends.
