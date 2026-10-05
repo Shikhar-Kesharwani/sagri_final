@@ -269,38 +269,22 @@ All endpoints were tested on `http://localhost:8000` and confirmed working:
 
 ---
 
-## 9. Common Viva Questions and Direct Answers
+## 9. Conclusion and Milestone 3 Roadmap
 
-**Q1: Why did you choose Random Forest instead of a Deep Neural Network for crop recommendation?**  
-*Answer:* Soil and weather data is tabular, not sequential or image-based. It has clear cut-off rules (for example, rice strictly requires high rainfall). Neural networks require heavy tuning and large datasets to perform well on tabular data, and they are sensitive to feature scaling. Random Forest handles non-linear tabular rules directly, does not overfit easily, trains in seconds, and provides clean probability scores for top-3 recommendations.
+In Milestones 1 and 2, we completed the review of existing systems, gathered authentic Indian agricultural datasets, trained four distinct machine learning models, and integrated them into a functional full-stack web application.
 
-**Q2: What is Depthwise Separable Convolution in simple terms?**  
-*Answer:* In standard convolutions, spatial filtering and color channel mixing happen in one combined step, which takes a lot of computing power. In MobileNetV2, it is split into two steps: depthwise convolution (filtering one channel at a time) and pointwise convolution (mixing channels with a 1x1 filter). This reduces calculations by about 8 to 9 times, letting our plant disease model run on a normal laptop CPU in just 112 milliseconds.
-
-**Q3: What is "Temporal Data Leakage" in crop risk prediction?**  
-*Answer:* If you split weather data randomly, data from the same drought year (like 2015) will end up in both training and test sets. The model then simply memorizes that 2015 had low rain, instead of learning how to predict future unseen years. We prevented this by training only on data up to 2012, and testing on 2013 to 2017.
-
-**Q4: Why was inflation adjustment necessary for mandi price forecasting?**  
-*Answer:* Crop prices from 20 years ago are naturally much lower due to general currency inflation, not because of farming supply or demand. We adjusted historical prices using the government's Wholesale Price Index (WPI) so past rupees are directly comparable to today's values.
+**Next Steps for Milestone 3 (Final Release):**
+- **Model Quantization:** Quantize the ONNX disease detection model to INT8 precision to reduce its file size from 16 MB to under 5 MB for fast edge execution.
+- **IoT Sensor Streaming:** Connect ESP32 soil sensor hardware modules to stream real-time Nitrogen, Phosphorus, Potassium, and moisture readings directly to the recommendation API.
+- **Vernacular Audio Advisory:** Integrate Hindi and regional language voice output using text-to-speech for farmers who prefer listening over reading.
+- **Live Mandi Webhook:** Connect live daily mandi price feeds via the official Agmarknet API to complement historical forecasting.
 
 ---
 
-## 10. Conclusion and Next Steps (Milestone 3)
+## 10. References (IEEE Format)
 
-In Milestones 1 and 2, we evaluated existing agricultural systems, gathered authentic Indian datasets, trained four machine learning models, and integrated them into a working full-stack web platform.
-
-**Next Steps for Milestone 3 (Final Phase):**
-1. **Model Quantization:** Quantize the ONNX disease model to INT8 precision to reduce its file size from 16 MB to under 5 MB for mobile devices.
-2. **IoT Sensor Ingestion:** Connect ESP32 soil sensor hardware to stream real-time N-P-K readings directly to the recommendation API.
-3. **Voice Advisory:** Add vernacular text-to-speech output in Hindi and regional languages for farmers who prefer listening over reading.
-4. **Live Mandi Feeds:** Connect live daily mandi price feeds via the official Agmarknet API.
-
----
-
-## 11. References (IEEE Format)
-
-1. J. G. A. Barbedo, "A review on the use of computer vision and artificial intelligence in plant disease recognition," Information Processing in Agriculture, vol. 7, no. 1, pp. 15-29, 2020.
-2. M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, "MobileNetV2: Inverted residuals and linear bottlenecks," in IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2018, pp. 4510-4520.
-3. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in ACM SIGKDD Conference on Knowledge Discovery and Data Mining, 2016, pp. 785-794.
-4. Indian Council of Agricultural Research (ICAR), "District-wise Soil Fertility Status of Indian Soils," Ministry of Agriculture and Farmers Welfare, Govt. of India, 2023.
-5. Ministry of Agriculture and Farmers Welfare, "Agmarknet: Agricultural Marketing Information Network Portal," Directorate of Marketing and Inspection, Govt. of India.
+[1] J. G. A. Barbedo, "A review on the use of computer vision and artificial intelligence in plant disease recognition," *Information Processing in Agriculture*, vol. 7, no. 1, pp. 15-29, Mar. 2020.  
+[2] M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, "MobileNetV2: Inverted residuals and linear bottlenecks," in *Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)*, Salt Lake City, USA, 2018, pp. 4510-4520.  
+[3] T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in *Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining*, San Francisco, USA, 2016, pp. 785-794.  
+[4] Indian Council of Agricultural Research (ICAR), "District-wise Soil Fertility Status of Indian Soils," Ministry of Agriculture and Farmers Welfare, Govt. of India, New Delhi, 2023.  
+[5] Ministry of Agriculture and Farmers Welfare, "Agmarknet: Agricultural Marketing Information Network Portal," Directorate of Marketing and Inspection (DMI), Govt. of India. [Online]. Available: https://agmarknet.gov.in
