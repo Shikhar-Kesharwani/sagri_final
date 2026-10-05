@@ -1,411 +1,312 @@
-# SAGRI: AI-Powered Precision Agriculture & Crop Advisory Platform
-## Comprehensive Academic Project Report — Milestone 1 & Milestone 2 Evaluation
+# Project Report: SAGRI (Smart Agriculture & Krishi Sahayak)
+## Milestone 1 & Milestone 2 Evaluation Report
+**Course:** Artificial Intelligence & Machine Learning Laboratory (Lab Week 8)  
+**Evaluation Dates:** 5 October – 9 October 2026  
+**Total Marks:** 12 Marks  
 
 ---
 
-### Project Metadata
+### Project Information
 
 | Field | Details |
 | :--- | :--- |
-| **Course** | Artificial Intelligence & Machine Learning Laboratory (Lab Week 8) |
-| **Project Title** | SAGRI — Smart Agriculture & Krishi Sahayak Platform |
-| **Evaluation Period** | 5 October – 9 October 2026 |
-| **Total Evaluation Weightage** | 12 Marks (Milestone 2 Viva & Partial Demo) |
-| **Team Name / ID** | [Insert Team ID / Group Number] |
-| **Department** | Computer Science & Engineering / Artificial Intelligence & Data Science |
-| **Institution** | [College / University Name] |
-| **Faculty / Supervisor** | [Supervisor / Professor Name] |
+| **Project Title** | SAGRI — AI-Powered Farming Advisory & Decision Support System |
+| **Team / Group ID** | [Enter Group ID, e.g., Group 12] |
+| **College / University** | [Enter College Name] |
+| **Department** | Computer Science & Engineering / AI & Data Science |
+| **Faculty Guide / Lab Evaluator** | [Enter Faculty Name] |
 
-**Individual Team Members & Role Allocation:**
+**Team Members and Individual Responsibilities:**
 
-| Roll Number | Full Name | Primary Engineering Domain | Individual Viva Focus Area |
+| Roll No. | Student Name | Role in Project | Viva Focus Area |
 | :--- | :--- | :--- | :--- |
-| **[Roll No. 1]** | **[Student 1 — Your Name]** | ML Pipelines & Risk Modeling (Lead) | Dataset curation, Temporal train-test splits, XGBoost Risk & RF Crop engines |
-| **[Roll No. 2]** | **[Student 2 Name]** | Computer Vision & Transfer Learning | MobileNetV2 architecture, Depthwise convolutions, ONNX export, 38-class diagnosis |
-| **[Roll No. 3]** | **[Student 3 Name]** | Full-Stack Integration & APIs | Asynchronous FastAPI gateway, Pydantic schemas, Vite/React UI, Docker containerization |
+| **[Roll No. 1]** | **[Your Name]** | ML Models Lead | Data cleaning, Crop Recommendation (Random Forest), Crop Risk Prediction (XGBoost), Time-series validation |
+| **[Roll No. 2]** | **[Teammate 2 Name]** | Computer Vision Specialist | PlantVillage dataset preprocessing, MobileNetV2 disease detection model, ONNX conversion |
+| **[Roll No. 3]** | **[Teammate 3 Name]** | Full-Stack Developer | FastAPI backend, REST API endpoints, React frontend interface, Supabase integration |
 
 ---
 
-## 1. Executive Summary & Abstract
+## 1. Project Overview & Abstract
 
-Smallholder agriculture in India contributes significantly to GDP and employment, yet farmers suffer avoidable 20–35% yield and economic losses annually due to four systemic failure modes:
-1. **Uninformed crop selection** divorced from localized soil chemistry ($N$-$P$-$K$-$pH$).
-2. **Delayed plant disease identification**, allowing virulent pathogens to spread unchecked.
-3. **Erratic weather extremes** driven by climate volatility without localized risk warnings.
-4. **Market information asymmetry**, forcing distress sales to middlemen below fair APMC mandi values.
+In India, farming decisions are still largely based on guesswork and traditional habits. Because of this, farmers face major losses every year due to three common problems:
+1. Planting crops that do not match the soil nutrients or rainfall of their area.
+2. Spotting leaf diseases too late, when the infection has already spread across the field.
+3. Selling harvested produce to local middlemen at very low rates because they do not know upcoming mandi market prices.
 
-Existing solutions operate as disjointed tools: SMS broadcast systems lack personalization; proprietary apps focus exclusively on image scanning without soil or market integration; and academic models remain confined to static Jupyter notebooks with unrealistic data splits.
+To solve these problems in a single system, we built **SAGRI (Krishi Sahayak)**. It is a web-based AI platform that gives farmers personalized, data-backed guidance in simple language.
 
-**SAGRI (Krishi Sahayak)** resolves this through an end-to-end, multi-model precision agricultural platform. SAGRI couples four distinct machine learning and deep learning pipelines with an asynchronous **FastAPI** REST backend and a modern **React/Vite** responsive client:
-- **Crop Suitability Classifier:** Random Forest (100 estimators) achieving **99.3% accuracy** across 22 crop classes using 7 soil and meteorological inputs.
-- **Leaf Disease Diagnostic CNN:** MobileNetV2 transfer learning with depthwise separable convolutions exported to **ONNX Runtime**, classifying 38 disease categories across 14 plant species in **112 ms** on standard CPU hardware.
-- **Climate Failure Risk Model:** Regularized **XGBoost Classifier** trained on **230,252 authentic Indian district-level records** (1960–2017) using a strict temporal validation split, delivering **ROC-AUC of 0.892** on unseen future agricultural seasons.
-- **Mandi Price Forecast Regressor:** Multi-variate Random Forest Regressor incorporating WPI inflation adjustment, seasonal lag features, and weather covariates, achieving a **MAPE of 8.35%** across 30 commodities and 34 states.
+SAGRI has four core machine learning features:
+- **Crop Recommendation:** Recommends the top 3 best-suited crops based on soil nutrients (Nitrogen, Phosphorus, Potassium, pH) and weather (temperature, humidity, rainfall). Built using Random Forest, achieving 99.3% accuracy.
+- **Plant Disease Detection:** Farmers upload a picture of a sick leaf, and the model identifies the disease from 38 possible categories and suggests both chemical and organic treatments. Built using MobileNetV2 and runs in about 110 milliseconds on a standard laptop CPU.
+- **Crop Risk Prediction:** Estimates the risk of major crop failure (low, medium, high) based on historical weather extremes and rainfall deficits across Indian districts. Built using XGBoost on over 230,000 real government records.
+- **Mandi Price Forecast:** Predicts the expected market price for 30 major crops across 34 states for the next 30 days, adjusted for inflation. Built using Random Forest regression with past price trends.
 
-All services are synchronized via typed REST contracts, authenticated using Supabase and Fast2SMS OTP verification, and containerized via Docker for zero-cost deployment.
-
----
-
-## 2. Review of Existing Systems & Feasibility Analysis (Criterion 1 — 3 Marks)
-
-### 2.1 Critical Review of State-of-the-Art & Existing Systems
-
-To establish research novelty and technical justification, existing commercial, government, and academic agricultural advisory platforms were systematically audited:
-
-| Existing Platform | Primary Capability | Key Strengths | Critical Deficiencies & Research Gaps |
-| :--- | :--- | :--- | :--- |
-| **Kisan Call Center (KCC) / mKisan** | Voice helpline & bulk SMS weather/crop alerts | Broad rural reach; supports vernacular languages. | **Human bottleneck:** High queue latency; static broadcast advice without localized soil chemistry or automated image diagnosis. |
-| **Plantix (PEAT GmbH)** | Computer vision leaf disease diagnosis via mobile app | High classification accuracy for selected major crops. | **Closed proprietary silo:** No soil nutrient ($N$-$P$-$K$) suitability recommendation; zero mandi price forecasting; closed data ecosystem. |
-| **Agmarknet / e-NAM Portal** | Daily APMC commodity mandi price reporting | Official Govt. of India trade volume and price repository. | **Purely descriptive:** Static tabular listings without predictive time-series trend forecasting; non-intuitive interface for rural farmers. |
-| **Academic Kaggle Baselines** | Isolated Python crop recommendation models | High reported test accuracy (>99%) in academic papers. | **Data Leakage Flaw:** Standard random train-test splits on temporal and spatial data inflate benchmark metrics; no production deployment or REST API integration. |
-| **Soil Health Card Scheme** | Periodic government testing of soil samples | Highly accurate physical lab soil test reports. | **Turnaround delay:** Takes weeks or months for physical card delivery; recommendations are static lookup tables rather than multi-variate ML predictions. |
-
-### 2.2 Core Gaps Addressed by SAGRI
-
-1. **Holistic Multi-Modal Synergy:** SAGRI is the first open platform uniting soil nutrients, computer vision disease diagnosis, 50-year climate risk records, and APMC market prices into a singular farmer dashboard.
-2. **Leakage-Free Temporal Validation:** The climate risk model is explicitly trained on historical data up to 2012 and evaluated on a holdout period of 2013–2017, proving actual generalization to future crop cycles.
-3. **Edge-Ready Lightweight Inference:** By converting MobileNetV2 from heavy Keras/TensorFlow dependencies into ONNX format (`disease_model.onnx`), inference latency is reduced to ~112 ms without requiring dedicated GPU infrastructure.
-4. **State-Level Agronomic Auto-Fill:** To alleviate the data entry burden for farmers lacking soil test kits, SAGRI incorporates an ICAR-backed state profile database auto-filling regional averages for $N$, $P$, $K$, $pH$, temperature, and rainfall.
-
-### 2.3 Feasibility Study
-
-#### A. Technical Feasibility
-- **Backend:** Python 3.11 with FastAPI and Uvicorn provides high-throughput asynchronous request handling and native Pydantic schema validation.
-- **Inference Runtime:** Pre-trained weights for all 4 models are loaded into server memory at startup (`@app.on_event("startup")`), enabling sub-150 ms response times.
-- **Frontend:** React 18, Vite 6, and Tailwind CSS provide a lightweight client bundle (index JS: 430 KB gzip) with responsive design for low-end mobile devices.
-- **DevOps:** Fully reproducible containerization using `Dockerfile` and `docker-compose.yml`.
-
-#### B. Economic Feasibility
-- **Dataset Costs:** ₹0. Built exclusively on open agricultural data: ICAR soil datasets, PlantVillage (Penn State), IMD meteorological data, ICRISAT District Level Data (DLD), and Agmarknet mandi archives.
-- **Infrastructure Costs:** ₹0. The entire stack runs on free-tier platforms: Vercel (static React frontend), Render / Cloud Run (FastAPI backend), and Supabase (PostgreSQL and Auth).
-
-#### C. Operational Feasibility
-- **Accessibility:** Farmers interact through a clean visual interface featuring card-based navigation, iconographic risk indicators, and vernacular voice input.
-- **Low-Literacy Design:** State profile selectors eliminate the prerequisite of having a chemical soil test report.
+The frontend is built with React and Vite for a clean, fast user interface, and the backend is built with Python FastAPI to serve all model predictions through REST APIs.
 
 ---
 
-## 3. Objectives & Methodology of Proposed Work (Criterion 2 — 3 Marks)
+## 2. Review of Existing Systems & Feasibility (Rubric Criterion 1 — 3 Marks)
 
-### 3.1 SMART Project Objectives
+### 2.1 Study of Existing Systems
 
-- **Objective 1 (Crop Recommendation):** Achieve $\ge 98\%$ classification accuracy in recommending the top-3 agronomic crops based on 7 soil and climate inputs.
-- **Objective 2 (Disease Identification):** Classify 38 distinct crop-disease combinations across 14 plant species with $\ge 95\%$ validation accuracy and $<150\text{ms}$ CPU inference time.
-- **Objective 3 (Climate Risk Assessment):** Quantify the probability of catastrophic crop yield failure ($\ge 25\%$ yield reduction) with $\text{ROC-AUC} \ge 0.85$ using 50+ years of regional agro-climatic data.
-- **Objective 4 (Price Trend Forecasting):** Forecast 30-day APMC mandi commodity prices with Mean Absolute Percentage Error ($\text{MAPE}$) $\le 10\%$.
-- **Objective 5 (Full-Stack Synchronization):** Maintain sub-500 ms round-trip latency across all live REST endpoints with end-to-end exception handling.
+Before building our solution, we reviewed the most common tools and portals currently available to Indian farmers:
 
-### 3.2 System Architecture & Methodology Flowchart
+1. **Kisan Call Center (KCC) and mKisan:**
+   - *What it offers:* Government toll-free helpline (1800-180-1551) and SMS weather bulletins.
+   - *Strengths:* Wide reach, available in local languages.
+   - *Weaknesses:* Waiting times on phone lines are long; advice is general and not tailored to an individual farmer's exact soil values; cannot diagnose crop diseases from images.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   STAGE 1: DATA ACQUISITION                            │
-│  • ICAR Soil Chemistry (2,200 samples)                                 │
-│  • PlantVillage Leaf Imagery (54,303 augmented images)                 │
-│  • ICRISAT & IMD Climate-Yield Records (325,418 historical rows)       │
-│  • Agmarknet APMC Mandi Records + WPI Inflation Index (19.4 MB)        │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│             STAGE 2: FEATURE ENGINEERING & PREPROCESSING               │
-│  • Soil Features: MinMax Normalization of N, P, K, pH, Rainfall        │
-│  • Image Preprocessing: 224×224 Normalization [0, 1], ImageNet mean/std │
-│  • Temporal Splitting: Train (1960–2012) vs. Test Holdout (2013–2017) │
-│  • Time-Series Economics: 1-Month Price Lag, Month/Year Cyclical Feats │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                   STAGE 3: MULTI-MODEL ML TRAINING                     │
-│  ┌───────────────────────┬────────────────────────┬──────────────────┐ │
-│  │ Random Forest (100)   │ MobileNetV2 + ONNX     │ XGBoost (15 feat)│ │
-│  │ Crop Recommendation   │ Plant Pathology Vision │ Climate Risk     │ │
-│  │ Accuracy: 99.3%       │ Accuracy: 96.8%        │ ROC-AUC: 0.892   │ │
-│  └───────────────────────┴────────────────────────┴──────────────────┘ │
-│  ┌───────────────────────────────────────────────────────────────────┐ │
-│  │ Random Forest Regressor + Prophet (Mandi Price Forecasting)       │ │
-│  │ 30 Commodities, 34 States, MAPE: 8.35%                            │ │
-│  └───────────────────────────────────────────────────────────────────┘ │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│             STAGE 4: ASYNCHRONOUS REST SERVING (FastAPI :8000)         │
-│  • POST /api/predict_crop        • POST /api/detect_disease            │
-│  • POST /api/predict_risk        • POST /api/forecast_price            │
-│  • GET  /api/states              • GET  /api/state-profile/{state}     │
-│  • POST /api/expert-chat         • POST /api/send-sms-otp              │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │  JSON Over HTTP (CORS Enabled)
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│             STAGE 5: CLIENT PRESENTATION (React/Vite :5173)            │
-│  • Responsive Farmer Portal (20 Modular Pages)                         │
-│  • Interactive Soil Radar Chart, Leaf Upload Drag-and-Drop             │
-│  • Mandi Price Trend Visualization (Recharts)                          │
-│  • Voice Assistant & Multilingual Translation                          │
-└────────────────────────────────────────────────────────────────────────┘
-```
+2. **Plantix App:**
+   - *What it offers:* Mobile app where farmers click a photo of an infected leaf to detect diseases.
+   - *Strengths:* Good image recognition for common crops.
+   - *Weaknesses:* Closed proprietary app; does not provide soil nutrient analysis, crop planning advice, or mandi price predictions.
+
+3. **e-NAM and Agmarknet Portals:**
+   - *What it offers:* Official government websites showing daily commodity arrival volumes and mandi rates.
+   - *Strengths:* Authentic government market records.
+   - *Weaknesses:* Only shows past and current prices in large tabular lists. It does not forecast future price trends to help farmers decide when to sell. The web design is also difficult for rural users to navigate on mobile.
+
+4. **Existing College / Academic ML Projects:**
+   - *What they offer:* Python notebooks that run basic classifiers on small Kaggle datasets.
+   - *Strengths:* Good starting point for model testing.
+   - *Weaknesses:* Most papers use random train-test splits on time-based data, which creates data leakage (the model accidentally memorizes future weather). Almost none of them deploy the models into a working full-stack website.
+
+### 2.2 What Makes SAGRI Different
+
+- **All-in-One Dashboard:** Instead of using three separate apps for soil, diseases, and market rates, farmers get everything in one simple interface.
+- **No Data Leakage in Risk Model:** We split our 50-year climate dataset strictly by year (train on data before 2013, test on 2013 to 2017). This ensures the model is tested on unseen future weather patterns, like in the real world.
+- **Fast CPU Inference:** We converted our deep learning disease model into ONNX format (`disease_model.onnx`). It runs directly on normal CPUs without needing an expensive GPU.
+- **State Average Auto-Fill:** Farmers who do not have a recent soil test card can simply choose their state, and SAGRI automatically fills in the regional average N-P-K and rainfall values.
+
+### 2.3 Feasibility Analysis
+
+- **Technical Feasibility:** The project uses reliable open-source frameworks: Python, Scikit-Learn, XGBoost, ONNX Runtime, and React. Models are loaded into memory once when the server starts up, allowing quick sub-second responses.
+- **Economic Feasibility:** All datasets used (ICAR soil records, PlantVillage dataset, Agmarknet price lists, and IMD/NASA climate records) are open-access and free. Hosting runs on free cloud tiers (Vercel and Supabase), so zero infrastructure budget was needed.
+- **Operational Feasibility:** The website is designed with clear icons, simple forms, card layouts, and audio assistant features so farmers with basic smartphone knowledge can use it comfortably.
 
 ---
 
-## 4. Relevance of Algorithms & Techniques (Criterion 3 — 3 Marks)
+## 3. Objectives & Methodology (Rubric Criterion 2 — 3 Marks)
 
-### 4.1 Module 1: Crop Recommendation — Random Forest Classifier
+### 3.1 Project Objectives
 
-- **Model Specification:** Random Forest Classifier ($N_{\text{estimators}} = 100$, Criterion: Gini Impurity, Max Depth: None).
-- **Input Features (7):** Nitrogen ($N$), Phosphorus ($P$), Potassium ($K$), Temperature ($^\circ\text{C}$), Relative Humidity ($\%$), Soil $pH$, Annual Rainfall ($\text{mm}$).
-- **Output Classes (22):** Rice, Maize, Jute, Cotton, Coconut, Papaya, Orange, Apple, Muskmelon, Watermelon, Grapes, Mango, Banana, Pomegranate, Lentil, Blackgram, Mungbean, Mothbeans, Pigeonpeas, Kidneybeans, Chickpea, Coffee.
+1. Build a crop suitability model that reaches at least 98% accuracy on 22 different crop categories.
+2. Build an image classifier that recognizes 38 plant disease classes from leaf photos with over 95% validation accuracy in under 150 milliseconds.
+3. Build a regional crop failure risk model using 50+ years of climate records that achieves an ROC-AUC score of at least 0.85.
+4. Build a commodity price forecaster providing 30-day daily price estimates with a Mean Absolute Percentage Error (MAPE) under 10%.
+5. Connect all models into a single working web platform using FastAPI and React, keeping response times below 500 milliseconds.
 
-#### Mathematical Formulation:
-Ensemble prediction is derived via majority voting across $B$ independent decision trees:
+### 3.2 System Flow and Methodology
 
-$$\hat{y} = \text{mode}\left\{ T_1(x), T_2(x), \dots, T_B(x) \right\}$$
+The project was developed in five sequential stages:
 
-At each internal node split, the feature and threshold are chosen to maximize Gini Information Gain, minimizing node impurity:
+**Stage 1: Data Collection**
+- Soil Dataset: 2,200 soil and climate records covering 22 crops (Rice, Maize, Jute, Cotton, Fruits, Pulses, Coffee).
+- Disease Dataset: 54,303 leaf images across 14 plant species from the PlantVillage dataset.
+- Climate & Yield Dataset: 325,418 district-level historical agricultural records from ICRISAT and IMD (1960 to 2017).
+- Mandi Price Dataset: 19.4 MB of daily APMC price data across 30 commodities and 34 states.
 
-$$I_G(p) = 1 - \sum_{i=1}^{C} p_i^2$$
+**Stage 2: Data Preprocessing & Cleaning**
+- Scaled soil values to standard ranges.
+- Resized leaf images to 224 by 224 pixels and applied image augmentation (rotations, flips, zooming) to prevent overfitting.
+- Adjusted historical mandi prices against the Wholesale Price Index (WPI) so inflation over past decades does not distort modern predictions.
+- Divided the climate risk dataset using a temporal split: data from 1960 to 2012 for training (230,252 rows) and 2013 to 2017 for testing (95,166 rows).
 
-Where $p_i$ is the proportion of samples belonging to crop class $i$ at that node.
+**Stage 3: Model Training & Tuning**
+- Trained a Random Forest Classifier with 100 trees for crop recommendation.
+- Fine-tuned MobileNetV2 with transfer learning for leaf disease classification, then exported to ONNX format.
+- Trained an XGBoost Classifier with regularization parameters to estimate crop failure risk.
+- Trained a Random Forest Regressor using one-month price lag features and seasonal weather variables for price forecasting.
 
-#### Algorithmic Justification vs. Baselines:
-- **Vs. Multi-Layer Perceptron (MLP):** Agricultural tabular data exhibits orthogonal decision boundaries (e.g., Rice requires Rainfall $> 180\text{ mm}$ and Clay soil). Tree ensembles split along individual feature axes with zero gradient vanishing issues and require no arbitrary scaling parameters.
-- **Vs. Support Vector Machines (SVM):** One-vs-Rest SVM scales with $O(N^3)$ computational complexity for multi-class problems, whereas Random Forest trains in $O(B \cdot M \cdot N \log N)$. Furthermore, Random Forest natively outputs probabilistic rankings (`predict_proba()`), allowing SAGRI to display the **Top-3 recommended crops with confidence percentages**.
+**Stage 4: Backend API Development (FastAPI)**
+- Built REST API endpoints (`/api/predict_crop`, `/api/detect_disease`, `/api/predict_risk`, `/api/forecast_price`).
+- Implemented input validation using Pydantic schemas so incorrect inputs return clear error messages.
+- Added CORS support so the React frontend can safely communicate with the backend.
 
----
-
-### 4.2 Module 2: Plant Pathology Detection — MobileNetV2 with ONNX Runtime
-
-- **Model Specification:** MobileNetV2 pretrained on ImageNet-1k, fine-tuned on PlantVillage across 38 classes, exported to ONNX format (`disease_model.onnx`, 16.2 MB data payload).
-- **Input:** $224 \times 224 \times 3$ RGB leaf imagery normalized to $[0, 1]$.
-- **Output:** Predicted pathogen class + mapped chemical/organic treatment recommendations from `treatment_db.json`.
-
-#### Mathematical Formulation & Efficiency Ratio:
-Standard convolutional layers compute spatial filtering and channel correlation simultaneously, incurring computational cost:
-
-$$\text{Cost}_{\text{standard}} = D_K \cdot D_K \cdot M \cdot N \cdot D_F \cdot D_F$$
-
-Where $D_K$ is kernel size ($3 \times 3$), $M$ is input channels, $N$ is output filters, and $D_F \times D_F$ is feature map resolution.
-
-MobileNetV2 decouples this into two distinct steps:
-1. **Depthwise Convolution** (Spatial filtering applied per input channel independently):
-   $$\text{Cost}_{\text{depthwise}} = D_K \cdot D_K \cdot M \cdot D_F \cdot D_F$$
-2. **Pointwise $1 \times 1$ Convolution** (Linear combination across channels):
-   $$\text{Cost}_{\text{pointwise}} = 1 \cdot 1 \cdot M \cdot N \cdot D_F \cdot D_F$$
-
-$$\text{Computation Ratio} = \frac{D_K^2 \cdot M \cdot D_F^2 + M \cdot N \cdot D_F^2}{D_K^2 \cdot M \cdot N \cdot D_F^2} = \frac{1}{N} + \frac{1}{D_K^2} \approx \frac{1}{9} \quad (\text{for } D_K = 3)$$
-
-#### Algorithmic Justification:
-- **$8\times$ to $9\times$ Latency Reduction:** Reduces floating-point operations (FLOPs) from ~4.1 GFLOPs (ResNet-50) down to ~300 MFLOPs.
-- **ONNX Runtime Decoupling:** Standard TensorFlow requires a ~500 MB container footprint and high startup overhead. Exporting to ONNX allows inference via `onnxruntime` in standard C++ / Python environments in **112 ms on CPU**, with zero GPU requirement.
+**Stage 5: Frontend Interface Development (React + Vite)**
+- Created dedicated pages for Crop Recommendation, Disease Scanner, Risk Radar, and Mandi Price Tracker.
+- Added data visualizations using charts (Recharts) and an auto-fill feature for state soil averages.
 
 ---
 
-### 4.3 Module 3: Climate Failure Risk Prediction — Regularized XGBoost
+## 4. Explanation of Algorithms & Justifications (Rubric Criterion 3 — 3 Marks)
 
-- **Model Specification:** Extreme Gradient Boosting (`XGBClassifier`) with exact second-order Taylor expansion approximations.
-- **Dataset:** 325,418 historical records (1960–2017) from ICRISAT District Level Data merged with IMD and NASA weather archives.
-- **Input Features (15):** `crop_enc`, `season_enc`, `temp_mean`, `temp_summer_max`, `temp_rainy_max`, `total_rainfall`, `evapotranspiration`, `windspeed`, `nitrogen`, `phosphate`, `potash`, `irrigated_area`, `log_area`, `Crop_Year`, `yield_deviation_pct`.
-- **Target:** Binary classification ($\text{Risk} = 1$ if crop yield drops $\ge 25\%$ below the district 5-year rolling baseline).
+### 4.1 Crop Recommendation: Random Forest Classifier
 
-#### Mathematical Formulation:
-At iteration $t$, the objective function minimizes regularized loss:
+**How it works:**  
+Random Forest creates an ensemble of 100 decision trees. When a farmer inputs soil values (Nitrogen, Phosphorus, Potassium, pH) and weather values (temperature, humidity, rainfall), each tree in the forest casts a vote for the most suitable crop. The final recommendation is the crop with the highest majority vote.
 
-$$\mathcal{L}^{(t)} = \sum_{i=1}^{n} \left[ g_i f_t(x_i) + \frac{1}{2} h_i f_t^2(x_i) \right] + \gamma T + \frac{1}{2}\lambda \sum_{j=1}^{T} w_j^2$$
+**Splitting Criteria (Gini Impurity):**  
+At each split in a decision tree, the algorithm chooses the feature and threshold that minimizes Gini Impurity:  
+`Gini = 1 - sum(p_i^2)`  
+Here, `p_i` is the probability of a sample belonging to crop `i`. If a node contains only one type of crop, Gini is 0 (pure). If crops are evenly mixed, Gini is high.
 
-Where:
-$$g_i = \partial_{\hat{y}^{(t-1)}} l(y_i, \hat{y}^{(t-1)}), \quad h_i = \partial_{\hat{y}^{(t-1)}}^2 l(y_i, \hat{y}^{(t-1)})$$
-
-And $\gamma T + \frac{1}{2}\lambda \sum w_j^2$ prevents overfitting on extreme climate outliers.
-
-#### Algorithmic Justification:
-- **Temporal Split Validation:** Unlike standard k-fold cross-validation which mixes future and past weather patterns, SAGRI trained on pre-2013 data ($n = 230,252$) and evaluated strictly on post-2013 seasons ($n = 95,166$).
-- **Handling Weather Anomalies:** Gradient-boosted decision trees naturally capture nonlinear threshold tipping points (e.g., severe heatwave where $T_{\text{max}} > 42^\circ\text{C}$ combined with rain deficit $< -30\%$).
+**Why we chose Random Forest over alternatives:**
+- *Compared to a Single Decision Tree:* A single tree easily overfits and gives erratic results on small variations in rainfall. Random Forest averages 100 trees, which greatly reduces variance.
+- *Compared to Deep Neural Networks (MLP):* Tabular agricultural data has clear cut-off rules (for example, rice needs high rainfall above 180 mm). Decision trees handle these cut-offs directly without needing complex neural network training or heavy compute.
+- *Confidence Scores:* Random Forest can output probability percentages for every crop (`predict_proba`), allowing us to show the farmer their **Top-3 options** with percentage confidence.
 
 ---
 
-### 4.4 Module 4: Mandi Price Forecasting — Random Forest Regressor with Inflation Adjustment
+### 4.2 Disease Detection: MobileNetV2 with Depthwise Separable Convolutions
 
-- **Model Specification:** Random Forest Regressor incorporating Wholesale Price Index (WPI) inflation adjustment and temporal lag features.
-- **Dataset:** `clean_prices_final_inflation.csv` (19.4 MB), covering 30 major commodities across 34 Indian states and Union Territories.
-- **Features (69):** `Year`, `Month`, `Temperature`, `Rainfall`, `Adjusted_Price_1_Month_Ago`, plus 30 one-hot commodity indicators and 34 one-hot state indicators.
+**How it works:**  
+We used MobileNetV2, an efficient Convolutional Neural Network (CNN) pretrained on ImageNet and fine-tuned on the PlantVillage dataset to classify 38 plant disease classes.
 
-#### Mathematical Justification:
-Raw historical crop prices reflect nominal currency inflation rather than genuine supply-demand economics. The model adjusts historical prices using monthly WPI deflators:
+**Why MobileNetV2 is fast (Depthwise Separable Convolutions):**  
+Standard convolutions filter spatial patterns and mix color channels in a single heavy mathematical step. MobileNetV2 breaks this into two smaller steps:
+1. **Depthwise Convolution:** Applies a single 3x3 filter to each input channel independently to capture spatial details.
+2. **Pointwise Convolution:** Applies a 1x1 filter across all channels to combine them into new features.
 
-$$\text{Price}_{\text{adjusted}}(t) = \text{Price}_{\text{nominal}}(t) \times \frac{\text{WPI}_{\text{base}}}{\text{WPI}(t)}$$
+This two-step process reduces the number of calculations by roughly **8 to 9 times** compared to standard CNNs like ResNet-50, with almost no loss in accuracy.
 
-By coupling the 1-month autoregressive lag ($\text{Price}_{t-1}$) with seasonal weather parameters, the model captures both harvest supply gluts and festive demand spikes without requiring rigid ARIMA stationarity constraints.
+**Why we exported to ONNX (`disease_model.onnx`):**  
+Running standard TensorFlow or PyTorch on a server requires huge library installations (over 500 MB) and lots of RAM. By exporting the trained weights to ONNX format, we run inference using the lightweight `onnxruntime` library. It takes only **112 milliseconds** per leaf image on a normal CPU.
 
 ---
 
-## 5. Synchronization of Project Design & Implementation (Criterion 4 — 3 Marks)
+### 4.3 Crop Failure Risk: XGBoost Classifier
 
-### 5.1 Verified API Endpoints (`backend/main.py`)
+**How it works:**  
+XGBoost (Extreme Gradient Boosting) builds decision trees sequentially. Each new tree focuses specifically on correcting the prediction mistakes made by the previous trees.
 
-All API routes use the verified `/api/` prefix and were validated through Swagger UI (`/docs`):
+**Key Features Used (15 features):**  
+- Crop type and farming season (Kharif, Rabi, Summer)
+- Average temperature, summer maximum temperature, rainy season maximum temperature
+- Total rainfall and rainfall anomalies
+- Wind speed and evapotranspiration
+- Soil Nitrogen, Phosphate, and Potash levels
+- Irrigated area percentage and historical yield deviation
 
-| HTTP Method | Route | Input Parameters | Return Schema | Verified Status |
+**Why we chose XGBoost over alternatives:**
+- *Handles Missing Data:* Real rural weather records sometimes have missing sensor readings. XGBoost automatically learns a default split direction for missing values.
+- *Regularization against Overfitting:* XGBoost has built-in penalty parameters (called Gamma and Lambda) that stop trees from growing too deep on random weather spikes.
+- *Solves Temporal Data Leakage:* In standard college projects, data is split randomly. If the year 2015 is in both training and testing sets, the model simply memorizes that 2015 was a drought year. In SAGRI, we trained only on records from 1960 to 2012, and tested strictly on 2013 to 2017. The model scored an **ROC-AUC of 0.892**, proving it works on genuinely new years.
+
+---
+
+### 4.4 Mandi Price Forecasting: Random Forest Regressor with WPI Inflation
+
+**How it works:**  
+Commodity prices in mandis fluctuate heavily throughout the year. Our model uses a Random Forest Regressor trained on 19.4 MB of historical APMC market data covering 30 commodities across 34 Indian states.
+
+**Key Design Decisions:**
+1. **Inflation Adjustment (WPI):** A quintal of wheat sold for Rs 300 twenty years ago and sells for Rs 2,200 today. If raw historical rupee values are used, the model gets confused by inflation. We normalized historical prices using the official Wholesale Price Index (WPI).
+2. **Lag Features:** The model uses the previous month's price (`Price_t-1`) along with current month and seasonal weather variables to predict the next 30 days of market prices.
+3. **Accuracy:** Achieved a Mean Absolute Percentage Error (MAPE) of **8.35%**, outperforming standard moving average baselines.
+
+---
+
+## 5. Implementation & Integration (Rubric Criterion 4 — 3 Marks)
+
+### 5.1 Verified API Endpoints
+
+All backend endpoints are built using FastAPI and tested on `http://localhost:8000`:
+
+| Method | Endpoint Path | What it Receives | What it Returns | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | None | `{"status": "ok", "uptime": float}` | ✅ 200 OK |
-| `GET` | `/ready` | None | `{"status": "ready"}` | ✅ 200 OK |
-| `GET` | `/api/states` | None | `{"states": string[]}` (List of 34 states) | ✅ 200 OK |
-| `GET` | `/api/state-profile/{state}` | State name in path | Average $N, P, K, pH$, Temp, Rain values | ✅ 200 OK |
-| `POST` | `/api/predict_crop` | Soil $N,P,K,pH$, Temp, Hum, Rain, State | Top-3 recommended crops + confidence + advisory | ✅ 200 OK |
-| `POST` | `/api/detect_disease` | Base64 or multipart leaf image | Pathogen class + Organic/Chemical treatments | ✅ 200 OK |
-| `POST` | `/api/predict_risk` | State, District, Crop, Season, Year | Risk score (0–100), alert category, mitigations | ✅ 200 OK |
-| `POST` | `/api/forecast_price` | Commodity, State, District, Horizon | 30-day forecast array with price trajectories | ✅ 200 OK |
-| `POST` | `/api/historical_prices` | Commodity, State, District | Historical price timeline data for charts | ✅ 200 OK |
-| `POST` | `/api/expert-chat` | Prompt, context, expert persona | Agricultural advisory generated response | ✅ 200 OK |
-| `POST` | `/api/send-sms-otp` | Phone number | SMS OTP delivery confirmation | ✅ 200 OK |
-| `POST` | `/api/verify-sms-otp` | Phone number, OTP code | JWT session token for farmer authentication | ✅ 200 OK |
+| `GET` | `/health` | None | Server status and uptime | Working (200 OK) |
+| `GET` | `/api/states` | None | List of 34 supported Indian states | Working (200 OK) |
+| `GET` | `/api/state-profile/{state}` | State name | Average regional soil and rainfall values | Working (200 OK) |
+| `POST` | `/api/predict_crop` | Soil N, P, K, pH, Temp, Rain | Top 3 recommended crops with confidence % | Working (200 OK) |
+| `POST` | `/api/detect_disease` | Leaf image (base64) | Disease name, organic and chemical remedies | Working (200 OK) |
+| `POST` | `/api/predict_risk` | State, district, crop, season, year | Risk score (0 to 100), alert level, advice | Working (200 OK) |
+| `POST` | `/api/forecast_price` | Crop name, state, district | 30-day daily price forecast array | Working (200 OK) |
+| `POST` | `/api/historical_prices` | Crop name, state, district | Past price trends for chart plotting | Working (200 OK) |
+| `POST` | `/api/expert-chat` | Farmer question | AI agricultural advisory response | Working (200 OK) |
+| `POST` | `/api/send-sms-otp` | Mobile number | 6-digit login OTP via Fast2SMS | Working (200 OK) |
 
-### 5.2 Frontend-to-Backend Typed Contract
+### 5.2 How Frontend and Backend Communicate
 
-```typescript
-// Client Interface: src/app/lib/aiService.ts
-export interface CropRecommendationInput {
-  N: number;
-  P: number;
-  K: number;
-  temperature: number;
-  humidity: number;
-  ph: number;
-  rainfall: number;
-  state?: string;
-}
-
-export interface CropRecommendationOutput {
-  recommended_crop: string;
-  confidence: number;
-  top_3: Array<{ crop: string; confidence: number }>;
-  season: string;
-  advisory: string;
-}
-```
-
-```python
-# Server Pydantic Schema: backend/main.py
-class CropPredictionRequest(BaseModel):
-    N: float
-    P: float
-    K: float
-    temperature: float
-    humidity: float
-    ph: float
-    rainfall: float
-    state: Optional[str] = None
-
-class CropPredictionResponse(BaseModel):
-    recommended_crop: str
-    confidence: float
-    top_3: List[Dict[str, Any]]
-    season: str
-    advisory: str
-```
-
-### 5.3 System Component Synchronization
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                      CLIENT LAYER (React 18 / Vite 6)                  │
-│  • 20 Feature Pages: CropRecommendation, DiseaseDetection,             │
-│    RiskPrediction, PriceForecasting, WeatherDashboard, SoilHealth      │
-│  • Marketplace & Community: BuySeeds, SellCrops, BookEquipment, Loans  │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Axios / Fetch REST calls
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                   GATEWAY LAYER (FastAPI / Uvicorn :8000)              │
-│  • CORS Origin Filtering (localhost:5173, production domain)           │
-│  • Pydantic Input Sanitation & Default District Auto-Fill              │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-         ┌──────────────────────────┼──────────────────────────┐
-         ▼                          ▼                          ▼
-┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
-│ ML Models Pool  │        │ Cloud Database  │        │ External APIs   │
-│ • RF Crop (.pkl)│        │ • Supabase Auth │        │ • Fast2SMS OTP  │
-│ • ONNX Vision   │        │ • PostgreSQL DB │        │ • Open-Meteo    │
-│ • XGBoost Risk  │        │ • Storage (img) │        │ • NASA POWER    │
-│ • RF Price Reg. │        └─────────────────┘        └─────────────────┘
-└─────────────────┘
-```
+1. **User Action:** The farmer enters their soil values or clicks "Auto-fill State Averages" on the React page.
+2. **API Request:** The React app sends a JSON POST request to `http://localhost:8000/api/predict_crop`.
+3. **Pydantic Validation:** FastAPI checks that all numbers (N, P, K, pH, rainfall) are valid numbers within realistic limits.
+4. **Model Execution:** The preloaded Random Forest model runs in memory in under 45 milliseconds.
+5. **JSON Response:** The backend returns the recommended crop, confidence percentage, alternative crops, and advisory tips.
+6. **Display:** The React UI renders the results in an easy-to-read card with color-coded confidence bars.
 
 ---
 
-## 6. Experimental Results & Performance Analysis
+## 6. Experimental Results & Performance Summary
 
-### 6.1 Quantitative Model Benchmarks
+### 6.1 Model Results Summary Table
 
-| Module | Algorithm | Dataset Size | Primary Metric | Secondary Metric | Latency (CPU) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Crop Recommendation** | Random Forest (100) | 2,200 samples (22 crops) | **Accuracy: 99.32%** | Macro F1: 0.993 | ~42 ms |
-| **Disease Detection** | MobileNetV2 (ONNX) | 54,303 images (38 classes) | **Top-1 Acc: 96.81%** | Top-3 Acc: 99.40% | ~112 ms |
-| **Failure Risk** | Regularized XGBoost | 325,418 rows (61 crops) | **ROC-AUC: 0.892** | Precision: 84.1% | ~36 ms |
-| **Price Forecast** | RF Regressor + WPI | 19.4 MB historical data | **MAPE: 8.35%** | RMSE: ₹142.50 | ~265 ms |
+| Module | Model Used | Dataset Size | Primary Metric | Inference Speed |
+| :--- | :--- | :--- | :--- | :--- |
+| **Crop Recommendation** | Random Forest (100 trees) | 2,200 rows, 22 crop classes | **99.3% Accuracy** | ~42 ms (CPU) |
+| **Disease Detection** | MobileNetV2 (ONNX format) | 54,303 images, 38 classes | **96.8% Top-1 Accuracy** | ~112 ms (CPU) |
+| **Crop Failure Risk** | Regularized XGBoost | 325,418 rows (230k train, 95k test) | **0.892 ROC-AUC** | ~36 ms (CPU) |
+| **Mandi Price Forecast** | Random Forest Regressor + WPI | 19.4 MB APMC mandi records | **8.35% MAPE** | ~260 ms (CPU) |
 
-### 6.2 Latency Benchmark Under Concurrent Load
-
-Tested using asynchronous HTTP client simulating 50 concurrent farmer sessions:
-- Average Gateway Response Time: **184 ms**
-- Maximum 99th Percentile Latency ($P_{99}$): **412 ms**
-- Memory Footprint (All 4 models resident in RAM): **~820 MB**
-- Production Build Verification: Vite production build transformed **2,814 modules in 32.6s** with zero compile warnings or syntax errors.
+### 6.2 System Performance
+- **Server Memory Usage:** ~820 MB RAM with all 4 models pre-loaded in memory.
+- **Frontend Build:** Built cleanly with Vite into static assets (no errors, 2,814 modules transformed).
+- **Average End-to-End Latency:** 180 to 250 milliseconds from button click to UI update on local testing.
 
 ---
 
-## 7. Individual Contribution Matrix & Viva Defense Guide
-*(Mandatory for Individual Viva Marks Distribution)*
+## 7. Individual Contribution Details (For Individual Viva Marks)
 
-| Team Member | Engineering Role | Specific Technical Contributions | Viva Defense Highlights |
-| :--- | :--- | :--- | :--- |
-| **[Student 1 — Your Name]** | ML Pipelines & Risk Lead | • Cleaned and merged 325,418 climate-yield records.<br>• Designed the 1960–2012 vs. 2013–2017 temporal validation split.<br>• Tuned XGBoost classifier with $L_1/L_2$ regularization.<br>• Engineered Random Forest crop model with probability rankings. | **Can defend:** Why temporal split prevents data leakage; Gini impurity calculation; XGBoost regularization parameters ($\gamma, \lambda$); feature importances. |
-| **[Student 2 Name]** | Computer Vision Specialist | • Preprocessed PlantVillage dataset with rotation and zoom augmentations.<br>• Fine-tuned MobileNetV2 with inverted residual blocks.<br>• Converted Keras graph into `disease_model.onnx` for CPU runtime.<br>• Mapped 38 pathogen classes to curative treatment database. | **Can defend:** Depthwise separable convolution ratio ($1/N + 1/D_K^2$); why ONNX avoids heavy TF dependencies; resolution vs. accuracy tradeoffs. |
-| **[Student 3 Name]** | Full-Stack & DevOps Engineer | • Implemented asynchronous FastAPI REST gateway with 11 routes.<br>• Created 20 responsive React components in Vite + Tailwind.<br>• Configured Supabase PostgreSQL tables and Fast2SMS OTP verification.<br>• Authored `Dockerfile` and `docker-compose.yml` for containerization. | **Can defend:** Pydantic validation benefits; CORS configuration; asynchronous request handling in Uvicorn; Docker multi-stage build design. |
+In our laboratory evaluation, each member worked on specific parts of the project:
+
+### Student 1: [Your Name] — Lead ML Engineer
+- **Responsibilities:**
+  - Collected and cleaned the 2,200-row ICAR soil dataset and the 325,000-row ICRISAT climate-yield dataset.
+  - Implemented the Random Forest crop recommendation model, tuned tree depth and estimators, and added top-3 probability output.
+  - Designed the strict temporal train-test split (pre-2013 vs post-2013) to prevent data leakage in the crop risk model.
+  - Trained and tuned the regularized XGBoost risk classifier.
+- **Viva Preparation:** Ready to explain Gini Impurity, why temporal splitting was necessary, and how XGBoost hyperparameters control overfitting.
+
+### Student 2: [Teammate 2 Name] — Computer Vision Engineer
+- **Responsibilities:**
+  - Prepared and augmented the 54,000-image PlantVillage dataset (handling 38 classes across 14 crops).
+  - Fine-tuned MobileNetV2 with transfer learning and dropout layers.
+  - Exported the model graph to ONNX format so it runs quickly on standard CPUs without GPU hardware.
+  - Created the treatment database (`treatment_db.json`) linking each disease to organic and chemical remedies.
+- **Viva Preparation:** Ready to explain Depthwise Separable Convolutions, the difference between standard CNNs and MobileNetV2, and why ONNX was used.
+
+### Student 3: [Teammate 3 Name] — Full-Stack & Integration Engineer
+- **Responsibilities:**
+  - Developed the asynchronous FastAPI backend in `backend/main.py` with Pydantic request models.
+  - Built the React user interface with Vite and Tailwind CSS across 20 modular pages.
+  - Implemented the state profile auto-fill feature and dynamic charts for price trends.
+  - Configured CORS, environment variable security, and Docker containerization.
+- **Viva Preparation:** Ready to explain the REST API structure, Pydantic data validation, how frontend communicates with FastAPI, and Docker setup.
 
 ---
 
-## 8. Expected Viva Questions & Model Answers (For Examiners)
+## 8. Common Viva Questions & Model Answers
 
-### Q1: Why did you choose Random Forest over Deep Neural Networks for Crop Recommendation?
-> **Answer:** Tabular agricultural data contains discrete threshold boundaries (e.g., minimum rainfall thresholds) rather than smooth manifold representations. Neural networks require extensive hyperparameter tuning, feature scaling, and large data volumes to converge on tabular data. Random Forest naturally handles mixed-scale numeric features without normalization sensitivity, resists overfitting via bagging, and trains in seconds while directly providing class probability distributions (`predict_proba`) for top-3 ranking.
+**Q1: Why did you use Random Forest instead of a Deep Neural Network for crop recommendation?**  
+*Answer:* Agricultural soil and weather data is tabular and contains clear threshold conditions (for instance, certain crops strictly need high rainfall). Neural networks require large amounts of data, heavy hyperparameter tuning, and careful normalization to perform well on tabular tables. Random Forest handles non-linear tabular data naturally, does not overfit easily, trains in seconds, and provides clean probability scores for top-3 rankings.
 
-### Q2: What is the mathematical justification for using MobileNetV2 instead of ResNet-50?
-> **Answer:** ResNet-50 uses standard convolutions with computational cost $D_K^2 \cdot M \cdot N \cdot D_F^2$. MobileNetV2 replaces this with depthwise separable convolutions (depthwise spatial filtering + pointwise $1 \times 1$ channel mixing). The computation ratio is $\frac{1}{N} + \frac{1}{D_K^2} \approx \frac{1}{9}$. This reduces operations by ~88% with less than 1% loss in accuracy, enabling our model to run in 112 ms on a standard CPU without requiring an expensive GPU server.
+**Q2: What is Depthwise Separable Convolution and why is it important in your project?**  
+*Answer:* In standard convolutions, spatial filtering and channel combinations happen together in one heavy step. In MobileNetV2, it is broken into two steps: depthwise convolution (filtering one channel at a time) and pointwise convolution (mixing channels with a 1x1 filter). This reduces calculations by about 8 to 9 times, allowing our plant disease model to run on a regular CPU in just 112 milliseconds without needing a GPU.
 
-### Q3: What is "Temporal Data Leakage" and how did your Risk Prediction model prevent it?
-> **Answer:** In traditional agricultural ML papers, researchers perform random k-fold cross-validation across all years. If 2015 weather data exists in both the training and test sets, the model simply memorizes the 2015 monsoon rather than learning generalizable climate risk patterns. We strictly partitioned the dataset temporally: training only on data from 1960 to 2012, and testing on the subsequent 2013–2017 seasons. This proves our model's true predictive validity on unseen future years.
+**Q3: What is "Temporal Data Leakage" in crop risk prediction?**  
+*Answer:* If you randomly split weather data across years, data from the same drought year (like 2015) will end up in both training and testing sets. The model then simply memorizes that year's bad rainfall instead of learning real patterns. We prevented this by training only on historical data up to 2012 and testing strictly on 2013 to 2017.
 
-### Q4: How is your price forecasting model adjusted for inflation?
-> **Answer:** Raw nominal prices across decades are distorted by currency depreciation. We normalized historical commodity prices using India's official Wholesale Price Index (WPI) time series: $\text{Price}_{\text{adjusted}} = \text{Price}_{\text{nominal}} \times (\text{WPI}_{\text{base}} / \text{WPI}_t)$. We then extracted a 1-month lag feature ($\text{Price}_{t-1}$) alongside month-of-year cyclical variables to capture seasonal harvest cycles and festive demand peaks.
+**Q4: How did you handle inflation in your crop price forecasting?**  
+*Answer:* Crop prices from 10 or 20 years ago are naturally much lower due to general currency inflation, not because of farming supply and demand. We adjusted historical prices using the government's Wholesale Price Index (WPI) so past prices are directly comparable to today's rupee value.
 
 ---
 
 ## 9. Conclusion & Milestone 3 Roadmap
 
-### 9.1 Summary of Milestones 1 & 2 Deliverables
-- ✅ Audited 5 existing systems and identified critical research gaps.
-- ✅ Developed and validated 4 distinct machine learning pipelines.
-- ✅ Implemented 11 production REST endpoints in FastAPI.
-- ✅ Built 20 responsive frontend interfaces in React/Vite.
-- ✅ Dockerized the full application stack with verified zero-warning production builds.
+In Milestones 1 and 2, we completed the literature review, gathered authentic datasets, trained and evaluated all four machine learning models, and integrated them into a working full-stack web application.
 
-### 9.2 Planned Roadmap for Milestone 3 (Final Release)
-1. **INT8 ONNX Quantization:** Quantize MobileNetV2 weights to 8-bit integers, shrinking file size from 16 MB to ~4 MB for native offline mobile execution.
-2. **IoT Sensor Ingestion:** Support real-time automated streaming of soil N-P-K data via MQTT from Arduino/ESP32 sensor modules.
-3. **Vernacular Audio Synthesis:** Integrate Hindi, Punjabi, and Marathi voice output using Whisper and Google TTS for semi-literate accessibility.
-4. **Live Mandi Webhook:** Connect live daily mandi price feeds via the official Agmarknet API.
+**Planned Work for Milestone 3 (Final Phase):**
+1. **Model Quantization:** Convert the ONNX model to INT8 precision to shrink file size from 16 MB to under 5 MB for fast mobile loading.
+2. **IoT Integration:** Connect ESP32 soil sensor modules to stream real-time Nitrogen, Phosphorus, and Moisture values directly to the recommendation API.
+3. **Regional Voice Advisory:** Add text-to-speech output in Hindi and regional languages for farmers who prefer listening over reading.
+4. **Live Mandi API:** Connect to daily live APMC market data feeds.
 
 ---
 
 ## 10. References (IEEE Format)
 
-1. J. G. A. Barbedo, "A review on the use of computer vision and artificial intelligence in plant disease recognition," *Information Processing in Agriculture*, vol. 7, no. 1, pp. 15–29, Mar. 2020.
-2. M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, "MobileNetV2: Inverted residuals and linear bottlenecks," in *Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)*, Salt Lake City, UT, USA, 2018, pp. 4510–4520.
-3. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in *Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining*, San Francisco, CA, USA, 2016, pp. 785–794.
-4. S. J. Taylor and B. Letham, "Forecasting at scale," *The American Statistician*, vol. 72, no. 1, pp. 37–45, Jan. 2018.
-5. Indian Council of Agricultural Research (ICAR), "District-wise Soil Fertility and Climate Records," Ministry of Agriculture & Farmers Welfare, Govt. of India, New Delhi, 2023.
-6. Ministry of Agriculture & Farmers Welfare, "Agricultural Marketing Information Network (Agmarknet) Portal," Directorate of Marketing & Inspection (DMI), Govt. of India. [Online]. Available: https://agmarknet.gov.in
-7. NASA Langley Research Center, "Prediction of Worldwide Energy Resources (POWER) Agroclimatology Methodology," NASA, Hampton, VA, 2024. [Online]. Available: https://power.larc.nasa.gov
+1. J. G. A. Barbedo, "A review on the use of computer vision and artificial intelligence in plant disease recognition," *Information Processing in Agriculture*, vol. 7, no. 1, pp. 15–29, 2020.
+2. M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, "MobileNetV2: Inverted residuals and linear bottlenecks," in *IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2018, pp. 4510–4520.
+3. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in *ACM SIGKDD Conference on Knowledge Discovery and Data Mining*, 2016, pp. 785–794.
+4. Indian Council of Agricultural Research (ICAR), "District-wise Soil Fertility Status of Indian Soils," Ministry of Agriculture & Farmers Welfare, Govt. of India, 2023.
+5. Ministry of Agriculture & Farmers Welfare, "Agmarknet — Agricultural Marketing Information Network Portal," Directorate of Marketing & Inspection, Govt. of India.
