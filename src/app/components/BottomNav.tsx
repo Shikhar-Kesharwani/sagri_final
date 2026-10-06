@@ -12,14 +12,14 @@ export function BottomNav() {
 
   const navItems = [
     {
-      path: '/',
-      icon: Home,
-      label: 'Home',
-    },
-    {
-      path: user.role === 'farmer' ? '/farmer' : '/admin',
+      path: '/farmer',
       icon: LayoutDashboard,
       label: 'Dashboard',
+    },
+    {
+      path: '/disease-detection',
+      icon: Home,
+      label: 'Crop AI',
     },
     {
       path: '/market-price',

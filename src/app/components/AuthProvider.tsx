@@ -82,9 +82,32 @@ const saveStoredAccount = (account: StoredAccount) => {
   }
 };
 
+export const DEFAULT_FARMER_USER: User = {
+  id: 'usr_farmer_ramesh',
+  email: 'ramesh.kumar@sagri.app',
+  phone: '9876543210',
+  name: 'Ramesh Kumar (किसान)',
+  role: 'farmer',
+  state: 'Haryana',
+  district: 'Karnal',
+  village: 'Taraori',
+  pincode: '132116',
+  landSize: '5.5 Acres',
+  primaryCrop: 'Wheat & Paddy',
+  location: 'Karnal, Haryana',
+  points: 150,
+  accessToken: 'token_active_farmer',
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User>(() => {
+    try {
+      const saved = localStorage.getItem(ACTIVE_USER_KEY) || localStorage.getItem(DEMO_USER_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_FARMER_USER;
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Check for existing Supabase session first
@@ -92,14 +115,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         loadUserProfile(session);
       } else {
-        // Fallback: restore persisted local session
+        // Fallback: restore persisted local session or use default farmer
         const saved = localStorage.getItem(ACTIVE_USER_KEY) || localStorage.getItem(DEMO_USER_KEY);
         if (saved) {
           try {
             setUser(JSON.parse(saved));
           } catch {
-            setUser(null);
+            setUser(DEFAULT_FARMER_USER);
           }
+        } else {
+          setUser(DEFAULT_FARMER_USER);
         }
         setLoading(false);
       }
@@ -109,8 +134,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           setUser(JSON.parse(saved));
         } catch {
-          setUser(null);
+          setUser(DEFAULT_FARMER_USER);
         }
+      } else {
+        setUser(DEFAULT_FARMER_USER);
       }
       setLoading(false);
     });
@@ -124,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem(ACTIVE_USER_KEY);
         localStorage.removeItem(DEMO_USER_KEY);
-        setUser(null);
+        setUser(DEFAULT_FARMER_USER);
       }
     });
 
@@ -389,7 +416,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       localStorage.removeItem(ACTIVE_USER_KEY);
       localStorage.removeItem(DEMO_USER_KEY);
-      setUser(null);
+      setUser(DEFAULT_FARMER_USER);
     }
   };
 

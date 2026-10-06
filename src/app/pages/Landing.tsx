@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Header } from '../components/Header';
-import { ModernAuth } from '../components/ModernAuth';
 import { motion } from 'motion/react';
 import {
   Sprout,
@@ -31,7 +30,6 @@ import { useAuth } from '../components/AuthProvider';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export function Landing() {
-  const [showLogin, setShowLogin] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -210,27 +208,15 @@ export function Landing() {
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
-                {user ? (
-                  <motion.button
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate(user.role === 'farmer' ? '/farmer' : '/admin')}
-                    className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-semibold hover:from-emerald-600 hover:to-green-700 transition-all shadow-xl hover:shadow-2xl flex items-center gap-2"
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowLogin(true)}
-                    className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-semibold hover:from-emerald-600 hover:to-green-700 transition-all shadow-xl hover:shadow-2xl flex items-center gap-2"
-                  >
-                    Get Started Free
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
-                )}
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/farmer')}
+                  className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-semibold hover:from-emerald-600 hover:to-green-700 transition-all shadow-xl hover:shadow-2xl flex items-center gap-2"
+                >
+                  Enter Farmer Dashboard
+                  <ArrowRight className="w-5 h-5" />
+                </motion.button>
                 
                 <motion.button
                   whileHover={{ scale: 1.05, y: -2 }}
@@ -575,21 +561,19 @@ export function Landing() {
           >
             Join thousands of farmers already using SAGRI to increase their yields and profits
           </motion.p>
-          {!user && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4, type: 'spring' }}
-              whileHover={{ scale: 1.1, y: -5 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowLogin(true)}
-              className="px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold hover:bg-emerald-50 transition-all shadow-2xl hover:shadow-3xl inline-flex items-center gap-3 text-lg"
-            >
-              Start Free Today
-              <ArrowRight className="w-6 h-6" />
-            </motion.button>
-          )}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, type: 'spring' }}
+            whileHover={{ scale: 1.1, y: -5 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/farmer')}
+            className="px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold hover:bg-emerald-50 transition-all shadow-2xl hover:shadow-3xl inline-flex items-center gap-3 text-lg"
+          >
+            Enter Farmer Dashboard
+            <ArrowRight className="w-6 h-6" />
+          </motion.button>
         </div>
       </section>
 
@@ -640,8 +624,6 @@ export function Landing() {
           </div>
         </div>
       </footer>
-
-      <ModernAuth isOpen={showLogin} onClose={() => setShowLogin(false)} />
     </div>
   );
 }

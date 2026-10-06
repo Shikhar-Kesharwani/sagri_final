@@ -28,10 +28,30 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        Component: Landing,
+        Component: FarmerDashboard,
       },
       {
         path: "farmer",
+        Component: FarmerDashboard,
+      },
+      {
+        path: "dashboard",
+        Component: FarmerDashboard,
+      },
+      {
+        path: "landing",
+        Component: Landing,
+      },
+      {
+        path: "login",
+        Component: FarmerDashboard,
+      },
+      {
+        path: "register",
+        Component: FarmerDashboard,
+      },
+      {
+        path: "auth",
         Component: FarmerDashboard,
       },
       {

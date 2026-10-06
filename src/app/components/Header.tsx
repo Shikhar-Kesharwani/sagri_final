@@ -40,16 +40,41 @@ export function Header() {
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/farmer"
+              className="px-3.5 py-1.5 text-sm font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:hover:bg-emerald-900/80 rounded-xl transition-all border border-emerald-300/50 dark:border-emerald-700/50 flex items-center gap-1.5 shadow-sm"
+            >
+              🌾 Dashboard
+            </Link>
+            <Link
+              to="/disease-detection"
+              className="px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+            >
+              Disease AI
+            </Link>
+            <Link
+              to="/crop-recommendation"
+              className="px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+            >
+              Crop Advice
+            </Link>
+            <Link
+              to="/market-price"
+              className="px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+            >
+              Market Rates
+            </Link>
+
             {user && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-200 dark:border-emerald-700/30"
+                className="flex items-center gap-3 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-200 dark:border-emerald-700/30"
               >
-                <span className="text-sm font-medium text-stone-700 dark:text-stone-300">{user.name}</span>
+                <span className="text-xs font-medium text-stone-700 dark:text-stone-300">{user.name}</span>
                 {user.points !== undefined && (
-                  <span className="text-xs bg-gradient-to-r from-emerald-500 to-green-600 text-white px-3 py-1 rounded-full font-semibold shadow-md">
+                  <span className="text-xs bg-gradient-to-r from-emerald-500 to-green-600 text-white px-2 py-0.5 rounded-full font-semibold shadow-md">
                     {user.points} pts
                   </span>
                 )}
@@ -110,16 +135,44 @@ export function Header() {
             >
               <div className="py-4 border-t border-stone-200 dark:border-stone-700">
                 <div className="space-y-3">
-                  {user && (
-                    <div className="px-4 py-3 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl">
-                      <p className="text-sm font-medium text-stone-700 dark:text-stone-300">{user.name}</p>
-                      {user.points !== undefined && (
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-semibold">
-                          Points: {user.points}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <Link
+                    to="/farmer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-900/40 rounded-xl"
+                  >
+                    🌾 Farmer Dashboard
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Link
+                      to="/disease-detection"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-3 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-lg text-center"
+                    >
+                      Disease AI
+                    </Link>
+                    <Link
+                      to="/crop-recommendation"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-3 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-lg text-center"
+                    >
+                      Crop Advice
+                    </Link>
+                    <Link
+                      to="/price-forecasting"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-3 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-lg text-center"
+                    >
+                      Price Forecast
+                    </Link>
+                    <Link
+                      to="/market-price"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-3 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-lg text-center"
+                    >
+                      Market Rates
+                    </Link>
+                  </div>
                   
                   <LanguageSelector />
 
