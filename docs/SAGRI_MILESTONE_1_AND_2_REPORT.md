@@ -1,14 +1,15 @@
-# Project Report: SAGRI (Smart Agriculture and Krishi Sahayak)
-## Milestone 1 and Milestone 2 Evaluation Report
+# Progressive Laboratory Evaluation Report: SAGRI (Krishi Sahayak)
+## Phased Implementation: Milestone 1 & Milestone 2 (Interim Progress Report)
 **Course:** Artificial Intelligence and Machine Learning Laboratory (CSET302 / Lab Week 8)  
 **Academic Institution:** Bennett University, Greater Noida (Times of India Group)  
 **School:** School of Computer Science Engineering and Technology (SCSET)  
 **Evaluation Dates:** October 5 to October 9, 2026  
-**Total Evaluation Weight:** 12 Marks  
+**Evaluation Type:** Progressive Phased Lab Evaluation (Milestone 1 & 2 Scope — 12 Marks)  
+**Upcoming Final Phase:** Milestone 3 (Production Hardening, Edge Quantization, IoT Telemetry & Final Defense)
 
 ---
 
-### Project Information & Team Details
+### Project Information & Phased Lifecycle Overview
 
 | Project Attribute | Official Details |
 | :--- | :--- |
@@ -18,10 +19,11 @@
 | **Faculty Guide & Evaluator**| **Monu Singh** |
 | **Project Repository** | `AyushGU12/sagri_final` |
 | **Technology Stack** | Python 3.11, Scikit-Learn, XGBoost, ONNX Runtime, FastAPI, React 18, Vite 6, Tailwind CSS |
+| **Project Lifecycle Stage**| **Phase 2 of 3 (Milestones 1 & 2 Implemented; Milestone 3 In-Progress)** |
 
 **Collaborative Engineering Project Team:**
 
-| Enrollment No. | Student Name | Core Engineering Focus | Academic Contribution |
+| Enrollment No. | Student Name | Core Engineering Focus | Phased Academic Contribution |
 | :--- | :--- | :--- | :--- |
 | **S24CSEU0502** | **Shikhar Kesharwani** | Machine Learning & Statistical Modeling | Soil-Crop Suitability Modeling, Chronological Temporal Splitting, XGBoost Climate Risk Engine |
 | **S24CSEU0465** | **Santusht Lakhanpal** | Computer Vision & Pathology Pipeline | MobileNetV2 Deep Learning, PlantVillage Augmentation, ONNX CPU Runtime Optimization |
@@ -29,20 +31,34 @@
 
 ---
 
+### Phased Project Progression Matrix (3-Stage Engineering Roadmap)
+
+To maintain disciplined systems engineering, our team structured SAGRI across three progressive evaluation milestones. The current evaluation specifically covers **Milestone 1 and Milestone 2**:
+
+| Engineering Phase | Primary Objectives & Technical Scope | Target Deliverables | Current Status |
+| :--- | :--- | :--- | :--- |
+| **Milestone 1: Foundations & Architecture** | Problem formulation, feasibility studies, literature review, acquisition of ICAR/PlantVillage/Agmarknet datasets, and baseline data pipelines. | Requirement specifications, feasibility matrix, raw datasets, data cleaning scripts. | **100% Completed** |
+| **Milestone 2: Core Modeling & API Integration (Current Scope)** | Machine learning model training, temporal validation split, MobileNetV2 ONNX graph export, asynchronous FastAPI backend, and interactive React prototype. | 4 validated ML/DL models, 10 REST API endpoints, connected web UI dashboard, benchmark metrics. | **Completed & Under Evaluation (Current)** |
+| **Milestone 3: Production Hardening & Hardware IoT (Final Scope)** | Edge INT8 quantization, ESP32 IoT soil sensor telemetry streaming, live Agmarknet REST webhooks, bilingual TTS audio engine, and final field trials. | INT8 quantized ONNX model, IoT serial ingestion bridge, live mandi polling service, bilingual speech synthesizer, final project report. | **In Progress / Scheduled for Final Evaluation** |
+
+---
+
 ## 1. Executive Summary & Problem Statement
 
 Agriculture forms the socioeconomic backbone of India, employing over 45% of the national workforce and contributing significantly to gross value added (GVA). Despite its critical importance, smallholder farmers—who operate more than 85% of Indian agricultural landholdings—routinely suffer severe economic losses due to fragmented advisory services, subjective guesswork, and volatile market mechanisms.
 
-Through our field and laboratory research at Bennett University, our project team identified three interrelated bottlenecks that cripple farming productivity:
+Through our laboratory research and field scoping at Bennett University, our project team identified three interrelated bottlenecks that cripple farming productivity:
 1. **Uninformed Crop Sowing:** Sowing decisions are overwhelmingly dictated by traditional habit rather than physiological soil chemistry (Nitrogen, Phosphorus, Potassium, and pH) or hyper-local meteorological forecasts. This mismatch leads to degraded soil fertility, wasted fertilizer expenditures, and suboptimal yields.
 2. **Delayed Foliar Pathology Detection:** Leaf blights, bacterial spots, and fungal infections are typically detected only after symptoms become widespread across the field. With agricultural extension officer ratios often exceeding 1 officer per 1,100 farmers in India, accessible and prompt laboratory diagnosis remains inaccessible to smallholders.
 3. **Mandi Price Asymmetry and Distress Selling:** Due to lack of forward-looking commodity price intelligence, smallholders sell produce immediately post-harvest during supply gluts. Middlemen exploit this uncertainty, forcing distress sales well below viable economic margins.
 
-To solve these systemic challenges, our engineering team designed and implemented **SAGRI (Krishi Sahayak)**: an end-to-end precision agriculture advisory ecosystem. SAGRI synthesizes four specialized machine learning and deep learning models into an intuitive, responsive web application served by an asynchronous Python FastAPI backend:
+To solve these systemic challenges, our engineering team designed **SAGRI (Krishi Sahayak)** as a modular precision agriculture advisory platform. Within the scope of **Milestones 1 and 2**, our team successfully developed and integrated the core predictive intelligence modules into an asynchronous Python FastAPI backend connected to an interactive React dashboard:
 - **Agronomic Crop Recommendation:** Recommends the optimal top-3 crops calibrated across 7 soil and meteorological parameters using an ensemble Random Forest classifier (**99.3% accuracy**).
 - **Leaf Pathology Diagnostic Scanner:** Identifies 38 distinct plant disease classes across 14 crops from leaf imagery using MobileNetV2 exported to ONNX Runtime (**112 ms CPU inference latency**, **96.8% accuracy**).
 - **Climate-Induced Crop Failure Risk Radar:** Predicts the probability of severe yield declines ($\ge 25\%$) using an XGBoost classifier evaluated across 325,418 historical records with strict temporal validation (**0.892 ROC-AUC**).
 - **Mandi Commodity Price Forecaster:** Forecasts 30-day commodity price trajectories across 30 crops and 34 states using a Random Forest regressor adjusted for inflation with the Wholesale Price Index (WPI) (**8.35% MAPE**).
+
+*(Note: Advanced edge quantization, hardware IoT sensor telemetry, and live mandi webhooks are currently being engineered under the subsequent Milestone 3 final phase).*
 
 ---
 
@@ -70,16 +86,16 @@ Our team conducted a thorough comparative study of current commercial, governmen
 
 ### 2.2 System Comparison Matrix
 
-| Evaluation Dimension | Kisan Call Center (KCC) | Plantix App | e-NAM / Agmarknet | Academic Baselines | **SAGRI (Our System)** |
+| Evaluation Dimension | Kisan Call Center (KCC) | Plantix App | e-NAM / Agmarknet | Academic Baselines | **SAGRI (Milestones 1 & 2 Prototype)** |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Soil NPK Crop Matching** | Manual operator advice | Not Supported | Not Supported | Offline scripts | **Supported (Top-3 Probabilities)** |
 | **Computer Vision Pathology** | Not Supported | Proprietary Cloud | Not Supported | High-VRAM GPUs | **Supported (112 ms CPU ONNX)** |
 | **Yield Risk Forecasting** | Qualitative warning | Not Supported | Not Supported | Random-split leak | **Supported (Leak-free XGBoost)** |
 | **Price Trend Prediction** | Not Supported | Not Supported | Historical logs only| ARIMA / Basic | **Supported (WPI-Adjusted ML)** |
-| **Deployment Architecture** | Telephony / SMS | Native Android App | Legacy Web Portal | Jupyter Notebook | **Full-Stack (FastAPI + React)** |
+| **Deployment Architecture** | Telephony / SMS | Native Android App | Legacy Web Portal | Jupyter Notebook | **Full-Stack (FastAPI + React Prototype)**|
 | **Software Cost & Licensing**| Free (Govt.) | Freemium / Paid | Free (Govt.) | Open Notebook | **100% Open-Source & Free** |
 
-### 2.3 Distinct Engineering Contributions of SAGRI
+### 2.3 Distinct Engineering Contributions of SAGRI in Milestones 1 & 2
 - **Unified Multi-Model Gateway:** Consolidated four distinct agronomic AI modules under a single asynchronous API architecture.
 - **Leak-Free Temporal Evaluation:** Strictly split training data chronologically (1960–2012) and test data (2013–2017) for yield risk prediction to guarantee real-world generalization.
 - **Edge-Optimized CPU Inference:** Implemented ONNX Runtime execution for deep learning inference, eliminating costly GPU infrastructure.
@@ -89,7 +105,7 @@ Our team conducted a thorough comparative study of current commercial, governmen
 
 ## 3. Project Feasibility Analysis (Rubric Criterion 1 - 3 Marks)
 
-Our team conducted a rigorous feasibility assessment across technical, economic, and operational dimensions before commencing full-stack implementation:
+Our team conducted a rigorous feasibility assessment across technical, economic, and operational dimensions before commencing implementation:
 
 ### 3.1 Technical Feasibility
 - **Maturity of Stack:** Built on industry-standard, production-proven technologies: Python 3.11, Scikit-Learn 1.4+, XGBoost 2.0+, ONNX Runtime 1.17+, FastAPI 0.110+, and React 18 with Vite 6.
@@ -109,17 +125,17 @@ Our team conducted a rigorous feasibility assessment across technical, economic,
 
 ## 4. Objectives and Methodology (Rubric Criterion 2 - 3 Marks)
 
-### 4.1 Measurable Engineering Targets
+### 4.1 Measurable Engineering Targets (Milestone 1 & 2 Scope)
 
-| Engineering Objective | Quantitative KPI Target | Achieved Milestone Metric | Verification Status |
+| Engineering Objective | Quantitative Target (M1 & M2) | Achieved Milestone Metric | Current Evaluation Status |
 | :--- | :--- | :--- | :--- |
-| **Crop Suitability Classification** | Accuracy $\ge 98.0\%$ across 22 crop classes | **99.3% Test Accuracy** | **Validated** |
-| **Plant Pathology Diagnosis** | Top-1 Accuracy $\ge 95.0\%$, Latency $\le 150\text{ ms}$ on CPU | **96.8% Accuracy, 112 ms Latency** | **Validated** |
-| **Climate Yield Risk Prediction** | Temporal Test ROC-AUC $\ge 0.85$ on unseen years | **0.892 ROC-AUC (2013–2017 split)** | **Validated** |
-| **Mandi Price Trend Regression** | Mean Absolute Percentage Error (MAPE) $\le 10.0\%$ | **8.35% Test MAPE** | **Validated** |
-| **API Round-Trip Latency** | End-to-end server response $\le 500\text{ ms}$ | **180 ms – 250 ms Mean Latency** | **Validated** |
+| **Crop Suitability Classification** | Accuracy $\ge 98.0\%$ across 22 crop classes | **99.3% Test Accuracy** | **Validated in M2** |
+| **Plant Pathology Diagnosis** | Top-1 Accuracy $\ge 95.0\%$, Latency $\le 150\text{ ms}$ on CPU | **96.8% Accuracy, 112 ms Latency** | **Validated in M2** |
+| **Climate Yield Risk Prediction** | Temporal Test ROC-AUC $\ge 0.85$ on unseen years | **0.892 ROC-AUC (2013–2017 split)** | **Validated in M2** |
+| **Mandi Price Trend Regression** | Mean Absolute Percentage Error (MAPE) $\le 10.0\%$ | **8.35% Test MAPE** | **Validated in M2** |
+| **API Round-Trip Latency** | End-to-end server response $\le 500\text{ ms}$ | **180 ms – 250 ms Mean Latency** | **Validated in M2** |
 
-### 4.2 System Architecture Overview
+### 4.2 System Architecture Overview (Current Milestone 2 Prototype)
 
 ```mermaid
 flowchart TD
@@ -136,7 +152,7 @@ flowchart TD
         ModelCache["In-Memory Model Engine Residency"]
     end
 
-    subgraph ModelLayer["AI / ML Predictive Core"]
+    subgraph ModelLayer["AI / ML Predictive Core (Milestone 2 Completed)"]
         M1["Crop Recommendation<br/>(Random Forest Ensemble - 100 Trees)"]
         M2["Pathology Diagnosis<br/>(MobileNetV2 ONNX Runtime)"]
         M3["Yield Risk Classifier<br/>(Regularized XGBoost Engine)"]
@@ -170,41 +186,41 @@ flowchart TD
     M4 -.-> D4
 ```
 
-### 4.3 Five-Stage Engineering Methodology
+### 4.3 Staged Engineering Methodology
 
 ```
 +---------------------------------------------------------------------------------------------------+
-| STAGE 1: Agronomic Data Acquisition                                                               |
+| MILESTONE 1: Agronomic Data Acquisition & Curation (COMPLETED)                                    |
 | Harvested 2,200 ICAR soil records, 54,303 PlantVillage images, 325,418 ICRISAT climate records,    |
-| and 19.4 MB of Agmarknet APMC mandi transaction records.                                          |
+| and 19.4 MB of Agmarknet APMC mandi transaction records. Cleaned and structured datasets.        |
 +---------------------------------------------------------------------------------------------------+
                                                   |
                                                   v
 +---------------------------------------------------------------------------------------------------+
-| STAGE 2: Feature Engineering & Preprocessing                                                      |
-| Normalized soil chemistry vectors; center-square cropped & normalized leaf imagery to 224x224;    |
-| created autoregressive price lag features; deflated raw prices using monthly WPI indices.          |
+| MILESTONE 1: Feature Engineering & Baseline Design (COMPLETED)                                    |
+| Formulated 15-feature climate-yield matrix, normalized soil chemistry vectors, center-cropped     |
+| leaf images to 224x224, and created WPI-deflated autoregressive market price features.            |
 +---------------------------------------------------------------------------------------------------+
                                                   |
                                                   v
 +---------------------------------------------------------------------------------------------------+
-| STAGE 3: Model Training & Rigorous Evaluation                                                     |
-| Trained Random Forest with Gini split; fine-tuned MobileNetV2 & exported to ONNX graph;           |
-| tuned regularized XGBoost with 1960-2012 vs 2013-2017 temporal validation split.                  |
+| MILESTONE 2: Model Training & Out-of-Time Validation (COMPLETED - CURRENT EVALUATION)              |
+| Trained 100-tree Random Forest (99.3%), fine-tuned MobileNetV2 & exported to ONNX (96.8%),        |
+| and trained regularized XGBoost with strict 1960-2012 vs 2013-2017 temporal split (0.892 ROC-AUC).|
 +---------------------------------------------------------------------------------------------------+
                                                   |
                                                   v
 +---------------------------------------------------------------------------------------------------+
-| STAGE 4: Asynchronous REST Service Development                                                    |
-| Implemented FastAPI endpoints in backend/main.py with Pydantic type validation, CORS middleware,  |
-| and non-blocking in-memory inference pipelines.                                                   |
+| MILESTONE 2: Async REST API & Interactive UI Integration (COMPLETED - CURRENT EVALUATION)         |
+| Implemented FastAPI asynchronous routing, Pydantic data models, in-memory model caching,          |
+| and connected 20 modular React components on http://localhost:5173.                               |
 +---------------------------------------------------------------------------------------------------+
                                                   |
                                                   v
 +---------------------------------------------------------------------------------------------------+
-| STAGE 5: Client Engineering & User Verification                                                   |
-| Developed 20 responsive React components with dynamic Chart.js market curves, auto-filling        |
-| state profiles, and sub-second diagnostic presentation.                                           |
+| MILESTONE 3: Production Hardening, Edge Quantization & IoT (IN PROGRESS - UPCOMING FINAL PHASE)   |
+| Post-training INT8 quantization, ESP32 IoT soil sensor integration, real-time Agmarknet webhooks,  |
+| bilingual Hindi/English voice synthesis, and real-farm field deployment trials.                   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -292,22 +308,22 @@ $$\text{MAPE} = \frac{100\%}{n} \sum_{t=1}^n \left| \frac{A_t - F_t}{A_t} \right
 
 All API endpoints are implemented with asynchronous route handlers and verified on `http://localhost:8000`:
 
-| HTTP Method | API Route | Request Payload Summary | Response Structure | Verified Status |
+| HTTP Method | API Route | Request Payload Summary | Response Structure | Current Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | None | Service status, runtime version, uptime | `200 OK` |
-| `GET` | `/api/states` | None | Array of 34 supported Indian states | `200 OK` |
-| `GET` | `/api/state-profile/{state}` | State name string | State N-P-K, pH, and rainfall averages | `200 OK` |
-| `POST` | `/api/predict_crop` | Soil N, P, K, pH, temp, humidity, rainfall | Ranked Top-3 crops with confidence % | `200 OK` |
-| `POST` | `/api/detect_disease` | Base64-encoded leaf photograph | Disease class, confidence, organic/chemical cure | `200 OK` |
-| `POST` | `/api/predict_risk` | State, district, crop, season, year | Risk score (0-100), alert level, mitigation plan | `200 OK` |
-| `POST` | `/api/forecast_price` | Crop name, state, district | 30-day forecasted daily price array | `200 OK` |
-| `POST` | `/api/historical_prices` | Crop name, state, district | Historical mandi arrival volumes and prices | `200 OK` |
-| `POST` | `/api/expert-chat` | Farmer query message | Agronomic advisory response | `200 OK` |
-| `POST` | `/api/send-sms-otp` | Indian mobile number | 6-digit authentication OTP via Fast2SMS | `200 OK` |
+| `GET` | `/health` | None | Service status, runtime version, uptime | `200 OK` (M2 Prototype) |
+| `GET` | `/api/states` | None | Array of 34 supported Indian states | `200 OK` (M2 Prototype) |
+| `GET` | `/api/state-profile/{state}` | State name string | State N-P-K, pH, and rainfall averages | `200 OK` (M2 Prototype) |
+| `POST` | `/api/predict_crop` | Soil N, P, K, pH, temp, humidity, rainfall | Ranked Top-3 crops with confidence % | `200 OK` (M2 Prototype) |
+| `POST` | `/api/detect_disease` | Base64-encoded leaf photograph | Disease class, confidence, organic/chemical cure | `200 OK` (M2 Prototype) |
+| `POST` | `/api/predict_risk` | State, district, crop, season, year | Risk score (0-100), alert level, mitigation plan | `200 OK` (M2 Prototype) |
+| `POST` | `/api/forecast_price` | Crop name, state, district | 30-day forecasted daily price array | `200 OK` (M2 Prototype) |
+| `POST` | `/api/historical_prices` | Crop name, state, district | Historical mandi arrival volumes and prices | `200 OK` (M2 Prototype) |
+| `POST` | `/api/expert-chat` | Farmer query message | Agronomic advisory response | `200 OK` (M2 Prototype) |
+| `POST` | `/api/send-sms-otp` | Indian mobile number | 6-digit authentication OTP via Fast2SMS | `200 OK` (M2 Prototype) |
 
 ---
 
-### 6.2 Running System Verification Proof
+### 6.2 Running System Verification Proof (Milestone 2 Prototype)
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -338,16 +354,16 @@ All API endpoints are implemented with asynchronous route handlers and verified 
 
 ---
 
-## 7. Experimental Results & Performance Benchmarks
+## 7. Experimental Results & Performance Benchmarks (Milestone 2 Validation)
 
 ### 7.1 Master Quantitative Benchmark Summary
 
-| Functional Module | Machine Learning Architecture | Dataset Size & Class Count | Primary Evaluation Metric | Mean CPU Latency | Resident RAM |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Crop Recommendation** | Random Forest (100 Trees) | 2,200 rows (22 crop classes) | **99.3% Test Accuracy** | **~42 ms** | ~65 MB |
-| **Disease Detection** | MobileNetV2 (ONNX Graph) | 54,303 images (38 pathology classes) | **96.8% Top-1 Accuracy** | **~112 ms** | ~210 MB |
-| **Crop Failure Risk** | Regularized XGBoost | 325,418 rows (Strict temporal split) | **0.892 Test ROC-AUC** | **~36 ms** | ~180 MB |
-| **Mandi Price Forecast** | Random Forest + WPI Normalization | 19.4 MB APMC logs (30 commodities) | **8.35% Test MAPE** | **~260 ms** | ~365 MB |
+| Functional Module | Machine Learning Architecture | Dataset Size & Class Count | Primary Evaluation Metric | Mean CPU Latency | Resident RAM | Milestone Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Crop Recommendation** | Random Forest (100 Trees) | 2,200 rows (22 crop classes) | **99.3% Test Accuracy** | **~42 ms** | ~65 MB | **Validated (M2)** |
+| **Disease Detection** | MobileNetV2 (ONNX Graph) | 54,303 images (38 pathology classes) | **96.8% Top-1 Accuracy** | **~112 ms** | ~210 MB | **Validated (M2)** |
+| **Crop Failure Risk** | Regularized XGBoost | 325,418 rows (Strict temporal split) | **0.892 Test ROC-AUC** | **~36 ms** | ~180 MB | **Validated (M2)** |
+| **Mandi Price Forecast** | Random Forest + WPI Normalization | 19.4 MB APMC logs (30 commodities) | **8.35% Test MAPE** | **~260 ms** | ~365 MB | **Validated (M2)** |
 
 ### 7.2 System Latency & Resource Utilization
 - **Total In-Memory Residency:** 820 MB RAM with all four models resident concurrently in backend memory.
@@ -360,7 +376,7 @@ All API endpoints are implemented with asynchronous route handlers and verified 
 
 The SAGRI platform was conceptualized, engineered, and evaluated through an integrated team workflow by the three members of our Bennett University student team: **Shikhar Kesharwani**, **Santusht Lakhanpal**, and **Sanchit Jain**. 
 
-To maintain technical excellence across all layers of the stack, the project team structured engineering responsibilities into three collaborative domain modules:
+To maintain technical excellence across all layers of the stack throughout Milestones 1 and 2, the project team structured engineering responsibilities into three collaborative domain modules:
 
 ### 8.1 Machine Learning & Statistical Modeling Domain
 - Formulated the multi-class crop recommendation pipeline across 22 crop varieties.
@@ -379,15 +395,29 @@ To maintain technical excellence across all layers of the stack, the project tea
 
 ---
 
-## 9. Conclusion & Milestone 3 Technical Roadmap
+## 9. Phased Project Status & Milestone 3 Final Deliverables
 
-During Milestones 1 and 2, our project team completed the domain literature review, curated authentic Indian agricultural datasets, trained four distinct machine learning and deep learning models, and integrated them into a fully operational web application.
+### 9.1 Summary of Milestones 1 & 2 Completion (Current Evaluation Scope)
+In Milestones 1 and 2, our team established the agronomic foundations, curated datasets from ICAR, PlantVillage, Agmarknet, and ICRISAT, trained four validated AI models, and integrated them into a functional full-stack web application running locally on port 5173 with a FastAPI backend on port 8000. 
 
-### Planned Milestone 3 Deliverables (Final Phase):
-1. **INT8 Quantization:** Apply post-training INT8 quantization to `disease_model.onnx`, reducing model storage footprint from 16 MB to under 5 MB for ultra-fast edge execution.
-2. **IoT Telemetry Ingestion:** Interface an ESP32 microcontroller with capacitive NPK/moisture soil probes to stream real-time sensor readings directly into `/api/predict_crop`.
-3. **Vernacular Audio Synthesizer:** Integrate bilingual text-to-speech (Hindi and English) to ensure accessibility for low-literacy rural farmers.
-4. **Live Mandi Webhook Feeds:** Ingest daily live APMC price arrivals via official Agmarknet REST webhooks to augment historical forecasting curves.
+### 9.2 In-Progress Work for Milestone 3 (Final Project Evaluation Scope)
+Our team is actively executing the final development phase (Milestone 3) to advance SAGRI from a laboratory prototype to a production-hardened, hardware-integrated agricultural advisory ecosystem:
+
+1. **Edge INT8 Model Quantization:**
+   - *Objective:* Convert `disease_model.onnx` from 32-bit floating point (FP32) to 8-bit integer (INT8) quantization using ONNX Runtime Quantization Tools.
+   - *Target KPI:* Reduce model file size from 16 MB to under 5 MB, cutting CPU inference latency from 112 ms down to under 50 ms for low-power edge devices.
+
+2. **ESP32 IoT Soil Telemetry Ingestion Bridge:**
+   - *Objective:* Connect physical capacitive NPK, moisture, and soil temperature probes via an ESP32 microcontroller over MQTT/HTTP to stream live farm field readings directly into `/api/predict_crop`, bypassing manual data entry.
+
+3. **Live Agmarknet APMC Real-Time Webhook Pipeline:**
+   - *Objective:* Establish automated daily webhook polling against the national Agmarknet data API to ingest live commodity spot prices, automatically updating the forecasting models with real-time arrivals.
+
+4. **Multilingual Vernacular Audio Advisory Engine:**
+   - *Objective:* Integrate bilingual text-to-speech (Hindi and English) audio generation to vocalize crop recommendations, risk advisories, and pathological treatments for low-literacy farmers.
+
+5. **Pilot Field Testing & Comprehensive Final Defense:**
+   - *Objective:* Conduct end-to-end user validation with local farming cooperative test cases and present the finalized production ecosystem during the final Milestone 3 evaluation.
 
 ---
 
