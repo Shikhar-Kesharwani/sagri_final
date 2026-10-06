@@ -1,7 +1,12 @@
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-267f669b`;
-export const ML_API_BASE_URL = (import.meta as any).env?.VITE_BACKEND_URL?.trim() || 'http://127.0.0.1:8000';
+export const ML_API_BASE_URL =
+  (import.meta as any).env?.VITE_BACKEND_URL?.trim() ||
+  (import.meta as any).env?.VITE_API_URL?.trim() ||
+  (typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : 'http://localhost:8000');
 
 // Helper to get auth token from localStorage
 function getAuthToken(): string | null {

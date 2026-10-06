@@ -883,7 +883,8 @@ def detect_disease(data: DiseaseInput):
 
     try:
         import numpy as np
-        from PIL import Image, ImageEnhance
+        from PIL import Image
+        from backend.pathology_kb import get_pathology_profile
 
         logger.info("Received image for disease detection (payload length: %s)", len(data.image_data))
 
@@ -898,13 +899,17 @@ def detect_disease(data: DiseaseInput):
         try:
             base_pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
             
-            # --- TTA (Test-Time Augmentation) Generation ---
+            # --- Center Square Crop to preserve authentic leaf morphology ---
+            w, h = base_pil_img.size
+            dim = min(w, h)
+            left = (w - dim) // 2
+            top = (h - dim) // 2
+            cropped_img = base_pil_img.crop((left, top, left + dim, top + dim))
+
+            # --- Clean, Non-Destructive TTA (Original + Horizontal Flip) ---
             augmented_images = [
-                base_pil_img,                                                # Original
-                base_pil_img.transpose(Image.FLIP_LEFT_RIGHT),               # Flipped
-                ImageEnhance.Brightness(base_pil_img).enhance(1.2),          # Brightened
-                ImageEnhance.Brightness(base_pil_img).enhance(0.8),          # Darkened
-                ImageEnhance.Contrast(base_pil_img).enhance(1.2),            # High Contrast
+                cropped_img,
+                cropped_img.transpose(Image.FLIP_LEFT_RIGHT)
             ]
             
             if disease_model_onnx:
@@ -918,7 +923,7 @@ def detect_disease(data: DiseaseInput):
                 std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
                 for aug_img in augmented_images:
-                    aug_img = aug_img.resize((224, 224))
+                    aug_img = aug_img.resize((224, 224), Image.Resampling.BILINEAR)
                     img_array = np.array(aug_img, dtype=np.float32)
                     
                     img_array = img_array / 255.0
@@ -931,15 +936,15 @@ def detect_disease(data: DiseaseInput):
                     probs = softmax(predictions)[0]
                     all_probs.append(probs)
                 
-                # Mathematical Averaging of all 5 passes
+                # Mathematical Averaging of clean passes
                 avg_probs = np.mean(all_probs, axis=0)
                 class_idx = int(np.argmax(avg_probs))
                 confidence = float(avg_probs[class_idx]) * 100
-                logger.info("Averaged probabilities over 5 TTA passes.")
+                logger.info("Averaged probabilities over clean TTA passes.")
                 
             else:
                 # Fallback to Keras model
-                pil_img = base_pil_img.resize((224, 224))
+                pil_img = cropped_img.resize((224, 224), Image.Resampling.BILINEAR)
                 img_array = np.array(pil_img, dtype=np.float32)
                 img_array = np.expand_dims(img_array, axis=0)
                 logger.info("Preprocessed Keras image array shape: %s", img_array.shape)
@@ -952,51 +957,53 @@ def detect_disease(data: DiseaseInput):
             raise HTTPException(status_code=400, detail="Invalid image format or preprocessing failed.")
 
         disease_name = disease_classes[class_idx]
-        is_healthy = "healthy" in disease_name.lower()
-
         logger.info("Disease prediction: %s (%.2f%%)", disease_name, confidence)
         
-        # Load the treatment database
+        # Load profile from pathology knowledge base
+        profile = get_pathology_profile(disease_name)
+        is_healthy = profile["is_healthy"]
+
+        # Merge with treatment database if present for complementary field data
         treatment_path = MODEL_DIR / "treatment_db.json"
         treatment_info = None
         if treatment_path.exists():
-            with open(treatment_path, "r") as f:
-                db = json.load(f)
-                treatment_info = db.get(str(class_idx))
-                
-        if not treatment_info:
-            # Fallback if DB is missing or class not found
-            return {
-                "disease": disease_name.replace("_", " "),
-                "confidence": round(confidence, 1),
-                "severity": "None" if is_healthy else ("High" if confidence > 80 else "Medium"),
-                "recommendation": (
-                    "Crop looks great! No disease detected."
-                    if is_healthy
-                    else f"AI identified possible {disease_name.replace('_', ' ')}. Please take action."
-                ),
-                "treatment": (
-                    []
-                    if is_healthy
-                    else [
-                        "Isolate the affected plants immediately.",
-                        "Consult a local agricultural expert.",
-                        "Consider appropriate fungicide/pesticide treatment.",
-                        "Remove and destroy severely affected leaves.",
-                    ]
-                ),
-                "color": "green" if is_healthy else "red",
-            }
-            
+            try:
+                with open(treatment_path, "r", encoding="utf-8") as f:
+                    db = json.load(f)
+                    treatment_info = db.get(str(class_idx))
+            except Exception:
+                pass
+
+        chem_treatment = list(profile["chemical_treatment"])
+        org_treatment = list(profile["organic_treatment"])
+        immediate_action = profile["immediate_action"]
+
+        if treatment_info:
+            if "immediate_action" in treatment_info and treatment_info["immediate_action"]:
+                immediate_action = treatment_info["immediate_action"]
+            if "chemical" in treatment_info and isinstance(treatment_info["chemical"], dict):
+                c = treatment_info["chemical"]
+                chem_str = f"{c.get('name', '')} — {c.get('dosage', '')} ({c.get('frequency', '')})".strip(" — ")
+                if chem_str and chem_str != "None — N/A (N/A)":
+                    chem_treatment = [chem_str]
+            if "organic" in treatment_info and isinstance(treatment_info["organic"], str) and treatment_info["organic"] not in ["None", "N/A"]:
+                org_treatment = [treatment_info["organic"]]
+
         return {
-            "disease": disease_name.replace("_", " "),
+            "disease": profile["display_name"],
+            "raw_class": disease_name,
+            "crop": profile["crop"],
             "confidence": round(confidence, 1),
-            "severity": treatment_info["severity"],
-            "immediate_action": treatment_info["immediate_action"],
-            "chemical_treatment": treatment_info["chemical"],
-            "organic_treatment": treatment_info["organic"],
-            "recheck_days": treatment_info["recheck_days"],
-            "color": "green" if is_healthy else ("yellow" if treatment_info["severity"] == "Medium" else "red")
+            "severity": profile["severity"],
+            "recommendation": profile["recommendation"],
+            "immediate_action": immediate_action,
+            "treatment": chem_treatment,
+            "chemical_treatment": chem_treatment,
+            "organic_treatment": org_treatment,
+            "prevention": profile["prevention"],
+            "recheck_days": profile.get("recheck_days", 7),
+            "color": profile["color"],
+            "is_healthy": is_healthy
         }
     except HTTPException:
         raise

@@ -48,14 +48,52 @@ export function DiseaseDetection() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 15 * 1024 * 1024) {
-        toast.error('Image is too large. Please choose an image under 15MB.');
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error('Image is too large. Please choose an image under 25MB.');
         return;
       }
+
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-        setResult(null);
+      reader.onload = (event) => {
+        const rawDataUrl = event.target?.result as string;
+        if (!rawDataUrl) return;
+
+        // Downscale image via client-side canvas to max 1024px (100-200KB) to ensure rapid, reliable API transfer
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1024;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.88);
+            setSelectedImage(compressed);
+            setResult(null);
+          } else {
+            setSelectedImage(rawDataUrl);
+            setResult(null);
+          }
+        };
+        img.onerror = () => {
+          setSelectedImage(rawDataUrl);
+          setResult(null);
+        };
+        img.src = rawDataUrl;
       };
       reader.readAsDataURL(file);
     }

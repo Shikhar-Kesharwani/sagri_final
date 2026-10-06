@@ -317,6 +317,150 @@ const PATHOLOGY_KNOWLEDGE_BASE: Record<string, DiseaseDiagnosis> = {
       'Plant border barrier of 2 rows of pearl millet or maize'
     ]
   },
+  'Apple Scab': {
+    disease_name: 'Apple Scab (Venturia inaequalis)',
+    confidence_score: 93.4,
+    severity_level: 'Moderate',
+    recommendation: 'Olive-green to black fungal scab lesions detected. Rake and destroy fallen leaves and apply protective fungicide.',
+    treatment: [
+      'Spray Captan 50% WP @ 2.0g/L during wet periods',
+      'Apply Difenoconazole 25% EC @ 0.5ml/L at petal fall stage',
+      'Mancozeb 75% WP @ 2.5g/L as preventative canopy cover'
+    ],
+    organic_treatment: [
+      'Neem seed kernel extract (NSKE 5%) foliar spray',
+      'Copper oxychloride (0.3%) dormant wash before bud break',
+      'Sulfur 80% WP @ 2g/L during early vegetative flush'
+    ],
+    prevention_tips: [
+      'Rake and destroy fallen leaves in autumn to eliminate overwintering spores',
+      'Prune inner canopy during dormancy to maximize air movement and sunlight',
+      'Apply 5% urea spray to orchard floor after harvest to accelerate leaf decay'
+    ]
+  },
+  'Corn Rust': {
+    disease_name: 'Corn / Maize Common Rust (Puccinia sorghi)',
+    confidence_score: 95.8,
+    severity_level: 'Moderate',
+    recommendation: 'Reddish-brown rust pustules detected on maize leaf lamina. Apply protectant fungicide if infection occurs before tasseling.',
+    treatment: [
+      'Spray Mancozeb 75% WP @ 2.5g/L at first sign of pustules',
+      'Apply Tebuconazole 25.9% EC @ 1ml/L',
+      'Azoxystrobin 23% SC @ 1ml/L'
+    ],
+    organic_treatment: [
+      'Foliar spray of 10% cow urine + fermented buttermilk (chaas)',
+      'Neem oil 1500 ppm @ 3ml/L water'
+    ],
+    prevention_tips: [
+      'Plant genetically rust-resistant hybrids featuring Rp single-gene resistance',
+      'Sow early to ensure crop passes vulnerable grain-filling before rust spore flight',
+      'Avoid excessive nitrogen fertilization which produces succulent leaf tissue'
+    ]
+  },
+  'Grape Black Rot': {
+    disease_name: 'Grape Black Rot (Guignardia bidwellii)',
+    confidence_score: 96.1,
+    severity_level: 'Critical',
+    recommendation: 'Grape black rot detected. Remove shriveled mummified fruit and apply protectant fungicide before rain events.',
+    treatment: [
+      'Spray Mancozeb 75% WP @ 2.5g/L water starting at 10-15cm shoot growth',
+      'Apply Myclobutanil 10% WP @ 0.5g/L or Kresoxim-methyl 44.3% SC @ 0.7ml/L',
+      'Difenoconazole 25% EC @ 0.5ml/L'
+    ],
+    organic_treatment: [
+      'Bordeaux mixture (1% 4:4:50) applied before predicted rain spells',
+      'Copper oxychloride 50% WP @ 3g/L water'
+    ],
+    prevention_tips: [
+      'Remove all shriveled black mummies from vines and ground during winter pruning',
+      'Canopy thin and shoot position to allow sun and wind to dry grape clusters quickly',
+      'Maintain clean, weed-free strips under trellis rows'
+    ]
+  },
+  'Peach Bacterial Spot': {
+    disease_name: 'Peach Bacterial Spot (Xanthomonas arboricola)',
+    confidence_score: 92.8,
+    severity_level: 'Moderate',
+    recommendation: 'Angular shot-hole lesions detected. Cease overhead irrigation and apply protective copper bactericide.',
+    treatment: [
+      'Copper hydroxide 53.8% DF @ 1.5g/L at bud swell and shuck split',
+      'Oxytetracycline agricultural grade @ 1.0g/L during bloom',
+      'Mancozeb + Copper tank mix during early cover stages'
+    ],
+    organic_treatment: [
+      'Fixed copper bactericide dormant spray before bud swell',
+      'Bacillus subtilis bio-bactericide foliar spray @ 2g/L'
+    ],
+    prevention_tips: [
+      'Select bacterial spot resistant peach varieties (Clayton, Candor, Biscoe)',
+      'Erect windbreaks along prevailing wind corridors to avoid sand abrasion injury',
+      'Maintain balanced soil fertility with moderate nitrogen and adequate potassium'
+    ]
+  },
+  'Pepper Bacterial Spot': {
+    disease_name: 'Bell Pepper Bacterial Spot (Xanthomonas campestris)',
+    confidence_score: 94.2,
+    severity_level: 'Moderate',
+    recommendation: 'Water-soaked necrotic spots identified on pepper leaf. Disinfect stakes and apply copper-streptocycline spray.',
+    treatment: [
+      'Copper oxychloride 50% WP @ 2.5g/L + Streptocycline (1g per 10L water)',
+      'Kasugamycin 3% SL @ 1.5ml/L water',
+      'Copper hydroxide @ 2g/L water'
+    ],
+    organic_treatment: [
+      'Pseudomonas fluorescens (10g/L) seedling root dip and foliar spray',
+      'Garlic + chili botanical extract spray',
+      'Trichoderma viride soil application'
+    ],
+    prevention_tips: [
+      'Hot-water treat non-certified seeds at 50°C for 25 minutes prior to sowing',
+      'Implement strict 2-3 year crop rotation away from solanaceous vegetables',
+      'Utilize drip irrigation exclusively; avoid overhead sprinkler splashing'
+    ]
+  },
+  'Squash Powdery Mildew': {
+    disease_name: 'Squash Powdery Mildew (Podosphaera xanthii)',
+    confidence_score: 93.6,
+    severity_level: 'Moderate',
+    recommendation: 'Powdery white fungal colonies identified on squash leaf surface. Thin dense older leaves and apply bio-fungicide.',
+    treatment: [
+      'Azoxystrobin 23% SC @ 1ml/L water',
+      'Myclobutanil 10% WP @ 0.5g/L water',
+      'Sulfur 80% WP @ 2.5g/L water (avoid if temperature exceeds 32°C)'
+    ],
+    organic_treatment: [
+      'Potassium bicarbonate (3g/L) + Neem oil (3ml/L) foliar spray',
+      'Baking soda (5g/L) with horticultural liquid soap surfactant',
+      'Trichoderma harzianum @ 5g/L water'
+    ],
+    prevention_tips: [
+      'Space vines generously (minimum 1.5–2m row spacing) for maximum air movement',
+      'Install drip irrigation; never wet cucurbit foliage in the evening',
+      'Plant powdery mildew tolerant hybrids'
+    ]
+  },
+  'Strawberry Scorch': {
+    disease_name: 'Strawberry Leaf Scorch (Diplocarpon earlianum)',
+    confidence_score: 91.9,
+    severity_level: 'Moderate',
+    recommendation: 'Dark purplish-brown scorch spots detected on strawberry foliage. Remove necrotic leaves and renovate bed mulch.',
+    treatment: [
+      'Captan 50% WP @ 2g/L water',
+      'Thiophanate-methyl 70% WP @ 1g/L water',
+      'Myclobutanil 10% WP @ 0.5g/L during renovation'
+    ],
+    organic_treatment: [
+      'Copper soap fungicide foliar spray',
+      'Neem oil 1500 ppm @ 3ml/L water',
+      'Bio-fungicide Bacillus subtilis @ 2g/L water'
+    ],
+    prevention_tips: [
+      'Plant certified disease-free strawberry runner transplants',
+      'Renovate beds immediately after fruiting: mow foliage above crowns, rake out debris',
+      'Mulch beds with clean, fresh wheat or barley straw to prevent soil-splash'
+    ]
+  },
   'Healthy Crop': {
     disease_name: 'Healthy Crop (No Pathogen Detected)',
     confidence_score: 98.6,
@@ -469,6 +613,10 @@ Return ONLY a raw JSON object (NO markdown, NO backticks) adhering strictly to t
           ? [formatTreatmentItem(data.organic_treatment)]
           : profile.organic_treatment;
 
+      const preventionList: string[] = Array.isArray(data.prevention) && data.prevention.length > 0
+        ? data.prevention.map(formatTreatmentItem)
+        : profile.prevention_tips;
+
       return {
         disease: diseaseName,
         confidence: typeof data.confidence === 'number' ? (data.confidence > 1 ? Number((data.confidence / 100).toFixed(2)) : data.confidence) : 0.89,
@@ -476,8 +624,8 @@ Return ONLY a raw JSON object (NO markdown, NO backticks) adhering strictly to t
         recommendation: data.recommendation || data.immediate_action || profile.recommendation || 'Follow CIBRC university advisory.',
         treatment: chemicalList,
         organicTreatment: organicList,
-        prevention: profile.prevention_tips,
-        color: data.color || 'orange',
+        prevention: preventionList,
+        color: data.color || (data.severity === 'Critical' || data.severity === 'High' ? 'red' : data.severity === 'Moderate' || data.severity === 'Medium' ? 'yellow' : 'green'),
         zod_validated: true
       };
     }
