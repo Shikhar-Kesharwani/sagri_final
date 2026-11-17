@@ -1,0 +1,10 @@
+{
+  "description": "A setup and verification workflow that prepares imported projects for deployment, helping developers validate production and preview configurations before release.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

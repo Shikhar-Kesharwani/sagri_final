@@ -82,6 +82,16 @@ export function Header() {
             )}
 
             <div className="flex items-center gap-2">
+              <a
+                href="http://localhost:5174"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open Modern SAGRI Intelligence (Port 5174)"
+                className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200 bg-emerald-100/90 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-800/80 rounded-xl transition-all border border-emerald-300 dark:border-emerald-700 shadow-sm"
+              >
+                ✨ Modern 5174 ↗
+              </a>
+
               <LanguageSelector />
 
               <motion.button

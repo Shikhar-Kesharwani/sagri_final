@@ -21,8 +21,10 @@ export default defineConfig({
   assetsInclude: ['**/*.svg', '**/*.csv'],
   
   server: {
+    port: 5173,
+    strictPort: true,
     watch: {
-      ignored: ['**/backend/**', '**/backend/data/**']
+      ignored: ['**/backend/**', '**/backend/data/**', '**/new_frontend/**']
     }
   }
 })

@@ -248,6 +248,18 @@ export function CropRecommendation() {
       });
       
       if (user?.email && crops.length > 0) {
+        // Persist to SQLite via backend
+        fetch(`${ML_API_BASE_URL}/api/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_email: user.email,
+            prediction_type: 'Crop Recommendation',
+            result: crops[0].name,
+            input_data: formData,
+          }),
+        }).catch(() => {});
+
         try {
           await supabase.from('prediction_history').insert([{
             user_email: user.email,

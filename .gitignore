@@ -89,3 +89,5 @@ backend/models/price_forecast_model.pkl
 # Large datasets — but allow the small state profile CSV needed for the states dropdown
 backend/data/
 !backend/data/state_profiles.csv
+
+*.bak

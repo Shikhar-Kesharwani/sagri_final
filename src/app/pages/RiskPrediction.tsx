@@ -92,6 +92,18 @@ export function RiskPrediction() {
       toast.success(data.is_mock ? 'Mock assessment complete!' : 'AI Risk assessment complete! +15 points');
 
       if (user?.email) {
+        // Persist to SQLite via backend
+        fetch(`${ML_API_BASE_URL}/api/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_email: user.email,
+            prediction_type: 'Risk Assessment',
+            result: `${risk.level} Risk (${riskLevel}%)`,
+            input_data: formData,
+          }),
+        }).catch(() => {});
+
         try {
           await supabase.from('prediction_history').insert([{
             user_email: user.email,

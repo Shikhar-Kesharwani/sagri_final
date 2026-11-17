@@ -1,0 +1,5 @@
+/* Native pickers follow the dark theme (farm tools entry only). */
+select,
+input[type="date"] {
+  color-scheme: dark;
+}

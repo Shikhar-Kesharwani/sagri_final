@@ -20,6 +20,8 @@ import { BackButton } from '../components/BackButton';
 import { supabase } from '../lib/supabase';
 import { diagnoseCropDisease, DiagnosisResult } from '../lib/aiService';
 
+const ML_API_BASE_URL = import.meta.env.VITE_ML_API_URL || 'http://localhost:8000';
+
 const DIAGNOSTIC_STEPS = [
   'Inspecting leaf morphology & cellular tissue...',
   'Evaluating pathogen markers against CIBRC database...',
@@ -113,6 +115,18 @@ export function DiseaseDetection() {
       toast.success('Pathology analysis complete! +10 Krishi points earned.');
 
       if (user?.email) {
+        // Persist to SQLite via backend
+        fetch(`${ML_API_BASE_URL}/api/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_email: user.email,
+            prediction_type: 'Disease Detection',
+            result: diagnosis.disease,
+            input_data: { image: 'leaf_photo_analyzed', crop: diagnosis.crop, severity: diagnosis.severity },
+          }),
+        }).catch(() => {});
+
         try {
           await supabase.from('prediction_history').insert([
             {

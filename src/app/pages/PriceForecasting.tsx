@@ -307,6 +307,18 @@ export function PriceForecasting() {
       toast.success('Market forecasting generated! +12 Krishi points.');
 
       if (user?.email) {
+        // Persist to SQLite via backend
+        fetch(`${ML_API_BASE_URL}/api/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_email: user.email,
+            prediction_type: 'Price Forecast',
+            result: `₹${forecast?.currentPrice || 2275}/Qtl target analysis`,
+            input_data: { crop: selectedCrop, state: selectedRegion },
+          }),
+        }).catch(() => {});
+
         try {
           await supabase.from('prediction_history').insert([
             {

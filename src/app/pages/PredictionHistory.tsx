@@ -7,6 +7,8 @@ import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
+const ML_API_BASE_URL = import.meta.env.VITE_ML_API_URL || 'http://localhost:8000';
+
 export function PredictionHistory() {
   const { user } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
@@ -24,16 +26,28 @@ export function PredictionHistory() {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('prediction_history')
-          .select('*')
-          .eq('user_email', user.email)
-          .order('timestamp', { ascending: false });
+        // 1. First fetch directly from SQLite database via ML Backend API
+        const res = await fetch(`${ML_API_BASE_URL}/api/history?user_email=${encodeURIComponent(user.email)}`);
+        const json = await res.json();
+        
+        let records = json.success && Array.isArray(json.data) ? json.data : null;
 
-        if (error) throw error;
+        // 2. Fall back to Supabase if backend did not return data
+        if (!records || records.length === 0) {
+          try {
+            const { data, error } = await supabase
+              .from('prediction_history')
+              .select('*')
+              .eq('user_email', user.email)
+              .order('timestamp', { ascending: false });
+            if (!error && data && data.length > 0) {
+              records = data;
+            }
+          } catch (_) {}
+        }
 
-        if (data) {
-          const formatted = data.map((item: any) => {
+        if (records && records.length > 0) {
+          const formatted = records.map((item: any) => {
             const dateObj = new Date(item.timestamp);
             let icon = <Sprout className="w-6 h-6" />;
             let color = 'from-purple-500 to-pink-500';
@@ -41,6 +55,12 @@ export function PredictionHistory() {
             if (item.prediction_type === 'Price Forecast') {
               icon = <TrendingUp className="w-6 h-6" />;
               color = 'from-blue-500 to-cyan-500';
+            } else if (item.prediction_type === 'Disease Detection') {
+              icon = <Camera className="w-6 h-6" />;
+              color = 'from-emerald-500 to-teal-500';
+            } else if (item.prediction_type === 'Risk Assessment') {
+              icon = <AlertTriangle className="w-6 h-6" />;
+              color = 'from-amber-500 to-red-500';
             }
 
             return {
@@ -50,7 +70,7 @@ export function PredictionHistory() {
               time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
               result: item.result,
               status: 'success',
-              details: JSON.stringify(item.input_data),
+              details: typeof item.input_data === 'string' ? item.input_data : JSON.stringify(item.input_data),
               color,
             };
           });
@@ -58,7 +78,7 @@ export function PredictionHistory() {
           setHistory(formatted);
 
           // Update stats
-          const thisMonth = data.filter((item: any) => {
+          const thisMonth = records.filter((item: any) => {
             const d = new Date(item.timestamp);
             const now = new Date();
             return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -69,39 +89,50 @@ export function PredictionHistory() {
             { label: 'This Month', value: thisMonth.toString(), icon: <Calendar className="w-5 h-5" /> },
             { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
           ]);
+          return;
         }
       } catch (err) {
         console.warn("Using local prediction history fallback:", err);
-        try {
-          const local = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
-          if (local.length > 0) {
-            const formatted = local.map((item: any) => {
-              const dateObj = new Date(item.timestamp || Date.now());
-              let icon = <Sprout className="w-6 h-6" />;
-              let color = 'from-purple-500 to-pink-500';
-              if (item.prediction_type === 'Price Forecast') {
-                icon = <TrendingUp className="w-6 h-6" />;
-                color = 'from-blue-500 to-cyan-500';
-              }
-              return {
-                type: item.prediction_type,
-                icon,
-                date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                result: item.result,
-                status: 'success',
-                details: JSON.stringify(item.input_data),
-                color,
-              };
-            });
-            setHistory(formatted);
-            setStats([
-              { label: 'Total Predictions', value: formatted.length.toString(), icon: <History className="w-5 h-5" /> },
-              { label: 'This Month', value: formatted.length.toString(), icon: <Calendar className="w-5 h-5" /> },
-              { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
-            ]);
-          }
-        } catch (_) {}
+      }
+
+      // 3. Fallback to localStorage if offline
+      try {
+        const local = JSON.parse(localStorage.getItem('sagri_prediction_history') || '[]');
+        if (local.length > 0) {
+          const formatted = local.map((item: any) => {
+            const dateObj = new Date(item.timestamp || Date.now());
+            let icon = <Sprout className="w-6 h-6" />;
+            let color = 'from-purple-500 to-pink-500';
+            if (item.prediction_type === 'Price Forecast') {
+              icon = <TrendingUp className="w-6 h-6" />;
+              color = 'from-blue-500 to-cyan-500';
+            } else if (item.prediction_type === 'Disease Detection') {
+              icon = <Camera className="w-6 h-6" />;
+              color = 'from-emerald-500 to-teal-500';
+            } else if (item.prediction_type === 'Risk Assessment') {
+              icon = <AlertTriangle className="w-6 h-6" />;
+              color = 'from-amber-500 to-red-500';
+            }
+            return {
+              type: item.prediction_type,
+              icon,
+              date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              result: item.result,
+              status: 'success',
+              details: typeof item.input_data === 'string' ? item.input_data : JSON.stringify(item.input_data),
+              color,
+            };
+          });
+          setHistory(formatted);
+          setStats([
+            { label: 'Total Predictions', value: formatted.length.toString(), icon: <History className="w-5 h-5" /> },
+            { label: 'This Month', value: formatted.length.toString(), icon: <Calendar className="w-5 h-5" /> },
+            { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
+          ]);
+        }
+      } catch (_) {}
+    }
       } finally {
         setLoading(false);
       }
