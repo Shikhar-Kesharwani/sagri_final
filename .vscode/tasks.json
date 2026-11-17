@@ -1,0 +1,82 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start ML Backend (Port 8000)",
+      "type": "shell",
+      "command": "python -m uvicorn main:app --port 8000 --reload",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Uvicorn running",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "group": "sagri",
+        "panel": "dedicated",
+        "focus": false
+      }
+    },
+    {
+      "label": "Start Modern Frontend (Port 5174)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/new_frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": {
+        "group": "sagri",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
+      "label": "Start Classic Frontend (Port 5173)",
+      "type": "shell",
+      "command": "npm run dev:classic",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "sagri",
+        "panel": "dedicated",
+        "focus": false
+      }
+    },
+    {
+      "label": "Run Modern Version (Backend + Port 5174)",
+      "dependsOn": [
+        "Start ML Backend (Port 8000)",
+        "Start Modern Frontend (Port 5174)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

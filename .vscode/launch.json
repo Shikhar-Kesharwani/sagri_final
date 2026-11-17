@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Modern Version in Browser (Port 5174)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5174",
+      "webRoot": "${workspaceFolder}/new_frontend",
+      "preLaunchTask": "Run Modern Version (Backend + Port 5174)"
+    },
+    {
+      "name": "Launch Classic Version in Browser (Port 5173)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
+}
