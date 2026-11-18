@@ -1,10 +1,10 @@
 # 🌾 SAGRI — Smart Agriculture Real-time Intelligence
 ### *Autonomous Multimodal AI Ecosystem & Instant Mandi Payout Engine for Indian Agriculture*
 
-[![Dual Platform](https://img.shields.io/badge/Architecture-Dual--Platform%20Concurrent-10B981?style=for-the-badge&logo=react&logoColor=white)](https://github.com/Shikhar-Kesharwani/Sagriai)
-[![Vite](https://img.shields.io/badge/Frontend-Vite%20%2B%20React%2018-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20REST-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Dual Platform](https://img.shields.io/badge/Architecture-Dual--Platform%20Concurrent-10B981?style=for-the-badge&logo=react&logoColor=white)](https://github.com/Shikhar-Kesharwani/sagri_final)
+[![Classic Frontend](https://img.shields.io/badge/Port%205173-SAGRI%20Classic-22C55E?style=for-the-badge&logo=vite&logoColor=white)](http://localhost:5173)
+[![Modern Frontend](https://img.shields.io/badge/Port%205174-SAGRI%20Modern-3B82F6?style=for-the-badge&logo=react&logoColor=white)](http://localhost:5174)
+[![FastAPI](https://img.shields.io/badge/Backend%20:8000-FastAPI%20REST-009688?style=for-the-badge&logo=fastapi&logoColor=white)](http://localhost:8000)
 [![ONNX Runtime](https://img.shields.io/badge/Vision%20AI-MobileNetV2%20ONNX-005CED?style=for-the-badge&logo=onnx&logoColor=white)](https://onnxruntime.ai/)
 [![XGBoost](https://img.shields.io/badge/Risk%20Radar-XGBoost%20Classifier-FF6F00?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.readthedocs.io/)
 [![SQLite WAL](https://img.shields.io/badge/Persistence-SQLite%20ACID%20WAL-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
@@ -12,13 +12,30 @@
 
 ---
 
+## 🌟 Dual-Platform Architecture (Both Versions Active & Live)
+
+SAGRI ships with **both frontends fully implemented and concurrent** within this single repository, sharing the same unified Python AI/ML backend and local ACID SQLite database:
+
+| Feature / Dimension | 🌿 **Version 1: SAGRI Classic** (`src/`) | ✨ **Version 2: SAGRI Modern** (`new_frontend/`) |
+| :--- | :--- | :--- |
+| **Local Port** | **`http://localhost:5173`** | **`http://localhost:5174`** |
+| **Design Language** | Vibrant Agricultural Emerald, Gamified Cards, 3D Canvas Visualizer | High-Precision Editorial (Linear/Palantir aesthetic), Radix UI, Clean Typography |
+| **Target Audience** | Smallholder Farmers, Extension Field Officers, Vernacular Voice Users | Agronomists, Research Institutes, Institutional Commodity Buyers, Policy Analysts |
+| **Navigation** | Sticky Top Navbar with Quick Modules + Live Voice Assistant Button | Sticky Editorial Header + Quick Command Palette (`Ctrl + K` / `Cmd + K`) |
+| **Foliar Pathology** | Real-time image upload, visual crop pathology cards, treatment drawer | High-precision diagnostic breakdown with top-3 differential confidence |
+| **Mandi Payout** | APMC Split Simulator (98% farmer / 2% cess), UTR generation, PDF receipt | Comprehensive mandi trend analysis, arrival volumes, real-time APMC settlement |
+| **Cross-Navigation** | Includes **`✨ Modern 5174 ↗`** header button to switch instantly | Includes **`🌿 Classic 5173 ↗`** header button to switch instantly |
+| **Persistence** | Synchronized with SQLite at `backend/data/sagri.db` + localStorage | Synchronized with SQLite at `backend/data/sagri.db` + localStorage |
+
+---
+
 ## 🚀 Live Deployments & Repository Overview
 
-* **🌾 Classic Agronomist Portal:** [`http://localhost:5173`](http://localhost:5173) *(Vibrant green, 3D Canvas visualizer, gamified extension tools)*
-* **✨ Modern Intelligence Suite:** [`http://localhost:5174`](http://localhost:5174) *(High-precision editorial interface, Linear/Palantir aesthetic, research grade)*
+* **🌿 Classic Agronomist Portal:** [`http://localhost:5173`](http://localhost:5173) *(Port 5173 — Full gamified farmer interface)*
+* **✨ Modern Intelligence Suite:** [`http://localhost:5174`](http://localhost:5174) *(Port 5174 — High-precision editorial research interface)*
 * **⚡ Unified ML Backend API:** [`http://localhost:8000`](http://localhost:8000) *(FastAPI, ONNX Runtime, Scikit-Learn, XGBoost, SQLite WAL)*
 * **🌐 Production Cloud Deploy:** [https://sagriai.vercel.app](https://sagriai.vercel.app) *(Mirror: [sagri-final.vercel.app](https://sagri-final.vercel.app))*
-* **📂 GitHub Repository:** [https://github.com/Shikhar-Kesharwani/Sagriai](https://github.com/Shikhar-Kesharwani/Sagriai)
+* **📂 GitHub Repository:** [https://github.com/Shikhar-Kesharwani/sagri_final](https://github.com/Shikhar-Kesharwani/sagri_final)
 
 ---
 
@@ -75,23 +92,26 @@ flowchart TD
 
 ---
 
-## 🧠 The 5 Core Machine Learning & AI Pipelines
+## 🧠 The 5 Core Machine Learning & AI Pipelines (Unadulterated Outputs)
+
+All models deliver **authentic, unmanipulated probabilities** directly from inference engines (zero artificial inflation or random number generation):
 
 ### 1. 📷 Deep Learning Foliar Pathology (`/api/predict_disease`)
 * **Architecture:** Quantized **MobileNetV2 Convolutional Neural Network** deployed in ONNX Runtime format (`16.2 MB`, $3.4\text{M}$ parameters).
 * **Scope:** 38 plant pathology classes spanning 14 major agricultural crops (PlantVillage standard).
 * **Pipeline:** Center square crop $\to$ bilateral interpolation to $224 \times 224$ px $\to$ ImageNet normalization ($\mu=[0.485, 0.456, 0.406], \sigma=[0.229, 0.224, 0.225]$) $\to$ **2-pass Test-Time Augmentation (TTA)** with horizontal flip averaging.
-* **Calibrated Output:** Returns **honest, unadulterated softmax probabilities** (zero fake inflation), top-3 differential diagnosis, pathogen taxonomy (fungal, bacterial, viral), and CIBRC-approved chemical and bio-control remedies.
+* **Calibrated Output:** Returns **honest, raw softmax probabilities** (zero artificial clamping), top-3 differential diagnosis, pathogen taxonomy (fungal, bacterial, viral), and CIBRC-approved chemical and bio-control remedies.
 
 ### 2. 🌱 Agronomic Crop Recommendation (`/api/predict_crop`)
 * **Architecture:** 100-tree **Random Forest Classifier** trained on multi-modal soil and climatic features.
 * **Feature Vector:** Soil Nitrogen (N), Phosphorus (P), Potassium (K), Soil pH, Temperature, Relative Humidity, and Precipitation.
 * **Agronomic Constraint Layer:** Raw ML models can suggest water-intensive paddy in arid zones if nutrients match. SAGRI enforces **hard geographical exclusion masks** based on ICAR agro-climatic zones (`HARD_EXCLUSIONS`) and physiological boundaries (`BIO_LIMITS`) to prevent invalid agricultural advice.
+* **Honest Scoring:** Displays genuine model prediction confidence percentages directly computed from tree ensemble votes.
 
 ### 3. ⚠️ Climate & Yield Failure Risk Radar (`/api/predict_risk`)
 * **Architecture:** Hybrid fusion of an **XGBoost Classifier** ($65\%$) and a physical **Agro-climatic Shortfall Engine** ($35\%$).
 * **Stress Telemetry:** Analyzes non-linear microclimatic stress: diurnal temperature swings, heat stress above physiological thresholds, rainfall deficits against crop water requirements, soil $N:P$ imbalances, and wind desiccation.
-* **Deterministic Scoring:** Delivers a realistic, calibrated $0\%\text{--}100\%$ risk probability with **zero random dice rolls**.
+* **Deterministic Scoring:** Delivers a realistic, calibrated $0\%\text{--}100\%$ risk probability with **zero random dice rolls or jitter**.
 
 ### 4. 📈 Mandi Price Trajectory Forecasting (`/api/forecast_price`)
 * **Architecture:** Autoregressive Econometric Time Series Model.
@@ -114,8 +134,8 @@ flowchart TD
 To guarantee complete operational reliability in rural and offline environments, SAGRI eliminates dependency on volatile cloud databases:
 
 * **Engine:** Embedded SQLite with **Write-Ahead Logging (`PRAGMA journal_mode=WAL;`)** at `backend/data/sagri.db`.
-* **Zero Configuration:** Automatically initializes on backend startup.
-* **Permanent Data Persistence:**
+* **Zero Configuration:** Automatically initializes tables and seeds demo profiles on backend startup.
+* **Permanent Data Tables:**
   * `otp_sessions`: High-security OTP credentials stored with 5-minute TTL.
   * `users`: Farmer profiles, land sizes, locations, and gamified Krishi points.
   * `prediction_history`: Full audit trail of every disease scan, crop advice, and risk assessment across both frontends.
@@ -147,7 +167,7 @@ To guarantee complete operational reliability in rural and offline environments,
 ### 🚀 1-Click Windows Launcher (Fastest)
 
 Double-click the pre-configured Windows batch script in the repository root:
-```
+```cmd
 start_all_servers.bat
 ```
 This automatically boots:
@@ -165,7 +185,7 @@ We have pre-configured [`.vscode/tasks.json`](.vscode/tasks.json) and [`.vscode/
 1. Open the project folder in VS Code (`code .`).
 2. Press:
    $$\mathbf{Ctrl + Shift + B}$$
-3. Select **`Run Modern Version (Backend + Port 5174)`**.
+3. Select **`Run Modern Version (Backend + Port 5174)`** or **`Run Both Frontends + Backend`**.
 4. *(Alternatively, press <kbd>F5</kbd> to launch with interactive debugging and browser opening).*
 
 ---
@@ -175,16 +195,16 @@ We have pre-configured [`.vscode/tasks.json`](.vscode/tasks.json) and [`.vscode/
 #### 1. Clone & Install Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/Shikhar-Kesharwani/Sagriai.git
-cd Sagriai
+git clone https://github.com/Shikhar-Kesharwani/sagri_final.git
+cd sagri_final
 
-# Install root dependencies (Classic Platform)
+# Install root dependencies (Classic Platform - Port 5173)
 npm install
 
-# Install Modern Version dependencies
+# Install Modern Version dependencies (Port 5174)
 cd new_frontend && npm install && cd ..
 
-# Setup Python Virtual Environment for ML Backend
+# Setup Python Virtual Environment for ML Backend (Port 8000)
 cd backend
 python -m venv venv
 .\venv\Scripts\activate
@@ -209,15 +229,31 @@ npm run build:all
 
 ---
 
+## 📊 Presentation Decks & Benchmark Assets Included
+
+This repository includes full pitch decks, presentation slide generators, and ML model benchmarking scripts:
+
+* **PowerPoint Master Deck:** [`SAGRI_Master_Presentation.pptx`](SAGRI_Master_Presentation.pptx)
+* **Enterprise Master Pitch (PDF):** [`SAGRI_Enterprise_Master_Presentation.pdf`](SAGRI_Enterprise_Master_Presentation.pdf)
+* **Professional Evaluation (PDF):** [`SAGRI_Professional_Presentation.pdf`](SAGRI_Professional_Presentation.pdf)
+* **HTML Interactive Deck:** [`sagri_enterprise_presentation.html`](sagri_enterprise_presentation.html)
+* **ML Model Audit Script:** [`backend/master_model_audit.py`](backend/master_model_audit.py)
+* **ML Latency & Accuracy Benchmark:** [`backend/master_model_benchmark.py`](backend/master_model_benchmark.py)
+* **Dual-Platform Architecture Guide:** [`SAGRI_DUAL_VERSION_GUIDE.md`](SAGRI_DUAL_VERSION_GUIDE.md)
+
+---
+
 ## 📂 Repository File Structure
 
 ```
-Sagriaibest/
+sagri_final/
 ├── backend/                             # FAST-INFERENCE MACHINE LEARNING ENGINE
 │   ├── main.py                          # FastAPI routing, ONNX runtime, and model inference
 │   ├── database.py                      # SQLite ACID storage (WAL mode)
 │   ├── geo_exclusions.py                # ICAR regional crop exclusion matrix
 │   ├── pathology_kb.py                  # CIBRC chemical & organic pathology knowledge base
+│   ├── master_model_audit.py            # Rigorous audit script across all 5 models
+│   ├── master_model_benchmark.py        # Latency and throughput benchmark suite
 │   ├── data/
 │   │   ├── sagri.db                     # Permanent on-disk SQLite database
 │   │   └── clean_prices_final_inflation.csv # 25-year Agmarknet historical dataset
@@ -229,14 +265,14 @@ Sagriaibest/
 │
 ├── src/                                 # VERSION 1: CLASSIC SAGRI PLATFORM (Port 5173)
 │   ├── app/
-│   │   ├── components/                  # Header, VoiceAssistant, AuthProvider
+│   │   ├── components/                  # Header (with Port 5174 link), VoiceAssistant, Auth
 │   │   ├── pages/                       # 12 agritech modules + 3D Canvas visualizer
-│   │   └── lib/                         # Client services and API clients
+│   │   └── lib/                         # Client services, Supabase & SQLite fallback
 │   └── package.json                     # Root npm package configuration
 │
 ├── new_frontend/                        # VERSION 2: MODERN INTELLIGENCE SUITE (Port 5174)
 │   ├── src/
-│   │   ├── app/                         # AppShell, CommandPalette, LanguageContext
+│   │   ├── app/                         # AppShell (with Port 5173 link), CommandPalette
 │   │   ├── pages/                       # High-precision editorial UI tools
 │   │   └── data/                        # Static regional datasets, agronomic profiles
 │   └── package.json                     # Standalone modern frontend configuration
@@ -247,6 +283,8 @@ Sagriaibest/
 │
 ├── start_all_servers.bat                # Windows single-click orchestrator launcher
 ├── SAGRI_DUAL_VERSION_GUIDE.md          # Dual-platform operations & architecture manual
+├── SAGRI_Master_Presentation.pptx       # Master presentation deck
+├── SAGRI_Enterprise_Master_Presentation.pdf # High-resolution enterprise deck
 └── README.md                            # Primary project documentation
 ```
 

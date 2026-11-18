@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAGRI — Smart Agriculture Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --green-dark:  #0A1F11;
+  --green-deep:  #0F2D1A;
+  --green-mid:   #1A5C32;
+  --green-light: #2E7D4F;
+  --green-glow:  #3DAA6A;
+  --wheat:       #C99436;
+  --wheat-light: #F0C060;
+  --cream:       #F7F3EC;
+  --paper:       #FEFCF8;
+  --white:       #FFFFFF;
+  --red:         #C0392B;
+  --orange:      #E67E22;
+  --blue:        #1E6BB0;
+  --purple:      #7C3AED;
+  --teal:        #0E7490;
+  --text-dark:   #1A1A1A;
+  --text-mid:    #3D3D3D;
+  --text-soft:   #666666;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #000;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@page {
+  size: 1280px 720px;
+  margin: 0;
+}
+
+.slide {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 1 — TITLE
+══════════════════════════════════════════ */
+.slide-01 {
+  background: linear-gradient(135deg, #071A0D 0%, #0F2D1A 40%, #1A5C32 80%, #0A1F11 100%);
+}
+.slide-01 .bg-pattern {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 70% 50%, rgba(61,170,106,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(201,148,54,0.08) 0%, transparent 50%);
+}
+.slide-01 .grid-lines {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(61,170,106,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61,170,106,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.slide-01 .content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  height: 100%; padding: 60px 80px;
+}
+.slide-01 .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--green-glow);
+  letter-spacing: 4px; text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.slide-01 .eyebrow::before {
+  content: ''; display: block;
+  width: 32px; height: 2px;
+  background: var(--green-glow);
+}
+.slide-01 h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 68px; font-weight: 900;
+  color: var(--white);
+  line-height: 1.1;
+  max-width: 700px;
+  margin-bottom: 16px;
+}
+.slide-01 h1 span {
+  color: var(--wheat-light);
+}
+.slide-01 .tagline {
+  font-size: 20px; font-weight: 300;
+  color: rgba(255,255,255,0.75);
+  max-width: 580px; line-height: 1.6;
+  margin-bottom: 44px;
+}
+.slide-01 .badges {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 48px;
+}
+.slide-01 .badge {
+  background: rgba(61,170,106,0.15);
+  border: 1px solid rgba(61,170,106,0.4);
+  color: var(--green-glow);
+  font-size: 12px; font-weight: 600;
+  padding: 6px 14px; border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.slide-01 .badge.wheat {
+  background: rgba(201,148,54,0.15);
+  border-color: rgba(201,148,54,0.4);
+  color: var(--wheat-light);
+}
+.slide-01 .metrics-row {
+  display: flex; gap: 40px;
+}
+.slide-01 .metric {
+  display: flex; flex-direction: column;
+}
+.slide-01 .metric-num {
+  font-size: 36px; font-weight: 800;
+  color: var(--white); line-height: 1;
+}
+.slide-01 .metric-num span { color: var(--wheat-light); }
+.slide-01 .metric-label {
+  font-size: 11px; font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-top: 4px;
+}
+.slide-01 .right-panel {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 400px;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 40px;
+}
+.slide-01 .hexagon-container {
+  position: relative; width: 260px; height: 260px;
+  display: flex; align-items: center; justify-content: center;
+}
+.slide-01 .ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(61,170,106,0.25);
+}
+.slide-01 .ring-1 { width: 260px; height: 260px; border-color: rgba(61,170,106,0.15); }
+.slide-01 .ring-2 { width: 200px; height: 200px; border-color: rgba(61,170,106,0.25); }
+.slide-01 .ring-3 { width: 140px; height: 140px; border-color: rgba(61,170,106,0.4); background: rgba(61,170,106,0.08); }
+.slide-01 .center-icon {
+  position: relative; z-index: 2;
+  font-size: 60px; text-align: center;
+  filter: drop-shadow(0 0 20px rgba(61,170,106,0.6));
+}
+.slide-01 .orbital {
+  position: absolute;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(61,170,106,0.2);
+  border: 1px solid rgba(61,170,106,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.slide-01 .orbital-1 { top: 10px; left: 50%; transform: translateX(-50%); }
+.slide-01 .orbital-2 { right: 10px; top: 50%; transform: translateY(-50%); }
+.slide-01 .orbital-3 { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.slide-01 .orbital-4 { left: 10px; top: 50%; transform: translateY(-50%); }
+.slide-01 .logo-bar {
+  position: absolute; bottom: 32px; right: 60px;
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 2px;
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 2 — THE PROBLEM
+══════════════════════════════════════════ */
+.slide-02 {
+  background: linear-gradient(160deg, #FEFCF8 0%, #F0EDE5 100%);
+}
+.slide-02 .slide-header {
+  display: flex; align-items: center;
+  padding: 40px 70px 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.slide-02 .slide-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--text-soft);
+  letter-spacing: 3px;
+}
+.slide-02 .slide-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px; font-weight: 700;
+  color: var(--text-dark); margin-left: 24px;
+}
+.slide-02 .slide-title span { color: var(--red); }
+.slide-02 .slide-body {
+  flex: 1; padding: 24px 60px 40px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 16px;
+}
+.problem-card {
+  border-radius: 16px; padding: 24px 28px;
+  display: flex; flex-direction: column;
+  background: white;
+  border-left: 5px solid var(--red);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  position: relative; overflow: hidden;
+}
+.problem-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 0 16px 0 80px;
+  opacity: 0.08;
+}
+.problem-card.disease { border-color: #E74C3C; }
+.problem-card.disease::before { background: #E74C3C; }
+.problem-card.sow { border-color: #E67E22; }
+.problem-card.sow::before { background: #E67E22; }
+.problem-card.sell { border-color: #E74C3C; }
+.problem-card.sell::before { background: #9B59B6; }
+.problem-card.climate { border-color: #E67E22; }
+.problem-card.climate::before { background: #E67E22; }
+.problem-card .p-icon { font-size: 32px; margin-bottom: 10px; }
+.problem-card .p-stat {
+  font-size: 28px; font-weight: 800;
+  color: var(--text-dark); line-height: 1; margin-bottom: 4px;
+}
+.problem-card.disease .p-stat { color: #C0392B; }
+.problem-card.sow .p-stat { color: #D35400; }
+.problem-card.sell .p-stat { color: #8E44AD; }
+.problem-card.climate .p-stat { color: #D35400; }
+.problem-card .p-label {
+  font-size: 15px; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 6px;
+}
+.problem-card .p-desc {
+  font-size: 12px; color: var(--text-soft); line-height: 1.5;
+}
+.slide-02 .bottom-banner {
+  background: var(--green-dark);
+  padding: 14px 70px;
+  display: flex; align-items: center; gap: 12px;
+}
+.slide-02 .bottom-banner span {
+  font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8);
+}
+.slide-02 .bottom-banner strong {
+  color: var(--wheat-light); font-weight: 700;
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 3 — ARCHITECTURE
+══════════════════════════════════════════ */
+.slide-03 {
+  background: linear-gradient(135deg, #071A0D 0%, #0F2D1A 100%);
+}
+.slide-03 .header {
+  padding: 36px 70px 24px;
+  border-bottom: 1px solid rgba(61,170,106,0.15);
+  display: flex; align-items: baseline; gap: 20px;
+}
+.slide-03 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-glow);
+  letter-spacing: 3px;
+}
+.slide-03 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--white);
+}
+.slide-03 .header h2 span { color: var(--wheat-light); }
+.slide-03 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px; padding: 20px 60px 32px;
+}
+.arch-pillar {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(61,170,106,0.2);
+  padding: 24px 20px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+.arch-pillar::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.arch-pillar.vision::before { background: linear-gradient(90deg, #3DAA6A, #1A5C32); }
+.arch-pillar.soil::before { background: linear-gradient(90deg, #C99436, #F0C060); }
+.arch-pillar.market::before { background: linear-gradient(90deg, #1E6BB0, #3B9FDF); }
+.arch-pillar .pillar-icon { font-size: 36px; margin-bottom: 12px; }
+.arch-pillar .pillar-title {
+  font-size: 17px; font-weight: 700; color: var(--white);
+  margin-bottom: 8px;
+}
+.arch-pillar .pillar-sub {
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.arch-pillar.vision .pillar-sub { color: var(--green-glow); }
+.arch-pillar.soil .pillar-sub { color: var(--wheat-light); }
+.arch-pillar.market .pillar-sub { color: #3B9FDF; }
+.arch-pillar .tech-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+}
+.arch-pillar .tech-tag {
+  font-size: 10px; padding: 3px 8px;
+  border-radius: 4px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.arch-pillar.vision .tech-tag { background: rgba(61,170,106,0.15); color: #3DAA6A; }
+.arch-pillar.soil .tech-tag { background: rgba(201,148,54,0.15); color: #C99436; }
+.arch-pillar.market .tech-tag { background: rgba(30,107,176,0.15); color: #3B9FDF; }
+.arch-pillar .pillar-items {
+  list-style: none; display: flex; flex-direction: column; gap: 7px;
+}
+.arch-pillar .pillar-items li {
+  font-size: 12px; color: rgba(255,255,255,0.65);
+  display: flex; align-items: center; gap: 8px;
+  line-height: 1.4;
+}
+.arch-pillar .pillar-items li::before {
+  content: '→'; font-size: 10px;
+}
+.arch-pillar.vision .pillar-items li::before { color: var(--green-glow); }
+.arch-pillar.soil .pillar-items li::before { color: var(--wheat-light); }
+.arch-pillar.market .pillar-items li::before { color: #3B9FDF; }
+.slide-03 .bottom-row {
+  padding: 10px 60px 20px;
+  display: flex; gap: 20px; align-items: center;
+}
+.slide-03 .bottom-row .flow-item {
+  display: flex; align-items: center; gap: 8px;
+}
+.slide-03 .bottom-row .flow-item .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green-glow);
+}
+.slide-03 .bottom-row .flow-item span {
+  font-size: 11px; color: rgba(255,255,255,0.4);
+  font-family: 'JetBrains Mono', monospace;
+}
+.slide-03 .bottom-row .arrow {
+  color: rgba(255,255,255,0.2); font-size: 14px;
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 4 — DISEASE VISION
+══════════════════════════════════════════ */
+.slide-04 {
+  background: linear-gradient(160deg, #F7F3EC 0%, #EDE9DF 100%);
+}
+.slide-04 .header {
+  padding: 32px 70px 20px;
+  display: flex; align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  gap: 20px;
+}
+.slide-04 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-mid); letter-spacing: 3px;
+}
+.slide-04 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--text-dark);
+}
+.slide-04 .header h2 span { color: var(--green-mid); }
+.slide-04 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px; padding: 20px 60px 32px;
+}
+.slide-04 .left { display: flex; flex-direction: column; gap: 16px; }
+.slide-04 .model-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  border-top: 3px solid var(--green-mid);
+}
+.slide-04 .model-card h3 {
+  font-size: 15px; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 10px;
+}
+.slide-04 .model-card .tags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.slide-04 .model-card .tag {
+  font-size: 10px; padding: 3px 10px;
+  border-radius: 4px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(26,92,50,0.1); color: var(--green-mid);
+}
+.slide-04 .pipeline {
+  background: white; border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+.slide-04 .pipeline h3 {
+  font-size: 14px; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 12px;
+}
+.slide-04 .pipeline-steps {
+  display: flex; align-items: center; gap: 0;
+}
+.slide-04 .step {
+  flex: 1; text-align: center;
+  padding: 8px 4px;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-mid);
+}
+.slide-04 .step .step-icon { font-size: 20px; margin-bottom: 4px; }
+.slide-04 .step-arrow { color: var(--green-mid); font-size: 16px; font-weight: 700; }
+.slide-04 .right { display: flex; flex-direction: column; gap: 12px; }
+.slide-04 .metric-big {
+  background: white; border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  display: flex; align-items: center; gap: 20px;
+}
+.slide-04 .metric-big .mb-num {
+  font-size: 48px; font-weight: 800;
+  color: var(--green-mid); line-height: 1;
+}
+.slide-04 .metric-big .mb-unit {
+  font-size: 20px; font-weight: 600; color: var(--green-mid);
+}
+.slide-04 .metric-big .mb-label {
+  font-size: 12px; color: var(--text-soft); line-height: 1.4;
+}
+.slide-04 .stat-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.slide-04 .stat-box {
+  background: white; border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.slide-04 .stat-box .sb-num {
+  font-size: 24px; font-weight: 800; color: var(--green-mid);
+  line-height: 1;
+}
+.slide-04 .stat-box .sb-label {
+  font-size: 11px; color: var(--text-soft); margin-top: 4px;
+}
+.slide-04 .bar-chart {
+  background: white; border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  flex: 1;
+}
+.slide-04 .bar-chart h3 { font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 14px; }
+.bar-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.bar-row .br-label { font-size: 10px; color: var(--text-soft); width: 100px; text-align: right; }
+.bar-row .br-track {
+  flex: 1; height: 8px; background: #EEE; border-radius: 4px; overflow: hidden;
+}
+.bar-row .br-fill {
+  height: 100%; background: linear-gradient(90deg, var(--green-mid), var(--green-glow));
+  border-radius: 4px;
+}
+.bar-row .br-val { font-size: 10px; font-weight: 700; color: var(--green-mid); width: 36px; }
+
+/* ══════════════════════════════════════════
+   SLIDE 5 — CROP RECOMMENDER
+══════════════════════════════════════════ */
+.slide-05 {
+  background: linear-gradient(135deg, #071A0D 0%, #0F2D1A 100%);
+}
+.slide-05 .header {
+  padding: 32px 70px 20px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(201,148,54,0.2);
+}
+.slide-05 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--wheat-light); letter-spacing: 3px;
+}
+.slide-05 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--white);
+}
+.slide-05 .header h2 span { color: var(--wheat-light); }
+.slide-05 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px; padding: 20px 60px 32px;
+}
+.slide-05 .left { display: flex; flex-direction: column; gap: 14px; }
+.slide-05 .input-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,148,54,0.2);
+  border-radius: 14px; padding: 18px 22px;
+}
+.slide-05 .input-card h3 {
+  font-size: 13px; font-weight: 700; color: var(--wheat-light);
+  letter-spacing: 1px; margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.slide-05 .input-tags {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.slide-05 .input-tag {
+  background: rgba(201,148,54,0.12);
+  border: 1px solid rgba(201,148,54,0.3);
+  color: rgba(255,255,255,0.8);
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 6px; font-weight: 500;
+}
+.slide-05 .algo-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(61,170,106,0.2);
+  border-radius: 14px; padding: 18px 22px;
+}
+.slide-05 .algo-card h3 {
+  font-size: 13px; font-weight: 700; color: var(--green-glow);
+  letter-spacing: 1px; margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.algo-step {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
+}
+.algo-step .as-num {
+  min-width: 20px; height: 20px; border-radius: 50%;
+  background: var(--green-glow);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--green-dark);
+}
+.algo-step .as-text {
+  font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4;
+}
+.slide-05 .right { display: flex; flex-direction: column; gap: 14px; }
+.slide-05 .accuracy-hero {
+  background: rgba(201,148,54,0.1);
+  border: 1px solid rgba(201,148,54,0.3);
+  border-radius: 16px; padding: 24px;
+  text-align: center;
+}
+.slide-05 .accuracy-hero .ah-num {
+  font-size: 60px; font-weight: 800; color: var(--wheat-light);
+  line-height: 1;
+}
+.slide-05 .accuracy-hero .ah-label {
+  font-size: 13px; color: rgba(255,255,255,0.6);
+  margin-top: 6px;
+}
+.slide-05 .crops-grid {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 18px 20px;
+  flex: 1;
+}
+.slide-05 .crops-grid h3 {
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;
+}
+.slide-05 .crops {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.slide-05 .crop-pill {
+  background: rgba(61,170,106,0.1);
+  border: 1px solid rgba(61,170,106,0.25);
+  color: rgba(255,255,255,0.75);
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 20px;
+}
+.slide-05 .metrics-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+.slide-05 .m-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 12px;
+  text-align: center;
+}
+.slide-05 .m-box .mn { font-size: 20px; font-weight: 800; color: var(--white); }
+.slide-05 .m-box .ml { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+
+/* ══════════════════════════════════════════
+   SLIDE 6 — PRICE & RISK
+══════════════════════════════════════════ */
+.slide-06 {
+  background: linear-gradient(160deg, #F7F3EC 0%, #EDE9DF 100%);
+}
+.slide-06 .header {
+  padding: 32px 70px 20px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.slide-06 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--blue); letter-spacing: 3px;
+}
+.slide-06 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--text-dark);
+}
+.slide-06 .header h2 span { color: var(--blue); }
+.slide-06 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px; padding: 20px 60px 32px;
+}
+.slide-06 .model-panel {
+  background: white; border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  display: flex; flex-direction: column;
+  border-top: 3px solid var(--blue);
+}
+.slide-06 .model-panel.risk { border-color: var(--red); }
+.slide-06 .model-panel h3 {
+  font-size: 17px; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 10px;
+}
+.slide-06 .model-panel .mp-sub {
+  font-size: 11px; color: var(--text-soft);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 16px;
+}
+.slide-06 .mp-stat {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.slide-06 .mp-stat .ms-num {
+  font-size: 32px; font-weight: 800; color: var(--blue); line-height: 1;
+}
+.slide-06 .model-panel.risk .mp-stat .ms-num { color: var(--red); }
+.slide-06 .mp-stat .ms-info { font-size: 12px; color: var(--text-soft); line-height: 1.4; }
+.price-chart { margin-top: 10px; }
+.price-chart .pc-label {
+  font-size: 11px; color: var(--text-soft); margin-bottom: 8px; font-weight: 600;
+}
+.price-chart svg { width: 100%; height: 80px; }
+.risk-gauge {
+  margin-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.risk-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.risk-row .rr-label { font-size: 11px; color: var(--text-soft); width: 80px; }
+.risk-row .rr-track {
+  flex: 1; height: 10px; background: #EEE;
+  border-radius: 5px; overflow: hidden;
+}
+.risk-row .rr-fill-low {
+  height: 100%; width: 8%;
+  background: linear-gradient(90deg, #E74C3C, #C0392B);
+  border-radius: 5px;
+}
+.risk-row .rr-fill-high {
+  height: 100%; width: 86.7%;
+  background: linear-gradient(90deg, #E74C3C, #C0392B);
+  border-radius: 5px;
+}
+.risk-row .rr-val { font-size: 11px; font-weight: 700; color: var(--red); width: 40px; }
+.slide-06 .bottom-stats {
+  grid-column: 1 / -1;
+  display: flex; gap: 16px;
+}
+.slide-06 .bs-card {
+  flex: 1; background: white; border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  display: flex; align-items: center; gap: 14px;
+}
+.slide-06 .bs-card .bc-num {
+  font-size: 24px; font-weight: 800; color: var(--text-dark);
+}
+.slide-06 .bs-card .bc-label {
+  font-size: 11px; color: var(--text-soft); line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 7 — 3D SEASON STORY
+══════════════════════════════════════════ */
+.slide-07 {
+  background: linear-gradient(135deg, #030D06 0%, #071A0D 50%, #0A2410 100%);
+}
+.slide-07 .header {
+  padding: 32px 70px 20px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(61,170,106,0.1);
+}
+.slide-07 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-glow); letter-spacing: 3px;
+}
+.slide-07 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--white);
+}
+.slide-07 .header h2 span { color: var(--green-glow); }
+.slide-07 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 24px; padding: 20px 60px 32px;
+}
+.slide-07 .scene-preview {
+  border-radius: 16px; overflow: hidden;
+  background: linear-gradient(180deg, #030D06 0%, #071A0D 50%, #0C2914 100%);
+  border: 1px solid rgba(61,170,106,0.2);
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.slide-07 .field-art {
+  width: 100%; height: 100%;
+  position: relative; overflow: hidden;
+}
+.slide-07 .field-row {
+  display: flex; gap: 2px;
+  margin-bottom: 2px;
+}
+.slide-07 .seed {
+  width: 14px; height: 20px;
+  background: linear-gradient(180deg, #2E7D4F, #1A5C32);
+  border-radius: 2px 2px 50% 50%;
+  opacity: 0.7;
+}
+.slide-07 .scene-label {
+  position: absolute; top: 16px; left: 16px;
+  font-size: 11px; font-family: 'JetBrains Mono', monospace;
+  color: var(--green-glow); letter-spacing: 2px;
+  background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px;
+}
+.slide-07 .webgl-badge {
+  position: absolute; bottom: 16px; right: 16px;
+  display: flex; gap: 8px;
+}
+.slide-07 .wb {
+  background: rgba(61,170,106,0.15);
+  border: 1px solid rgba(61,170,106,0.3);
+  color: var(--green-glow); font-size: 10px;
+  padding: 3px 8px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.slide-07 .right { display: flex; flex-direction: column; gap: 12px; }
+.slide-07 .chapter-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(61,170,106,0.15);
+  border-left: 3px solid var(--green-glow);
+  border-radius: 10px; padding: 12px 16px;
+}
+.slide-07 .chapter-card .cc-num {
+  font-size: 10px; font-family: 'JetBrains Mono', monospace;
+  color: var(--green-glow); letter-spacing: 2px; margin-bottom: 4px;
+}
+.slide-07 .chapter-card .cc-title {
+  font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 4px;
+}
+.slide-07 .chapter-card .cc-desc {
+  font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.4;
+}
+.slide-07 .tech-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.slide-07 .tech-pill {
+  font-size: 10px; padding: 3px 10px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(61,170,106,0.1); color: var(--green-glow);
+  border: 1px solid rgba(61,170,106,0.2);
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 8 — ECOSYSTEM
+══════════════════════════════════════════ */
+.slide-08 {
+  background: linear-gradient(160deg, #FEFCF8 0%, #EDE9DF 100%);
+}
+.slide-08 .header {
+  padding: 28px 70px 18px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.slide-08 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-mid); letter-spacing: 3px;
+}
+.slide-08 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--text-dark);
+}
+.slide-08 .header h2 span { color: var(--green-mid); }
+.slide-08 .header .h-badge {
+  margin-left: auto;
+  background: var(--green-mid); color: white;
+  font-size: 12px; font-weight: 700;
+  padding: 6px 16px; border-radius: 20px;
+}
+.slide-08 .body {
+  flex: 1; padding: 20px 60px 28px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.tool-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.tool-card {
+  background: white; border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+  display: flex; flex-direction: column;
+  border-top: 3px solid;
+  transition: all 0.2s;
+}
+.tool-card:nth-child(1) { border-color: #3DAA6A; }
+.tool-card:nth-child(2) { border-color: #3DAA6A; }
+.tool-card:nth-child(3) { border-color: #E67E22; }
+.tool-card:nth-child(4) { border-color: #3DAA6A; }
+.tool-card:nth-child(5) { border-color: #1E6BB0; }
+.tool-card:nth-child(6) { border-color: #E67E22; }
+.tool-card:nth-child(7) { border-color: #3DAA6A; }
+.tool-card:nth-child(8) { border-color: #E67E22; }
+.tool-card:nth-child(9) { border-color: #7C3AED; }
+.tool-card:nth-child(10) { border-color: #7C3AED; }
+.tool-card:nth-child(11) { border-color: #1E6BB0; }
+.tool-card:nth-child(12) { border-color: #E74C3C; }
+.tool-card .tc-icon { font-size: 24px; margin-bottom: 6px; }
+.tool-card .tc-name {
+  font-size: 12px; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 4px;
+}
+.tool-card .tc-desc {
+  font-size: 10px; color: var(--text-soft); line-height: 1.4;
+}
+.slide-08 .bottom-row {
+  display: flex; gap: 16px; align-items: center;
+}
+.slide-08 .br-stat {
+  background: var(--green-dark); border-radius: 10px;
+  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+}
+.slide-08 .br-stat .brs-num {
+  font-size: 20px; font-weight: 800; color: var(--wheat-light);
+}
+.slide-08 .br-stat .brs-label {
+  font-size: 11px; color: rgba(255,255,255,0.6);
+}
+
+/* ══════════════════════════════════════════
+   SLIDE 9 — TECH STACK
+══════════════════════════════════════════ */
+.slide-09 {
+  background: linear-gradient(135deg, #071A0D 0%, #0F2D1A 100%);
+}
+.slide-09 .header {
+  padding: 32px 70px 20px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(61,170,106,0.15);
+}
+.slide-09 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-glow); letter-spacing: 3px;
+}
+.slide-09 .header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--white);
+}
+.slide-09 .header h2 span { color: var(--green-glow); }
+.slide-09 .body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px; padding: 20px 60px 32px;
+}
+.tech-layer {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(61,170,106,0.15);
+  border-radius: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+}
+.tech-layer .tl-header {
+  padding: 10px 16px;
+  background: rgba(61,170,106,0.1);
+  border-bottom: 1px solid rgba(61,170,106,0.15);
+  display: flex; align-items: center; gap: 8px;
+}
+.tech-layer .tl-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.tech-layer .tl-dot.red { background: #E74C3C; }
+.tech-layer .tl-dot.yellow { background: #F39C12; }
+.tech-layer .tl-dot.green { background: #3DAA6A; }
+.tech-layer .tl-title {
+  font-size: 11px; color: rgba(255,255,255,0.4); margin-left: 8px;
+}
+.tech-layer .tl-body { padding: 14px 16px; }
+.tech-line {
+  margin-bottom: 8px; font-size: 12px; line-height: 1.6;
+}
+.tech-line .tl-comment { color: rgba(61,170,106,0.6); }
+.tech-line .tl-key { color: #3B9FDF; }
+.tech-line .tl-val { color: #F0C060; }
+.tech-line .tl-str { color: #E8A87C; }
+.tech-line .tl-num { color: #9B59B6; }
+.tech-line .tl-bool { color: #E74C3C; }
+.slide-09 .right { display: flex; flex-direction: column; gap: 14px; }
+.slide-09 .layer-cards { display: flex; flex-direction: column; gap: 10px; }
+.slide-09 .lc {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.slide-09 .lc-icon { font-size: 20px; }
+.slide-09 .lc-info { flex: 1; }
+.slide-09 .lc-title {
+  font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 2px;
+}
+.slide-09 .lc-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.slide-09 .lc-tag {
+  font-size: 10px; padding: 2px 8px; border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.slide-09 .lc-tag.g { background: rgba(61,170,106,0.15); color: #3DAA6A; }
+.slide-09 .lc-tag.b { background: rgba(59,159,223,0.15); color: #3B9FDF; }
+.slide-09 .lc-tag.y { background: rgba(240,192,96,0.15); color: #F0C060; }
+.slide-09 .lc-tag.p { background: rgba(124,58,237,0.15); color: #A78BFA; }
+
+/* ══════════════════════════════════════════
+   SLIDE 10 — VISION
+══════════════════════════════════════════ */
+.slide-10 {
+  background: linear-gradient(135deg, #030D06 0%, #071A0D 40%, #0A1F11 100%);
+}
+.slide-10 .bg-glow {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 50% 60% at 20% 50%, rgba(201,148,54,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 50%, rgba(61,170,106,0.1) 0%, transparent 60%);
+}
+.slide-10 .content {
+  position: relative; z-index: 2;
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.slide-10 .left {
+  display: flex; flex-direction: column;
+  justify-content: center; padding: 50px 60px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.slide-10 .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--wheat-light);
+  letter-spacing: 4px; text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.slide-10 h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 44px; font-weight: 900;
+  color: var(--white); line-height: 1.1;
+  margin-bottom: 24px;
+}
+.slide-10 h2 span { color: var(--wheat-light); }
+.slide-10 .roadmap { display: flex; flex-direction: column; gap: 12px; }
+.slide-10 .rm-item {
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.slide-10 .rm-item .rm-year {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; color: var(--wheat-light);
+  min-width: 40px; margin-top: 2px;
+}
+.slide-10 .rm-item .rm-line {
+  width: 1px; background: rgba(201,148,54,0.3);
+  margin: 4px 0;
+}
+.slide-10 .rm-item .rm-text {
+  font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5;
+}
+.slide-10 .right {
+  display: flex; flex-direction: column;
+  justify-content: center; padding: 40px 60px;
+  gap: 20px;
+}
+.slide-10 .metric-hero {
+  text-align: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 20px;
+}
+.slide-10 .mh-num {
+  font-size: 56px; font-weight: 800;
+  line-height: 1; margin-bottom: 4px;
+}
+.slide-10 .mh-num.green { color: var(--green-glow); }
+.slide-10 .mh-num.wheat { color: var(--wheat-light); }
+.slide-10 .mh-num.blue { color: #3B9FDF; }
+.slide-10 .mh-label { font-size: 12px; color: rgba(255,255,255,0.4); }
+.slide-10 .bottom-metrics {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.slide-10 .bm-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 14px 16px;
+  text-align: center;
+}
+.slide-10 .bm-num {
+  font-size: 24px; font-weight: 800;
+  color: var(--white); margin-bottom: 4px;
+}
+.slide-10 .bm-label { font-size: 10px; color: rgba(255,255,255,0.35); }
+.slide-10 .header {
+  padding: 28px 70px 0; position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 18px;
+}
+.slide-10 .header .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green-glow); letter-spacing: 3px;
+}
+.slide-10 .header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--white);
+}
+.slide-10 .header h3 span { color: var(--wheat-light); }
+
+/* Footer bar on all light slides */
+.footer-bar {
+  background: var(--green-dark); height: 4px; width: 100%;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 1: TITLE
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-01">
+  <div class="bg-pattern"></div>
+  <div class="grid-lines"></div>
+  <div class="content">
+    <div class="eyebrow">Smart Agriculture Intelligence</div>
+    <h1>Decide What to <span>Sow</span>,<br>When to Spray,<br>&amp; Where to Sell.</h1>
+    <div class="tagline">India's first full-stack AI operating system for 140 million farmers — from field to market, powered by computer vision, soil intelligence, and fair-price forecasting.</div>
+    <div class="badges">
+      <span class="badge">🌿 Disease Vision AI</span>
+      <span class="badge">🌾 Smart Crop Recommender</span>
+      <span class="badge wheat">₹ Price Forecasting</span>
+      <span class="badge">⚡ Risk Radar</span>
+      <span class="badge wheat">🗺 3D Season Story</span>
+      <span class="badge">💬 AI Expert Chat</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-num">140<span>M</span></div>
+        <div class="metric-label">Target Farmers</div>
+      </div>
+      <div class="metric">
+        <div class="metric-num">94<span>.5%</span></div>
+        <div class="metric-label">Disease Accuracy</div>
+      </div>
+      <div class="metric">
+        <div class="metric-num">99<span>.87%</span></div>
+        <div class="metric-label">Risk Precision</div>
+      </div>
+      <div class="metric">
+        <div class="metric-num">&lt;450<span>ms</span></div>
+        <div class="metric-label">AI Inference</div>
+      </div>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="hexagon-container">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="center-icon">🌾</div>
+      <div class="orbital orbital-1">🔬</div>
+      <div class="orbital orbital-2">📊</div>
+      <div class="orbital orbital-3">☁️</div>
+      <div class="orbital orbital-4">🤖</div>
+    </div>
+  </div>
+  <div class="logo-bar">SAGRI</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 2: THE PROBLEM
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-02">
+  <div class="slide-header">
+    <span class="slide-num">02 / 10</span>
+    <div class="slide-title">The <span>₹1.5 Lakh Crore</span> Problem</div>
+  </div>
+  <div class="slide-body">
+    <div class="problem-card disease">
+      <div class="p-icon">🦠</div>
+      <div class="p-stat">₹1.5L Cr</div>
+      <div class="p-label">Annual Crop Disease Loss</div>
+      <div class="p-desc">Fungal, bacterial, and viral pathogens destroy 15–20% of yield every season. Farmers misidentify diseases without expert access, leading to wrong pesticide use and total crop failure.</div>
+    </div>
+    <div class="problem-card sow">
+      <div class="p-icon">🌱</div>
+      <div class="p-stat">3 of 5</div>
+      <div class="p-label">Farmers Sow Without Soil Data</div>
+      <div class="p-desc">Sub-optimal crop selection based on tradition, not soil science. Sand/silt/clay composition, pH, NPK and vapour pressure deficit data are unavailable to most smallholders.</div>
+    </div>
+    <div class="problem-card sell">
+      <div class="p-icon">📉</div>
+      <div class="p-stat">30–40%</div>
+      <div class="p-label">Post-Harvest Price Loss</div>
+      <div class="p-desc">Distress selling at APMC mandis drives farmers to accept prices 30–40% below 6-month forecast highs. No predictive analytics means no negotiating power.</div>
+    </div>
+    <div class="problem-card climate">
+      <div class="p-icon">⚡</div>
+      <div class="p-stat">↑73%</div>
+      <div class="p-label">Extreme Weather Events Since 2000</div>
+      <div class="p-desc">Climate-driven risk — drought, flood, pest outbreaks — now affects 4 in 10 Indian farming seasons. Existing tools offer no actionable risk quantification or mitigation roadmap.</div>
+    </div>
+  </div>
+  <div class="bottom-banner">
+    <span>🎯 SAGRI addresses all four crises with <strong>one unified AI platform</strong> — available in 5 Indic languages, offline-capable, voice-first.</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 3: ARCHITECTURE
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-03">
+  <div class="header">
+    <span class="num">03 / 10</span>
+    <h2>Three-Pillar <span>Architecture</span></h2>
+  </div>
+  <div class="body">
+    <div class="arch-pillar vision">
+      <div class="pillar-icon">👁️</div>
+      <div class="pillar-title">Edge Vision Intelligence</div>
+      <div class="pillar-sub">Pillar I</div>
+      <div class="tech-tags">
+        <span class="tech-tag">ONNX</span>
+        <span class="tech-tag">MobileNetV2</span>
+        <span class="tech-tag">TTA</span>
+        <span class="tech-tag">CIBRC</span>
+      </div>
+      <ul class="pillar-items">
+        <li>38-class leaf disease classifier</li>
+        <li>54,305 plant specimen training set</li>
+        <li>Test-Time Augmentation for uncertainty</li>
+        <li>CIBRC-validated pesticide dosages</li>
+        <li>Sub-450ms on-device inference</li>
+        <li>Camera capture → instant diagnosis</li>
+      </ul>
+    </div>
+    <div class="arch-pillar soil">
+      <div class="pillar-icon">🌱</div>
+      <div class="pillar-title">Soil &amp; Climate AI</div>
+      <div class="pillar-sub">Pillar II</div>
+      <div class="tech-tags">
+        <span class="tech-tag">Random Forest</span>
+        <span class="tech-tag">XGBoost</span>
+        <span class="tech-tag">VPD</span>
+        <span class="tech-tag">ICAR</span>
+      </div>
+      <ul class="pillar-items">
+        <li>22-crop suitability recommender</li>
+        <li>Soil texture triangle physics (Sand/Silt/Clay)</li>
+        <li>Vapour Pressure Deficit formula</li>
+        <li>ICAR exclusion zones enforcement</li>
+        <li>96.0% top-suitability score accuracy</li>
+        <li>Region-specific advisory rules</li>
+      </ul>
+    </div>
+    <div class="arch-pillar market">
+      <div class="pillar-icon">📊</div>
+      <div class="pillar-title">Fair Markets &amp; Voice</div>
+      <div class="pillar-sub">Pillar III</div>
+      <div class="tech-tags">
+        <span class="tech-tag">Autoregressive</span>
+        <span class="tech-tag">APMC</span>
+        <span class="tech-tag">Gemini Pro</span>
+        <span class="tech-tag">i18n</span>
+      </div>
+      <ul class="pillar-items">
+        <li>6-month APMC price forecast</li>
+        <li>99.87% risk model precision</li>
+        <li>230,252 record training corpus</li>
+        <li>Gemini Pro expert chatbot</li>
+        <li>5 Indic languages (Hindi, Punjabi…)</li>
+        <li>Market connect &amp; scheme discovery</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bottom-row">
+    <div class="flow-item"><div class="dot"></div><span>FastAPI Python 3.13</span></div>
+    <span class="arrow">→</span>
+    <div class="flow-item"><div class="dot"></div><span>React 18 + TypeScript</span></div>
+    <span class="arrow">→</span>
+    <div class="flow-item"><div class="dot"></div><span>Three.js WebGL</span></div>
+    <span class="arrow">→</span>
+    <div class="flow-item"><div class="dot"></div><span>Framer Motion</span></div>
+    <span class="arrow">→</span>
+    <div class="flow-item"><div class="dot"></div><span>Tailwind CSS</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 4: DISEASE VISION MODEL
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-04">
+  <div class="header">
+    <span class="num">04 / 10</span>
+    <h2>Disease Vision <span>Model</span></h2>
+  </div>
+  <div class="body">
+    <div class="left">
+      <div class="model-card">
+        <h3>🧠 Model Architecture</h3>
+        <div class="tags">
+          <span class="tag">ONNX Runtime</span>
+          <span class="tag">MobileNetV2</span>
+          <span class="tag">Transfer Learning</span>
+          <span class="tag">ImageNet Pretrained</span>
+          <span class="tag">Float32 Quantised</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <h3>📐 Test-Time Augmentation Pipeline</h3>
+        <div class="tags">
+          <span class="tag">Horizontal Flip</span>
+          <span class="tag">Brightness ±20%</span>
+          <span class="tag">Gaussian Blur</span>
+          <span class="tag">Ensemble Voting</span>
+          <span class="tag">Confidence Calibration</span>
+        </div>
+      </div>
+      <div class="pipeline">
+        <h3>🔄 Inference Pipeline</h3>
+        <div class="pipeline-steps">
+          <div class="step"><div class="step-icon">📷</div>Capture</div>
+          <div class="step-arrow">›</div>
+          <div class="step"><div class="step-icon">✂️</div>Crop &amp; Resize</div>
+          <div class="step-arrow">›</div>
+          <div class="step"><div class="step-icon">🔄</div>TTA x5</div>
+          <div class="step-arrow">›</div>
+          <div class="step"><div class="step-icon">🧠</div>ONNX Infer</div>
+          <div class="step-arrow">›</div>
+          <div class="step"><div class="step-icon">💊</div>Dosage</div>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <h3>Top Disease Classes Supported</h3>
+        <div class="bar-row">
+          <span class="br-label">Apple Scab</span>
+          <div class="br-track"><div class="br-fill" style="width:95%"></div></div>
+          <span class="br-val">95%</span>
+        </div>
+        <div class="bar-row">
+          <span class="br-label">Tomato Blight</span>
+          <div class="br-track"><div class="br-fill" style="width:93%"></div></div>
+          <span class="br-val">93%</span>
+        </div>
+        <div class="bar-row">
+          <span class="br-label">Corn Rust</span>
+          <div class="br-track"><div class="br-fill" style="width:91%"></div></div>
+          <span class="br-val">91%</span>
+        </div>
+        <div class="bar-row">
+          <span class="br-label">Grape Mildew</span>
+          <div class="br-track"><div class="br-fill" style="width:89%"></div></div>
+          <span class="br-val">89%</span>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="metric-big">
+        <div>
+          <div class="mb-num">94<span class="mb-unit">.5%</span></div>
+        </div>
+        <div class="mb-label">Live Confidence Score<br>on Test Images</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="sb-num">38</div>
+          <div class="sb-label">Disease Classes</div>
+        </div>
+        <div class="stat-box">
+          <div class="sb-num">54,305</div>
+          <div class="sb-label">Training Specimens</div>
+        </div>
+        <div class="stat-box">
+          <div class="sb-num">&lt;450ms</div>
+          <div class="sb-label">Inference Latency</div>
+        </div>
+        <div class="stat-box">
+          <div class="sb-num">CIBRC</div>
+          <div class="sb-label">Validated Dosages</div>
+        </div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.07);flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--text-dark);margin-bottom:12px">🌿 Crops Covered</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Apple</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Tomato</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Corn</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Grape</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Strawberry</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Potato</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Pepper</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Cherry</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Peach</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Squash</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">Blueberry</span>
+          <span style="font-size:10px;padding:3px 8px;background:rgba(26,92,50,0.08);color:var(--green-mid);border-radius:4px;font-weight:600">+27 more</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 5: CROP RECOMMENDER
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-05">
+  <div class="header">
+    <span class="num">05 / 10</span>
+    <h2>Smart Crop <span>Recommender</span></h2>
+  </div>
+  <div class="body">
+    <div class="left">
+      <div class="input-card">
+        <h3>📥 Multi-Dimensional Inputs</h3>
+        <div class="input-tags">
+          <span class="input-tag">🌡 Temperature (°C)</span>
+          <span class="input-tag">💧 Humidity (%)</span>
+          <span class="input-tag">🌧 Rainfall (mm)</span>
+          <span class="input-tag">⚗️ Soil pH</span>
+          <span class="input-tag">🧪 Nitrogen (N)</span>
+          <span class="input-tag">🧪 Phosphorus (P)</span>
+          <span class="input-tag">🧪 Potassium (K)</span>
+          <span class="input-tag">🏔 Elevation</span>
+          <span class="input-tag">☀️ Sunlight Hours</span>
+          <span class="input-tag">💨 VPD (kPa)</span>
+          <span class="input-tag">🏜 Sand %</span>
+          <span class="input-tag">🌊 Silt %</span>
+          <span class="input-tag">🧱 Clay %</span>
+          <span class="input-tag">📍 State/Region</span>
+        </div>
+      </div>
+      <div class="algo-card">
+        <h3>⚙️ Algorithm Logic</h3>
+        <div class="algo-step">
+          <div class="as-num">1</div>
+          <div class="as-text">Soil Texture Triangle Physics — compute drainage class and water-holding capacity from Sand/Silt/Clay proportions</div>
+        </div>
+        <div class="algo-step">
+          <div class="as-num">2</div>
+          <div class="as-text">Vapour Pressure Deficit formula: VPD = 0.6108 × e^(17.27T/T+237.3) × (1 - RH/100)</div>
+        </div>
+        <div class="algo-step">
+          <div class="as-num">3</div>
+          <div class="as-text">Random Forest classifier scores 22 crops; ICAR exclusion zones override unsuitable selections</div>
+        </div>
+        <div class="algo-step">
+          <div class="as-num">4</div>
+          <div class="as-text">Returns Top-5 ranked crops with per-crop suitability %, expected yield range, and market notes</div>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="accuracy-hero">
+        <div class="ah-num">96.0%</div>
+        <div class="ah-label">Top-Crop Suitability Score Accuracy</div>
+      </div>
+      <div class="crops-grid">
+        <h3>22 Crops Modelled</h3>
+        <div class="crops">
+          <span class="crop-pill">🌾 Wheat</span>
+          <span class="crop-pill">🌾 Rice</span>
+          <span class="crop-pill">🌽 Maize</span>
+          <span class="crop-pill">🧅 Chickpea</span>
+          <span class="crop-pill">🫘 Lentil</span>
+          <span class="crop-pill">🌿 Jute</span>
+          <span class="crop-pill">☕ Coffee</span>
+          <span class="crop-pill">🍌 Banana</span>
+          <span class="crop-pill">🥭 Mango</span>
+          <span class="crop-pill">🍇 Grapes</span>
+          <span class="crop-pill">🍉 Watermelon</span>
+          <span class="crop-pill">🧅 Muskmelon</span>
+          <span class="crop-pill">🍎 Apple</span>
+          <span class="crop-pill">🌴 Coconut</span>
+          <span class="crop-pill">🌴 Papaya</span>
+          <span class="crop-pill">🍊 Orange</span>
+          <span class="crop-pill">🌸 Cotton</span>
+          <span class="crop-pill">🌿 Jute</span>
+          <span class="crop-pill">🌱 Pigeonpea</span>
+          <span class="crop-pill">🌱 Mothbeans</span>
+          <span class="crop-pill">🫘 Blackgram</span>
+          <span class="crop-pill">🫘 Mungbean</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="m-box">
+          <div class="mn">22</div>
+          <div class="ml">Crops</div>
+        </div>
+        <div class="m-box">
+          <div class="mn">Top 5</div>
+          <div class="ml">Ranked Output</div>
+        </div>
+        <div class="m-box">
+          <div class="mn">ICAR</div>
+          <div class="ml">Validated</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6: PRICE & RISK
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-06">
+  <div class="header">
+    <span class="num">06 / 10</span>
+    <h2>Price Forecasting &amp; <span>Risk Radar</span></h2>
+  </div>
+  <div class="body">
+    <div class="model-panel">
+      <h3>📈 Price Forecasting Model</h3>
+      <div class="mp-sub">Autoregressive APMC time-series forecaster</div>
+      <div class="mp-stat">
+        <div class="ms-num">6</div>
+        <div class="ms-info"><strong>Month</strong> forecast horizon<br>APMC mandi price predictions</div>
+      </div>
+      <div class="price-chart">
+        <div class="pc-label">Projected Price Trend — Wheat (₹/quintal)</div>
+        <svg viewBox="0 0 400 80">
+          <defs>
+            <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1E6BB0" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#1E6BB0" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,60 Q40,55 80,45 Q120,35 160,38 Q200,40 240,28 Q280,18 320,22 Q360,25 400,15" stroke="#1E6BB0" stroke-width="2.5" fill="none"/>
+          <path d="M0,60 Q40,55 80,45 Q120,35 160,38 Q200,40 240,28 Q280,18 320,22 Q360,25 400,15 L400,80 L0,80 Z" fill="url(#priceGrad)"/>
+          <circle cx="400" cy="15" r="4" fill="#1E6BB0"/>
+          <text x="300" y="12" font-size="10" fill="#1E6BB0" font-weight="600">↑ ₹2,340</text>
+        </svg>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(30,107,176,0.1);color:#1E6BB0;font-weight:600">35 Crops</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(30,107,176,0.1);color:#1E6BB0;font-weight:600">Historical APMC Data</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(30,107,176,0.1);color:#1E6BB0;font-weight:600">Seasonal Decomposition</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(30,107,176,0.1);color:#1E6BB0;font-weight:600">Trend + Residual</span>
+      </div>
+    </div>
+    <div class="model-panel risk">
+      <h3>⚡ Risk Radar — XGBoost</h3>
+      <div class="mp-sub">230,252 records · 99.87% accuracy · 100% ROC-AUC</div>
+      <div class="mp-stat">
+        <div class="ms-num">99.87%</div>
+        <div class="ms-info"><strong>Risk Classification</strong><br>Accuracy on held-out test set</div>
+      </div>
+      <div class="risk-gauge">
+        <div class="pc-label">Risk Sensitivity (Before → After Tuning)</div>
+        <div class="risk-row">
+          <span class="rr-label">Before tuning</span>
+          <div class="rr-track"><div class="rr-fill-low"></div></div>
+          <span class="rr-val">8.0%</span>
+        </div>
+        <div class="risk-row">
+          <span class="rr-label">After tuning</span>
+          <div class="rr-track"><div class="rr-fill-high"></div></div>
+          <span class="rr-val">86.7%</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(192,57,43,0.1);color:#C0392B;font-weight:600">XGBoost Classifier</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(192,57,43,0.1);color:#C0392B;font-weight:600">SMOTE Oversampling</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(192,57,43,0.1);color:#C0392B;font-weight:600">Class Weight Tuning</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(192,57,43,0.1);color:#C0392B;font-weight:600">100% ROC-AUC</span>
+      </div>
+    </div>
+    <div class="bottom-stats">
+      <div class="bs-card"><span style="font-size:28px">📊</span><div><div class="bc-num">230,252</div><div class="bc-label">XGBoost Training Records</div></div></div>
+      <div class="bs-card"><span style="font-size:28px">🎯</span><div><div class="bc-num">99.87%</div><div class="bc-label">Risk Model Precision</div></div></div>
+      <div class="bs-card"><span style="font-size:28px">📈</span><div><div class="bc-num">6-Month</div><div class="bc-label">Price Forecast Horizon</div></div></div>
+      <div class="bs-card"><span style="font-size:28px">⚡</span><div><div class="bc-num">100%</div><div class="bc-label">ROC-AUC Score</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 7: 3D SEASON STORY
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-07">
+  <div class="header">
+    <span class="num">07 / 10</span>
+    <h2>Immersive <span>3D Season Story</span></h2>
+  </div>
+  <div class="body">
+    <div class="scene-preview">
+      <div class="field-art">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#030D06 0%,#071A0D 60%,#0C2914 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:60%;display:flex;flex-direction:column;justify-content:flex-end;padding:0 20px 20px">
+          <div style="display:flex;gap:3px;margin-bottom:3px">
+            <div style="flex:1;height:50px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.7"></div>
+            <div style="flex:1;height:60px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.8"></div>
+            <div style="flex:1;height:45px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.65"></div>
+            <div style="flex:1;height:55px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.75"></div>
+            <div style="flex:1;height:48px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.7"></div>
+            <div style="flex:1;height:62px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.85"></div>
+            <div style="flex:1;height:52px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.7"></div>
+            <div style="flex:1;height:58px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.78"></div>
+            <div style="flex:1;height:44px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.65"></div>
+            <div style="flex:1;height:66px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.9"></div>
+            <div style="flex:1;height:50px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.7"></div>
+            <div style="flex:1;height:55px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.75"></div>
+          </div>
+          <div style="height:4px;background:linear-gradient(90deg,#C99436,#8B6914);border-radius:2px;opacity:0.6;margin-bottom:8px"></div>
+          <div style="display:flex;gap:3px">
+            <div style="flex:1;height:38px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.5"></div>
+            <div style="flex:1;height:42px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.55"></div>
+            <div style="flex:1;height:36px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.45"></div>
+            <div style="flex:1;height:40px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.5"></div>
+            <div style="flex:1;height:38px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.47"></div>
+            <div style="flex:1;height:44px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.52"></div>
+            <div style="flex:1;height:36px;background:linear-gradient(180deg,#2E7D4F,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.45"></div>
+            <div style="flex:1;height:42px;background:linear-gradient(180deg,#3DAA6A,#1A5C32);border-radius:2px 2px 50% 50%;opacity:0.55"></div>
+          </div>
+        </div>
+        <div style="position:absolute;top:20px;left:0;right:0;height:30px;background:radial-gradient(ellipse 50% 100% at 50% 100%,rgba(201,148,54,0.15),transparent)"></div>
+        <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,#F0C060 30%,rgba(201,148,54,0.4) 60%,transparent 100%);box-shadow:0 0 30px rgba(201,148,54,0.4)"></div>
+      </div>
+      <div class="scene-label">THREE.JS WEBGL — 60fps</div>
+      <div class="webgl-badge">
+        <span class="wb">416 Instances</span>
+        <span class="wb">Scroll-driven</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="chapter-card">
+        <div class="cc-num">CH. 01</div>
+        <div class="cc-title">🌱 Bare Earth — The Promise</div>
+        <div class="cc-desc">Empty furrows under a golden sky. The farmer's hands. The season's first hope.</div>
+      </div>
+      <div class="chapter-card">
+        <div class="cc-num">CH. 02</div>
+        <div class="cc-title">💧 Germination — Rain &amp; Roots</div>
+        <div class="cc-desc">WebGL particle rain. Seedlings burst from the soil in real-time 3D animation.</div>
+      </div>
+      <div class="chapter-card">
+        <div class="cc-num">CH. 03</div>
+        <div class="cc-title">☀️ Growth — Season's Peak</div>
+        <div class="cc-desc">416 furrow instances fill the canvas. Dynamic lighting shifts from dawn to dusk.</div>
+      </div>
+      <div class="chapter-card">
+        <div class="cc-num">CH. 04</div>
+        <div class="cc-title">🌾 Harvest — The Golden Hour</div>
+        <div class="cc-desc">Wheat turns amber. Scroll-driven camera glides through a living, breathing field.</div>
+      </div>
+      <div class="chapter-card">
+        <div class="cc-num">CH. 05</div>
+        <div class="cc-title">📊 Market — Closing the Loop</div>
+        <div class="cc-desc">Price data, market connect, and the cycle begins again. AI meets tradition.</div>
+      </div>
+      <div class="tech-row">
+        <span class="tech-pill">Three.js r167</span>
+        <span class="tech-pill">WebGL 2.0</span>
+        <span class="tech-pill">GLSL Shaders</span>
+        <span class="tech-pill">InstancedMesh</span>
+        <span class="tech-pill">Framer Motion</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8: ECOSYSTEM
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-08">
+  <div class="header">
+    <span class="num">08 / 10</span>
+    <h2>The SAGRI <span>Ecosystem</span></h2>
+    <div class="h-badge">12 Tools · 1 Platform</div>
+  </div>
+  <div class="body">
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tc-icon">🧪</div>
+        <div class="tc-name">Soil NPK Analyzer</div>
+        <div class="tc-desc">Lab-grade soil nutrient mapping with actionable fertilizer recommendations</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">☁️</div>
+        <div class="tc-name">Weather Intelligence</div>
+        <div class="tc-desc">Hyperlocal 7-day forecast with farm-level risk alerts and spray windows</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">📅</div>
+        <div class="tc-name">Crop Calendar</div>
+        <div class="tc-desc">AI-personalised sowing, irrigation and harvest schedule by crop and region</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">🏛️</div>
+        <div class="tc-name">Government Schemes</div>
+        <div class="tc-desc">Discover PM-KISAN, PMFBY and 200+ schemes with one-tap apply links</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">💳</div>
+        <div class="tc-name">KCC Loan Connect</div>
+        <div class="tc-desc">Kisan Credit Card eligibility check and instant bank pre-qualification</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">🛒</div>
+        <div class="tc-name">Sell Crops</div>
+        <div class="tc-desc">Direct mandi connect with APMC price comparison and transport booking</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">🌱</div>
+        <div class="tc-name">Buy Seeds &amp; Inputs</div>
+        <div class="tc-desc">Verified seed suppliers, graded fertilizers, and certified pesticide sources</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">🚜</div>
+        <div class="tc-name">Rent Machinery</div>
+        <div class="tc-desc">Tractor and harvester rental marketplace with GPS tracking and payment</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">💬</div>
+        <div class="tc-name">Expert AI Chat</div>
+        <div class="tc-desc">Gemini Pro–powered agronomist in Hindi, Punjabi, Telugu, Bengali, Tamil</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">👥</div>
+        <div class="tc-name">Community Forum</div>
+        <div class="tc-desc">Peer-to-peer knowledge network with region-based crop advisory boards</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">📊</div>
+        <div class="tc-name">Live Market Rates</div>
+        <div class="tc-desc">Real-time APMC prices across 500+ mandis with 6-month forecast overlay</div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-icon">📋</div>
+        <div class="tc-name">Audit History</div>
+        <div class="tc-desc">Farm-level decision journal — every AI recommendation saved and traceable</div>
+      </div>
+    </div>
+    <div class="bottom-row">
+      <div class="br-stat"><span class="brs-num">12</span><span class="brs-label">Platform Tools</span></div>
+      <div class="br-stat"><span class="brs-num">5</span><span class="brs-label">Indic Languages</span></div>
+      <div class="br-stat"><span class="brs-num">500+</span><span class="brs-label">APMC Mandis</span></div>
+      <div class="br-stat"><span class="brs-num">200+</span><span class="brs-label">Govt Schemes</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 9: TECH STACK
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-09">
+  <div class="header">
+    <span class="num">09 / 10</span>
+    <h2>Technology <span>Stack</span></h2>
+  </div>
+  <div class="body">
+    <div class="tech-layer">
+      <div class="tl-header">
+        <div class="tl-dot red"></div>
+        <div class="tl-dot yellow"></div>
+        <div class="tl-dot green"></div>
+        <span class="tl-title">sagri/backend/config.py — Python 3.13 · FastAPI</span>
+      </div>
+      <div class="tl-body">
+        <div class="tech-line"><span class="tl-comment"># ── Core AI / ML Stack ──────────────────────</span></div>
+        <div class="tech-line"><span class="tl-key">framework</span>: <span class="tl-str">"FastAPI 0.115"</span> + <span class="tl-str">"uvicorn"</span></div>
+        <div class="tech-line"><span class="tl-key">vision_runtime</span>: <span class="tl-str">"ONNX Runtime 1.19"</span></div>
+        <div class="tech-line"><span class="tl-key">crop_model</span>: <span class="tl-str">"scikit-learn RandomForest"</span></div>
+        <div class="tech-line"><span class="tl-key">risk_model</span>: <span class="tl-str">"XGBoost 2.1"</span> + <span class="tl-str">"SMOTE"</span></div>
+        <div class="tech-line"><span class="tl-key">price_model</span>: <span class="tl-str">"statsmodels Autoregressive"</span></div>
+        <div class="tech-line"><span class="tl-key">llm</span>: <span class="tl-str">"Google Gemini 1.5 Pro"</span></div>
+        <div class="tech-line"><span class="tl-comment"># ── Data &amp; Validation ───────────────────────</span></div>
+        <div class="tech-line"><span class="tl-key">validation</span>: <span class="tl-str">"Pydantic v2"</span></div>
+        <div class="tech-line"><span class="tl-key">data_science</span>: [<span class="tl-str">"pandas"</span>, <span class="tl-str">"numpy"</span>, <span class="tl-str">"scipy"</span>]</div>
+        <div class="tech-line"><span class="tl-key">cors</span>: <span class="tl-bool">true</span> <span class="tl-comment"># all origins — dev mode</span></div>
+        <div class="tech-line"><span class="tl-key">port</span>: <span class="tl-num">8000</span></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="layer-cards">
+        <div class="lc">
+          <div class="lc-icon">⚛️</div>
+          <div class="lc-info">
+            <div class="lc-title">Frontend — React 18 + TypeScript</div>
+            <div class="lc-tags">
+              <span class="lc-tag b">Vite</span>
+              <span class="lc-tag b">React Router</span>
+              <span class="lc-tag y">Tailwind CSS</span>
+              <span class="lc-tag p">Framer Motion</span>
+            </div>
+          </div>
+        </div>
+        <div class="lc">
+          <div class="lc-icon">🌐</div>
+          <div class="lc-info">
+            <div class="lc-title">3D Engine — Three.js + WebGL</div>
+            <div class="lc-tags">
+              <span class="lc-tag g">Three.js r167</span>
+              <span class="lc-tag g">GLSL Shaders</span>
+              <span class="lc-tag g">InstancedMesh</span>
+            </div>
+          </div>
+        </div>
+        <div class="lc">
+          <div class="lc-icon">📊</div>
+          <div class="lc-info">
+            <div class="lc-title">Data Visualization — Recharts + D3</div>
+            <div class="lc-tags">
+              <span class="lc-tag b">Recharts 2</span>
+              <span class="lc-tag b">D3.js</span>
+              <span class="lc-tag y">Chart.js</span>
+            </div>
+          </div>
+        </div>
+        <div class="lc">
+          <div class="lc-icon">🤖</div>
+          <div class="lc-info">
+            <div class="lc-title">AI — ONNX + Scikit + XGBoost</div>
+            <div class="lc-tags">
+              <span class="lc-tag g">ONNX 1.19</span>
+              <span class="lc-tag g">XGBoost 2.1</span>
+              <span class="lc-tag g">sklearn</span>
+            </div>
+          </div>
+        </div>
+        <div class="lc">
+          <div class="lc-icon">🌍</div>
+          <div class="lc-info">
+            <div class="lc-title">Localisation &amp; Accessibility</div>
+            <div class="lc-tags">
+              <span class="lc-tag y">i18next</span>
+              <span class="lc-tag y">5 Languages</span>
+              <span class="lc-tag y">Voice Input</span>
+            </div>
+          </div>
+        </div>
+        <div class="lc">
+          <div class="lc-icon">🚀</div>
+          <div class="lc-info">
+            <div class="lc-title">Runtime &amp; Ports</div>
+            <div class="lc-tags">
+              <span class="lc-tag p">:8000 Backend</span>
+              <span class="lc-tag p">:5173 Old UI</span>
+              <span class="lc-tag p">:5174 New UI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 10: VISION
+═══════════════════════════════════════════════════ -->
+<div class="slide slide-10">
+  <div class="bg-glow"></div>
+  <div class="header">
+    <span class="num">10 / 10</span>
+    <h3>Traction &amp; <span>Vision 2026</span></h3>
+  </div>
+  <div class="content">
+    <div class="left">
+      <div class="eyebrow">The Road Ahead</div>
+      <h2>From 1 Farm to<br><span>10 Million Farms.</span></h2>
+      <div class="roadmap">
+        <div class="rm-item">
+          <div class="rm-year">Q1 '25</div>
+          <div class="rm-text">Beta launch — 5 states, 3 crops, Hindi + Punjabi voice interface</div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-year">Q3 '25</div>
+          <div class="rm-text">Sentinel-2 satellite imagery integration — field-level NDVI and soil health maps</div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-year">Q1 '26</div>
+          <div class="rm-text">Drone fleet API — autonomous spray scheduling and precision dosage delivery</div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-year">Q3 '26</div>
+          <div class="rm-text">22 Indic languages · 10M active farmers · ₹500Cr+ yield value protected annually</div>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="metric-hero">
+          <div class="mh-num green">94.5%</div>
+          <div class="mh-label">Disease Detection<br>Confidence</div>
+        </div>
+        <div class="metric-hero">
+          <div class="mh-num wheat">96.0%</div>
+          <div class="mh-label">Crop Recommendation<br>Accuracy</div>
+        </div>
+        <div class="metric-hero">
+          <div class="mh-num blue">99.87%</div>
+          <div class="mh-label">Risk Model<br>Precision</div>
+        </div>
+      </div>
+      <div class="bottom-metrics">
+        <div class="bm-card">
+          <div class="bm-num">140M</div>
+          <div class="bm-label">Target Indian Farmers</div>
+        </div>
+        <div class="bm-card">
+          <div class="bm-num">38</div>
+          <div class="bm-label">Disease Classes</div>
+        </div>
+        <div class="bm-card">
+          <div class="bm-num">22</div>
+          <div class="bm-label">Crops Modelled</div>
+        </div>
+        <div class="bm-card">
+          <div class="bm-num">&lt;450ms</div>
+          <div class="bm-label">AI Inference Speed</div>
+        </div>
+      </div>
+      <div style="background:rgba(201,148,54,0.1);border:1px solid rgba(201,148,54,0.3);border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--wheat-light);font-weight:700;margin-bottom:6px">
+          "Every acre. Every season. Every farmer."
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:3px">— SAGRI MISSION STATEMENT</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

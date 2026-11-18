@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAGRI — Enterprise Agriculture Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg-main: #060907;
+  --bg-card: rgba(14, 22, 17, 0.85);
+  --border-card: rgba(52, 211, 153, 0.2);
+  --border-card-subtle: rgba(255, 255, 255, 0.08);
+  --emerald: #10B981;
+  --emerald-light: #34D399;
+  --emerald-glow: rgba(16, 185, 129, 0.25);
+  --amber: #F59E0B;
+  --amber-light: #FBBF24;
+  --amber-glow: rgba(245, 158, 11, 0.2);
+  --cyan: #06B6D4;
+  --cyan-light: #38BDF8;
+  --rose: #F43F5E;
+  --rose-light: #FB7185;
+  --text-white: #FFFFFF;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  --font-main: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-main);
+  background: #000000;
+  color: var(--text-white);
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@page {
+  size: 1280px 720px;
+  margin: 0;
+}
+
+.slide {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  page-break-inside: avoid;
+  background: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 12% 18%, rgba(16, 185, 129, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(245, 158, 11, 0.07) 0%, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+  pointer-events: none;
+}
+
+.slide-topbar {
+  height: 60px;
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-card-subtle);
+  position: relative;
+  z-index: 10;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo-icon {
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, var(--emerald), #047857);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px var(--emerald-glow);
+}
+.brand-logo-icon svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2.2; }
+.brand-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--text-white);
+}
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-card-subtle);
+}
+.slide-counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--emerald-light);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.slide-canvas {
+  flex: 1;
+  padding: 30px 48px 32px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 5;
+}
+
+.title-section {
+  margin-bottom: 18px;
+}
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--emerald-light);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.kicker-line {
+  width: 20px;
+  height: 2px;
+  background: var(--emerald-light);
+}
+.slide-headline {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-white);
+  line-height: 1.15;
+}
+.slide-headline span {
+  color: var(--emerald-light);
+}
+.slide-subheadline {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+}
+.glass-card.accent-emerald { border-color: rgba(16, 185, 129, 0.25); }
+.glass-card.accent-amber { border-color: rgba(245, 158, 11, 0.25); }
+.glass-card.accent-cyan { border-color: rgba(6, 182, 212, 0.25); }
+.glass-card.accent-rose { border-color: rgba(244, 63, 94, 0.25); }
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tag-pill.emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald-light); border: 1px solid rgba(16, 185, 129, 0.3); }
+.tag-pill.amber { background: rgba(245, 158, 11, 0.12); color: var(--amber-light); border: 1px solid rgba(245, 158, 11, 0.3); }
+.tag-pill.cyan { background: rgba(6, 182, 212, 0.12); color: var(--cyan-light); border: 1px solid rgba(6, 182, 212, 0.3); }
+.tag-pill.rose { background: rgba(244, 63, 94, 0.12); color: var(--rose-light); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+/* SLIDE 01: HERO */
+.hero-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 36px;
+  height: 100%;
+  align-items: center;
+}
+.hero-content h1 {
+  font-family: var(--font-display);
+  font-size: 50px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -1.2px;
+  margin-bottom: 16px;
+}
+.hero-content h1 span.gradient-text {
+  color: var(--emerald-light);
+}
+.hero-desc {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 560px;
+  margin-bottom: 24px;
+}
+.hero-pill-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.hero-telemetry-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  border-top: 1px solid var(--border-card-subtle);
+  padding-top: 20px;
+}
+.hero-stat-node { display: flex; flex-direction: column; }
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-white);
+  line-height: 1;
+}
+.hero-stat-num span { color: var(--emerald-light); font-size: 16px; }
+.hero-stat-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+.hero-hud-card {
+  background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08) 0%, rgba(10, 15, 12, 0.9) 100%);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(16, 185, 129, 0.05);
+}
+.hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-card-subtle);
+}
+.hud-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--emerald-light);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pulse-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--emerald-light);
+  box-shadow: 0 0 8px var(--emerald-light);
+}
+.hud-grid-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.hud-subcard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.hud-subcard-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.hud-subcard-metric {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-white);
+}
+.hud-subcard-sub {
+  font-size: 9.5px;
+  color: var(--emerald-light);
+  margin-top: 2px;
+}
+.hud-terminal-log {
+  background: #020403;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.hud-terminal-log span.g { color: var(--emerald-light); }
+.hud-terminal-log span.c { color: var(--cyan-light); }
+.hud-terminal-log span.y { color: var(--amber-light); }
+
+/* SLIDE 02: PROBLEM */
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  flex: 1;
+}
+.problem-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.p-header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.p-stat-hero {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+.problem-item.accent-rose .p-stat-hero { color: var(--rose-light); }
+.problem-item.accent-amber .p-stat-hero { color: var(--amber-light); }
+.problem-item.accent-cyan .p-stat-hero { color: var(--cyan-light); }
+.problem-item.accent-emerald .p-stat-hero { color: var(--emerald-light); }
+.p-item-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-white);
+  margin-bottom: 6px;
+}
+.p-item-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.p-impact-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+.problem-footer-bar {
+  margin-top: 14px;
+  padding: 10px 18px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pfb-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.pfb-left strong { color: var(--text-white); }
+.pfb-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--emerald-light);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* SLIDE 03: ARCHITECTURE */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  flex: 1;
+}
+.arch-col {
+  display: flex;
+  flex-direction: column;
+}
+.arch-header {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-card-subtle);
+}
+.arch-tier-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.arch-tier-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-white);
+}
+.arch-col.accent-emerald .arch-tier-num { color: var(--emerald-light); }
+.arch-col.accent-amber .arch-tier-num { color: var(--amber-light); }
+.arch-col.accent-cyan .arch-tier-num { color: var(--cyan-light); }
+.arch-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.arch-spec-item {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.arch-spec-bullet {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.arch-col.accent-emerald .arch-spec-bullet { background: var(--emerald-light); }
+.arch-col.accent-amber .arch-spec-bullet { background: var(--amber-light); }
+.arch-col.accent-cyan .arch-spec-bullet { background: var(--cyan-light); }
+.arch-tech-stack-row {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-card-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arch-flow-strip {
+  margin-top: 14px;
+  background: #030504;
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.arch-flow-step { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+.arch-flow-step strong { color: var(--text-white); }
+.arch-flow-arrow { color: var(--emerald-light); font-weight: 700; }
+
+/* SLIDE 04: VISION */
+.vision-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 18px;
+  flex: 1;
+}
+.scan-telemetry-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-target-box {
+  background: #030604;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  padding: 14px;
+}
+.scan-reticle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.reticle-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--emerald-light);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.scan-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.smr-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.smr-lbl { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); text-transform: uppercase; }
+.smr-val { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-white); margin-top: 2px; }
+.dist-chart-group { display: flex; flex-direction: column; gap: 7px; }
+.dist-row { display: flex; align-items: center; gap: 10px; }
+.dist-label { width: 140px; font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); }
+.dist-bar-track { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden; }
+.dist-bar-fill { height: 100%; border-radius: 3px; }
+.dist-bar-fill.high { background: linear-gradient(90deg, #10B981, #34D399); }
+.dist-bar-fill.mid { background: rgba(255, 255, 255, 0.2); }
+.dist-bar-fill.low { background: rgba(255, 255, 255, 0.1); }
+.dist-val { width: 44px; text-align: right; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; color: var(--text-white); }
+.pipeline-diagram {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pipe-node { text-align: center; }
+.pipe-node-title { font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; color: var(--emerald-light); }
+.pipe-node-sub { font-size: 8.5px; color: var(--text-dim); margin-top: 1px; }
+.pipe-chevron { color: var(--text-dim); font-size: 12px; }
+
+/* SLIDE 05: CROP RECOMMENDER */
+.recommender-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+}
+.physics-spec-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.formula-callout {
+  background: #020403;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+}
+.formula-lbl { font-size: 9.5px; color: var(--amber-light); text-transform: uppercase; margin-bottom: 3px; letter-spacing: 1px; }
+.formula-math { font-size: 11.5px; color: var(--text-white); line-height: 1.5; }
+.input-variables-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.iv-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.iv-name { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); text-transform: uppercase; }
+.iv-val { font-size: 10.5px; font-weight: 600; color: var(--text-white); margin-top: 1px; }
+.ranked-crop-list { display: flex; flex-direction: column; gap: 7px; }
+.rc-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rc-item.top-ranked { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); }
+.rc-rank { font-family: var(--font-mono); font-size: 11px; font-weight: 700; width: 24px; color: var(--text-dim); }
+.rc-item.top-ranked .rc-rank { color: var(--emerald-light); }
+.rc-info { flex: 1; padding: 0 10px; }
+.rc-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 700; color: var(--text-white); }
+.rc-meta { font-size: 9.5px; color: var(--text-dim); margin-top: 1px; }
+.rc-score-badge { text-align: right; }
+.rc-pct { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--emerald-light); line-height: 1; }
+.rc-pct-lbl { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); text-transform: uppercase; }
+
+/* SLIDE 06: PRICE & RISK */
+.dual-engine-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+}
+.engine-subcard { display: flex; flex-direction: column; justify-content: space-between; }
+.engine-meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.engine-stat-headline { font-family: var(--font-display); font-size: 30px; font-weight: 800; line-height: 1; }
+.engine-subcard.cyan .engine-stat-headline { color: var(--cyan-light); }
+.engine-subcard.rose .engine-stat-headline { color: var(--rose-light); }
+.svg-chart-container {
+  background: #020403;
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+.svg-chart-container svg { width: 100%; height: 85px; }
+.tuning-comparison-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 8px; }
+.tuning-comparison-table th {
+  text-align: left; font-family: var(--font-mono); font-size: 9px;
+  color: var(--text-dim); text-transform: uppercase; padding: 4px 6px;
+  border-bottom: 1px solid var(--border-card-subtle);
+}
+.tuning-comparison-table td { padding: 5px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); color: var(--text-muted); }
+.tuning-comparison-table td strong { color: var(--text-white); }
+.tuning-comparison-table td.highlight { color: var(--rose-light); font-weight: 700; font-family: var(--font-mono); }
+
+/* SLIDE 07: 3D ENGINE */
+.season-story-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+}
+.threejs-schematic-card {
+  background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.06) 0%, #030504 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.wireframe-visual {
+  flex: 1;
+  background: #010302;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 8px;
+  margin: 10px 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wireframe-visual svg { width: 100%; height: 100%; }
+.chapter-stepper { display: flex; flex-direction: column; gap: 7px; }
+.step-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.step-item.active { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); }
+.step-badge {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+.step-item.active .step-badge { background: rgba(16, 185, 129, 0.2); color: var(--emerald-light); }
+.step-body-title { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; color: var(--text-white); }
+.step-body-desc { font-size: 10px; color: var(--text-muted); margin-top: 1px; line-height: 1.35; }
+
+/* SLIDE 08: ECOSYSTEM */
+.ecosystem-layers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  flex: 1;
+}
+.eco-pillar-card { display: flex; flex-direction: column; justify-content: space-between; }
+.eco-pillar-header {
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-card-subtle);
+}
+.eco-pillar-name {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-white);
+}
+.eco-module-list { display: flex; flex-direction: column; gap: 7px; }
+.eco-module-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.emi-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.emi-tag { font-family: var(--font-mono); font-size: 8px; color: var(--emerald-light); font-weight: 600; }
+.emi-desc { font-size: 9.5px; color: var(--text-muted); line-height: 1.35; margin-top: 2px; }
+.eco-footer-kpi {
+  border-top: 1px solid var(--border-card-subtle);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* SLIDE 09: TECH STACK */
+.tech-spec-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+}
+.terminal-code-panel {
+  background: #020403;
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tcp-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-card-subtle);
+}
+.tcp-dots { display: flex; gap: 5px; }
+.tcp-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+.tcp-title { font-size: 10px; color: var(--text-dim); }
+.tcp-body { padding: 12px 14px; line-height: 1.6; color: var(--text-muted); flex: 1; }
+.tcp-body span.comment { color: #52525B; }
+.tcp-body span.key { color: var(--cyan-light); }
+.tcp-body span.str { color: #A7F3D0; }
+.tcp-body span.val { color: var(--amber-light); }
+
+.stack-categories-grid { display: flex; flex-direction: column; gap: 8px; }
+.sc-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.sc-title { font-family: var(--font-mono); font-size: 9.5px; color: var(--emerald-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.sc-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* SLIDE 10: TRACTION & VISION */
+.traction-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  flex: 1;
+  align-items: center;
+}
+.roadmap-timeline { display: flex; flex-direction: column; gap: 10px; }
+.rm-node { display: flex; gap: 14px; align-items: flex-start; }
+.rm-quarter {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--amber-light);
+  min-width: 58px;
+  padding: 3px 6px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 4px;
+  text-align: center;
+}
+.rm-content { flex: 1; }
+.rm-title { font-family: var(--font-display); font-size: 12.5px; font-weight: 700; color: var(--text-white); }
+.rm-desc { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; line-height: 1.4; }
+
+.scorecard-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.score-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.score-box.emerald { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.03); }
+.score-box.amber { border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.03); }
+.score-num { font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1; }
+.score-box.emerald .score-num { color: var(--emerald-light); }
+.score-box.amber .score-num { color: var(--amber-light); }
+.score-lbl { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); text-transform: uppercase; margin-top: 5px; }
+
+.market-tam-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.tam-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-card-subtle);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+.tam-val { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text-white); }
+.tam-lbl { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; }
+
+.mission-callout {
+  margin-top: 10px;
+  background: #020403;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+}
+.mission-text { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-white); }
+.mission-sub { font-family: var(--font-mono); font-size: 9px; color: var(--emerald-light); margin-top: 3px; letter-spacing: 1px; }
+
+</style>
+</head>
+<body>
+
+<!-- SLIDE 01: HERO COVER -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Autonomous Agricultural Intelligence</div>
+    </div>
+    <div class="slide-counter">01 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="hero-layout">
+      <div class="hero-content">
+        <div class="kicker"><span class="kicker-line"></span>Enterprise Project Master Deck</div>
+        <h1>The AI Operating System for <span class="gradient-text">140M Indian Farmers</span></h1>
+        <div class="hero-desc">
+          Empowering smallholders across the end-to-end crop lifecycle: edge vision diagnostics, soil physics crop matching, predictive APMC mandi price forecasting, and climate risk radar.
+        </div>
+        <div class="hero-pill-cluster">
+          <span class="tag-pill emerald">Edge ONNX Vision</span>
+          <span class="tag-pill amber">Soil Physics VPD</span>
+          <span class="tag-pill cyan">APMC Price Engine</span>
+          <span class="tag-pill rose">XGBoost Risk Radar</span>
+          <span class="tag-pill emerald">WebGL 3D Digital Twin</span>
+        </div>
+        <div class="hero-telemetry-strip">
+          <div class="hero-stat-node">
+            <div class="hero-stat-num">94.5<span>%</span></div>
+            <div class="hero-stat-lbl">Vision Confidence</div>
+          </div>
+          <div class="hero-stat-node">
+            <div class="hero-stat-num">96.0<span>%</span></div>
+            <div class="hero-stat-lbl">Crop Precision</div>
+          </div>
+          <div class="hero-stat-node">
+            <div class="hero-stat-num">99.87<span>%</span></div>
+            <div class="hero-stat-lbl">Risk Model Acc</div>
+          </div>
+          <div class="hero-stat-node">
+            <div class="hero-stat-num">&lt;450<span>ms</span></div>
+            <div class="hero-stat-lbl">Edge Latency</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-hud-card">
+        <div class="hud-header">
+          <div class="hud-title"><span class="pulse-dot"></span>Core Intelligence Telemetry</div>
+          <span class="tag-pill emerald">Live Cluster</span>
+        </div>
+        <div class="hud-grid-display">
+          <div class="hud-subcard">
+            <div class="hud-subcard-title">Inference Engine</div>
+            <div class="hud-subcard-metric">MobileNetV2</div>
+            <div class="hud-subcard-sub">Float32 ONNX Runtime</div>
+          </div>
+          <div class="hud-subcard">
+            <div class="hud-subcard-title">Training Cohort</div>
+            <div class="hud-subcard-metric">230,252</div>
+            <div class="hud-subcard-sub">Curated Records</div>
+          </div>
+          <div class="hud-subcard">
+            <div class="hud-subcard-title">Pathogen Taxonomy</div>
+            <div class="hud-subcard-metric">38 Classes</div>
+            <div class="hud-subcard-sub">CIBRC Dosage Validated</div>
+          </div>
+          <div class="hud-subcard">
+            <div class="hud-subcard-title">Forecast Horizon</div>
+            <div class="hud-subcard-metric">6 Months</div>
+            <div class="hud-subcard-sub">Autoregressive APMC</div>
+          </div>
+        </div>
+        <div class="hud-terminal-log">
+          <span class="g">[SYSTEM_READY]</span> FastApi ASGI on :8000 (0.0.0.0)<br>
+          <span class="c">[ONNX_LOADED]</span> 54,305 plant specimens weights loaded<br>
+          <span class="y">[PHYSICS_INIT]</span> USDA Soil Triangle + VPD compute online
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 02: THE PROBLEM MATRIX -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Macro Problem Landscape</div>
+    </div>
+    <div class="slide-counter">02 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Market Dynamics &amp; Structural Bottlenecks</div>
+      <h2 class="slide-headline">The <span>₹1.5 Lakh Crore</span> Agronomic &amp; Market Deficit</h2>
+      <div class="slide-subheadline">Indian smallholders operate with acute information asymmetry across biological, physical, and financial dimensions.</div>
+    </div>
+    <div class="problem-grid">
+      <div class="glass-card problem-item accent-rose">
+        <div>
+          <div class="p-header-line">
+            <div class="p-stat-hero">₹1.5L Cr</div>
+            <span class="tag-pill rose">Biological Risk</span>
+          </div>
+          <div class="p-item-title">Annual Pathogen &amp; Pest Losses</div>
+          <div class="p-item-desc">Fungal, viral, and bacterial blights destroy 15–20% of national harvest annually. Without instant laboratory access, smallholders misdiagnose symptoms, resulting in toxic over-spraying or catastrophic crop failure.</div>
+        </div>
+        <div class="p-impact-tag">ICAR Benchmark: 1 Extension Officer per 1,160 Farm Families</div>
+      </div>
+      <div class="glass-card problem-item accent-amber">
+        <div>
+          <div class="p-header-line">
+            <div class="p-stat-hero">62.4%</div>
+            <span class="tag-pill amber">Agronomic Gap</span>
+          </div>
+          <div class="p-item-title">Uncalibrated Soil Sowing</div>
+          <div class="p-item-desc">Over 60% of smallholders plant traditional monocultures without awareness of micro-soil chemistry (NPK, pH) or atmospheric Vapour Pressure Deficit (VPD), severely depressing baseline yield potential.</div>
+        </div>
+        <div class="p-impact-tag">Hydraulic conductivity &amp; sand/silt/clay physics neglected</div>
+      </div>
+      <div class="glass-card problem-item accent-cyan">
+        <div>
+          <div class="p-header-line">
+            <div class="p-stat-hero">30–42%</div>
+            <span class="tag-pill cyan">Monetization Deficit</span>
+          </div>
+          <div class="p-item-title">Distress Selling at Local Mandis</div>
+          <div class="p-item-desc">Harvest-time glut forces immediate liquidation at local APMC mandis at prices 30–42% below peak forward rates. Absence of predictive price intelligence strips farmers of all collective bargaining leverage.</div>
+        </div>
+        <div class="p-impact-tag">Zero predictive visibility into 30/60/90-day wholesale arrival volume</div>
+      </div>
+      <div class="glass-card problem-item accent-emerald">
+        <div>
+          <div class="p-header-line">
+            <div class="p-stat-hero">+73%</div>
+            <span class="tag-pill emerald">Climate Exposure</span>
+          </div>
+          <div class="p-item-title">Climate Shock Frequency Since 2000</div>
+          <div class="p-item-desc">Unseasonal deluges, heatwaves, and localized drought patterns affect 4 in 10 agricultural cycles. Traditional tools lack cost-sensitive risk underwriting models capable of guiding proactive mitigation.</div>
+        </div>
+        <div class="p-impact-tag">High-severity failure events systematically under-forecasted</div>
+      </div>
+    </div>
+    <div class="problem-footer-bar">
+      <div class="pfb-left">
+        <strong>The Strategic Need:</strong> A singular, unified digital operating system combining edge computer vision, bio-physical soil modeling, and forward-looking economic forecasting.
+      </div>
+      <div class="pfb-badge">SAGRI ARCHITECTURE</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 03: ARCHITECTURE (3 TIERS) -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Systems Blueprint</div>
+    </div>
+    <div class="slide-counter">03 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Core Engineering Topology</div>
+      <h2 class="slide-headline">The <span>Three-Tier Intelligence</span> Framework</h2>
+      <div class="slide-subheadline">Separation of concerns across edge computer vision, bio-physical agronomy, and forward market underwriting.</div>
+    </div>
+    <div class="arch-grid">
+      <div class="glass-card arch-col accent-emerald">
+        <div class="arch-header">
+          <div class="arch-tier-num">Tier 01 · Visual Diagnosis</div>
+          <div class="arch-tier-title">Edge Vision Subsystem</div>
+        </div>
+        <div class="arch-specs">
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Inference Engine:</strong> MobileNetV2 quantized Float32 running via ONNX Runtime for low-spec Android devices.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Taxonomy:</strong> 38 distinct crop pathogen classes across 14 commercial plant families.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Test-Time Augmentation:</strong> 5-pass ensemble (H-Flip, Luminance ±15%, Blur) for calibrated confidence scoring.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Remediation Pipeline:</strong> Direct mapping to CIBRC-approved pesticide and bio-organic dosages.</div></div>
+        </div>
+        <div class="arch-tech-stack-row">
+          <span class="tag-pill emerald">ONNX Runtime</span>
+          <span class="tag-pill emerald">MobileNetV2</span>
+          <span class="tag-pill emerald">CIBRC DB</span>
+        </div>
+      </div>
+      <div class="glass-card arch-col accent-amber">
+        <div class="arch-header">
+          <div class="arch-tier-num">Tier 02 · Agronomy Engine</div>
+          <div class="arch-tier-title">Bio-Physical Soil Brain</div>
+        </div>
+        <div class="arch-specs">
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Soil Physics Engine:</strong> Sand/Silt/Clay ternary decomposition calculating hydraulic retention.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>VPD Calculation:</strong> Real-time atmospheric Vapour Pressure Deficit evaluating plant transpiration stress.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Decision Tree:</strong> Random Forest scoring 22 regional crops across 14 bio-chemical soil vectors.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Constraint Engine:</strong> ICAR agro-climatic boundaries and pH buffer overrides.</div></div>
+        </div>
+        <div class="arch-tech-stack-row">
+          <span class="tag-pill amber">Scikit-Learn</span>
+          <span class="tag-pill amber">USDA Physics</span>
+          <span class="tag-pill amber">ICAR Rules</span>
+        </div>
+      </div>
+      <div class="glass-card arch-col accent-cyan">
+        <div class="arch-header">
+          <div class="arch-tier-num">Tier 03 · Macro Economics</div>
+          <div class="arch-tier-title">Market &amp; Risk Underwriting</div>
+        </div>
+        <div class="arch-specs">
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Price Forecaster:</strong> Autoregressive APMC time-series model predicting mandi spot rates up to 6 months.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>XGBoost Risk Radar:</strong> Calibrated classifier predicting catastrophic climate and market vulnerabilities.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>Cohort Depth:</strong> 230,252 historical agricultural records across 28 Indian farming districts.</div></div>
+          <div class="arch-spec-item"><div class="arch-spec-bullet"></div><div><strong>LLM Reasoning:</strong> Multilingual conversational agronomist powered by Google Gemini 1.5 Pro.</div></div>
+        </div>
+        <div class="arch-tech-stack-row">
+          <span class="tag-pill cyan">XGBoost 2.1</span>
+          <span class="tag-pill cyan">Statsmodels</span>
+          <span class="tag-pill cyan">Gemini Pro</span>
+        </div>
+      </div>
+    </div>
+    <div class="arch-flow-strip">
+      <div class="arch-flow-step"><span>Client Edge</span> <strong>React 18 + Three.js</strong></div>
+      <div class="arch-flow-arrow">⟶</div>
+      <div class="arch-flow-step"><span>FastAPI Gateway</span> <strong>Python 3.13 ASGI</strong></div>
+      <div class="arch-flow-arrow">⟶</div>
+      <div class="arch-flow-step"><span>ML Pipeline</span> <strong>ONNX + RF + XGBoost</strong></div>
+      <div class="arch-flow-arrow">⟶</div>
+      <div class="arch-flow-step"><span>Intelligence Output</span> <strong>Actionable Farmer Action</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 04: DISEASE VISION -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Model Deep Dive · Vision</div>
+    </div>
+    <div class="slide-counter">04 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Computer Vision Diagnostics</div>
+      <h2 class="slide-headline">Edge-Optimized <span>Leaf Pathogen Inference</span></h2>
+      <div class="slide-subheadline">Quantized MobileNetV2 architecture with 5-step Test-Time Augmentation (TTA) achieving 94.5% precision.</div>
+    </div>
+    <div class="vision-split">
+      <div class="glass-card scan-telemetry-hud accent-emerald">
+        <div class="scan-target-box">
+          <div class="scan-reticle">
+            <span class="reticle-badge">SPECIMEN #88241 · SOLANUM LYCOPERSICUM</span>
+            <span class="tag-pill rose">PATHOGEN DETECTED</span>
+          </div>
+          <div class="scan-metrics-row">
+            <div class="smr-card"><div class="smr-lbl">Primary Finding</div><div class="smr-val" style="color:var(--rose-light)">Tomato Early Blight</div></div>
+            <div class="smr-card"><div class="smr-lbl">Inference Confidence</div><div class="smr-val" style="color:var(--emerald-light)">94.52%</div></div>
+            <div class="smr-card"><div class="smr-lbl">Inference Latency</div><div class="smr-val">384 ms</div></div>
+          </div>
+          <div class="dist-chart-group">
+            <div class="dist-row">
+              <span class="dist-label">Early Blight (A. solani)</span>
+              <div class="dist-bar-track"><div class="dist-bar-fill high" style="width: 94.5%"></div></div>
+              <span class="dist-val" style="color:var(--emerald-light)">94.5%</span>
+            </div>
+            <div class="dist-row">
+              <span class="dist-label">Late Blight (P. infestans)</span>
+              <div class="dist-bar-track"><div class="dist-bar-fill mid" style="width: 3.8%"></div></div>
+              <span class="dist-val">3.8%</span>
+            </div>
+            <div class="dist-row">
+              <span class="dist-label">Septoria Leaf Spot</span>
+              <div class="dist-bar-track"><div class="dist-bar-fill low" style="width: 1.2%"></div></div>
+              <span class="dist-val">1.2%</span>
+            </div>
+            <div class="dist-row">
+              <span class="dist-label">Healthy Leaf Baseline</span>
+              <div class="dist-bar-track"><div class="dist-bar-fill low" style="width: 0.5%"></div></div>
+              <span class="dist-val">0.5%</span>
+            </div>
+          </div>
+        </div>
+        <div class="pipeline-diagram">
+          <div class="pipe-node"><div class="pipe-node-title">224x224 RGB</div><div class="pipe-node-sub">Camera Capture</div></div>
+          <div class="pipe-chevron">⟶</div>
+          <div class="pipe-node"><div class="pipe-node-title">5x TTA Stack</div><div class="pipe-node-sub">H-Flip / Blur / Scale</div></div>
+          <div class="pipe-chevron">⟶</div>
+          <div class="pipe-node"><div class="pipe-node-title">MobileNetV2</div><div class="pipe-node-sub">ONNX FP32 Engine</div></div>
+          <div class="pipe-chevron">⟶</div>
+          <div class="pipe-node"><div class="pipe-node-title">CIBRC Match</div><div class="pipe-node-sub">Chemical Dosage DB</div></div>
+        </div>
+      </div>
+      <div class="glass-card" style="display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text-white)">Regulatory Chemical &amp; Organic Remediation</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:16px">
+            Model predictions interface directly with the Central Insecticides Board &amp; Registration Committee (CIBRC) standards to generate legally compliant, safe dosages.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-card-subtle);border-radius:6px;padding:10px 12px">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--emerald-light);text-transform:uppercase;font-weight:700">Chemical Intervention (Standard CIBRC)</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-white);margin-top:2px">Mancozeb 75% WP @ 2.5 g / Litre of water</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:2px">Apply at 10-day intervals upon first lesion appearance. Pre-harvest interval: 7 days.</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-card-subtle);border-radius:6px;padding:10px 12px">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--amber-light);text-transform:uppercase;font-weight:700">Bio-Organic Alternative</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-white);margin-top:2px">Trichoderma viride (1% WP) @ 5 g / Litre</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:2px">Bio-antagonist foliar spray prevents spore germination without chemical residue.</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-card-subtle);padding-top:12px;display:flex;justify-content:space-between">
+          <div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">TRAINING CORPUS:</span> <strong style="font-size:11px;color:var(--text-white)">54,305 Specimens</strong></div>
+          <div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">TAXONOMY:</span> <strong style="font-size:11px;color:var(--emerald-light)">38 Leaf Classes</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 05: CROP RECOMMENDER -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Model Deep Dive · Agronomy</div>
+    </div>
+    <div class="slide-counter">05 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Bio-Physical Agronomy Intelligence</div>
+      <h2 class="slide-headline">Soil Texture Physics &amp; <span>VPD Optimization</span></h2>
+      <div class="slide-subheadline">Combining USDA ternary soil dynamics with atmospheric vapour pressure deficit across a 22-crop Random Forest.</div>
+    </div>
+    <div class="recommender-split">
+      <div class="glass-card physics-spec-panel accent-amber">
+        <div class="formula-callout">
+          <div class="formula-lbl">Vapour Pressure Deficit Formulation</div>
+          <div class="formula-math">
+            VPD = e<sub>s</sub>(T) &times; (1 - RH / 100)<br>
+            where e<sub>s</sub>(T) = 0.6108 &times; exp[ (17.27 &times; T) / (T + 237.3) ]
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-muted);line-height:1.45">
+          VPD quantifies the atmospheric moisture extraction force exerted on crop foliage. SAGRI pairs VPD with hydraulic conductivity calculated from ternary Sand/Silt/Clay fractions.
+        </div>
+        <div class="input-variables-matrix">
+          <div class="iv-box"><div class="iv-name">Nitrogen (N)</div><div class="iv-val">90 kg/ha</div></div>
+          <div class="iv-box"><div class="iv-name">Phosphorus (P)</div><div class="iv-val">42 kg/ha</div></div>
+          <div class="iv-box"><div class="iv-name">Potassium (K)</div><div class="iv-val">43 kg/ha</div></div>
+          <div class="iv-box"><div class="iv-name">Soil pH</div><div class="iv-val">6.5 (Loam)</div></div>
+          <div class="iv-box"><div class="iv-name">Temperature</div><div class="iv-val">20.8 °C</div></div>
+          <div class="iv-box"><div class="iv-name">Humidity (RH)</div><div class="iv-val">82.0 %</div></div>
+          <div class="iv-box"><div class="iv-name">Rainfall (Annual)</div><div class="iv-val">202.9 mm</div></div>
+          <div class="iv-box"><div class="iv-name">Calculated VPD</div><div class="iv-val">0.44 kPa</div></div>
+          <div class="iv-box"><div class="iv-name">Texture Class</div><div class="iv-val">Sandy Loam</div></div>
+        </div>
+      </div>
+      <div class="glass-card" style="display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-white)">Top Ranked Recommendations</div>
+            <span class="tag-pill amber">Random Forest</span>
+          </div>
+          <div class="ranked-crop-list">
+            <div class="rc-item top-ranked">
+              <div class="rc-rank">01</div>
+              <div class="rc-info">
+                <div class="rc-name">Rice (Oryza sativa)</div>
+                <div class="rc-meta">Optimal pH: 5.5-7.0 · Water Req: High · Clay fraction supported</div>
+              </div>
+              <div class="rc-score-badge">
+                <div class="rc-pct">96.0%</div>
+                <div class="rc-pct-lbl">Suitability</div>
+              </div>
+            </div>
+            <div class="rc-item">
+              <div class="rc-rank">02</div>
+              <div class="rc-info">
+                <div class="rc-name">Jute (Corchorus olitorius)</div>
+                <div class="rc-meta">High humidity tolerance · Warm vegetative period</div>
+              </div>
+              <div class="rc-score-badge">
+                <div class="rc-pct" style="color:var(--text-white)">88.4%</div>
+                <div class="rc-pct-lbl">Suitability</div>
+              </div>
+            </div>
+            <div class="rc-item">
+              <div class="rc-rank">03</div>
+              <div class="rc-info">
+                <div class="rc-name">Maize (Zea mays)</div>
+                <div class="rc-meta">Moderate nitrogen demand · Rapid root establishment</div>
+              </div>
+              <div class="rc-score-badge">
+                <div class="rc-pct" style="color:var(--text-white)">78.1%</div>
+                <div class="rc-pct-lbl">Suitability</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-card-subtle);padding-top:12px;display:flex;justify-content:space-between">
+          <div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">EVALUATED CROPS:</span> <strong style="font-size:11px;color:var(--text-white)">22 Cultivars</strong></div>
+          <div><span style="font-family:var(--font-mono);font-size:10px;color:var(--amber-light)">ACCURACY:</span> <strong style="font-size:11px;color:var(--amber-light)">96.0% Top Match</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 06: PRICE FORECASTING & RISK RADAR -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Model Deep Dive · Economics</div>
+    </div>
+    <div class="slide-counter">06 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Predictive APMC &amp; Underwriting Engine</div>
+      <h2 class="slide-headline">Price Forecasting &amp; <span>XGBoost Risk Radar</span></h2>
+      <div class="slide-subheadline">Overcoming severe class imbalance (8.0% → 86.7% recall) across 230,252 historical agricultural records.</div>
+    </div>
+    <div class="dual-engine-split">
+      <div class="glass-card engine-subcard cyan">
+        <div>
+          <div class="engine-meta-row">
+            <div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan-light);text-transform:uppercase">Autoregressive Mandi Engine</div>
+              <div style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-white)">6-Month APMC Spot Price Trajectory</div>
+            </div>
+            <span class="tag-pill cyan">35 Mandi Crops</span>
+          </div>
+          <div class="svg-chart-container">
+            <svg viewBox="0 0 400 85">
+              <defs>
+                <linearGradient id="cyanFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="20" x2="400" y2="20" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3"/>
+              <line x1="0" y1="45" x2="400" y2="45" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3"/>
+              <line x1="0" y1="70" x2="400" y2="70" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3"/>
+              <path d="M0,72 Q60,65 120,52 T240,58 T340,32 T400,18" fill="none" stroke="#06B6D4" stroke-width="2.5"/>
+              <path d="M0,72 Q60,65 120,52 T240,58 T340,32 T400,18 L400,85 L0,85 Z" fill="url(#cyanFill)"/>
+              <circle cx="400" cy="18" r="4" fill="#38BDF8"/>
+              <rect x="290" y="4" width="105" height="18" rx="3" fill="#040907" stroke="#06B6D4" stroke-width="1"/>
+              <text x="342" y="16" font-family="JetBrains Mono" font-size="9" fill="#38BDF8" font-weight="700" text-anchor="middle">₹2,450 / Qtl (+18%)</text>
+            </svg>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.45">
+            Deconstructs seasonal harvest arrival compression from structural wholesale demand, giving farmers forward price negotiation signals.
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-card-subtle);padding-top:10px;display:flex;justify-content:space-between">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">HORIZON: 6 Months Ahead</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--cyan-light)">MANDI BENCHMARK: Agmarknet</span>
+        </div>
+      </div>
+      <div class="glass-card engine-subcard rose">
+        <div>
+          <div class="engine-meta-row">
+            <div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--rose-light);text-transform:uppercase">Risk Classification</div>
+              <div style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-white)">XGBoost High-Sensitivity Classifier</div>
+            </div>
+            <span class="tag-pill rose">100% ROC-AUC</span>
+          </div>
+          <div class="engine-stat-headline">99.87% <span style="font-size:13px;color:var(--text-muted);font-weight:400">Overall Precision</span></div>
+          <table class="tuning-comparison-table">
+            <thead>
+              <tr>
+                <th>Configuration State</th>
+                <th>Risk Precision</th>
+                <th>True Risk Recall</th>
+                <th>Failure Sensitivity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Default Unweighted</td>
+                <td>99.2%</td>
+                <td>8.0%</td>
+                <td>Poor (Blind to Crises)</td>
+              </tr>
+              <tr>
+                <td><strong>SMOTE + Cost-Tuned</strong></td>
+                <td><strong>99.87%</strong></td>
+                <td class="highlight">86.7%</td>
+                <td style="color:var(--emerald-light);font-weight:700">Superior Protection</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.4">
+            Cost-sensitive objective penalty forces the gradient booster to prioritize rare catastrophic climate events over majority baseline conditions.
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-card-subtle);padding-top:10px;display:flex;justify-content:space-between">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">TRAINED CORPUS: 230,252 Records</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--rose-light)">ROC-AUC: 1.000</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 07: 3D DIGITAL TWIN -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Spatial UX Design</div>
+    </div>
+    <div class="slide-counter">07 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>WebGL Spatial Storytelling</div>
+      <h2 class="slide-headline">The <span>3D Season Story</span> Engine</h2>
+      <div class="slide-subheadline">Hardware-accelerated Three.js r167 viewport simulating biological crop development through scroll-driven interaction.</div>
+    </div>
+    <div class="season-story-split">
+      <div class="threejs-schematic-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="tag-pill emerald">WebGL 2.0 Viewport</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--emerald-light)">60.0 FPS LOCKED</span>
+        </div>
+        <div class="wireframe-visual">
+          <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="furrowGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#10B981" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#047857" stop-opacity="0.05"/>
+              </linearGradient>
+            </defs>
+            <!-- Perspective Ground Plane Grid -->
+            <line x1="200" y1="20" x2="40" y2="190" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="200" y1="20" x2="100" y2="190" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="200" y1="20" x2="160" y2="190" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+            <line x1="200" y1="20" x2="200" y2="190" stroke="rgba(16,185,129,0.5)" stroke-width="1.5"/>
+            <line x1="200" y1="20" x2="240" y2="190" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+            <line x1="200" y1="20" x2="300" y2="190" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="200" y1="20" x2="360" y2="190" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <!-- Horizontal Perspective Depth Lines -->
+            <line x1="160" y1="60" x2="240" y2="60" stroke="rgba(16,185,129,0.15)"/>
+            <line x1="130" y1="90" x2="270" y2="90" stroke="rgba(16,185,129,0.2)"/>
+            <line x1="95" y1="125" x2="305" y2="125" stroke="rgba(16,185,129,0.3)"/>
+            <line x1="55" y1="165" x2="345" y2="165" stroke="rgba(16,185,129,0.4)"/>
+            <!-- Stalk Instances (GLSL simulated) -->
+            <circle cx="200" cy="70" r="3" fill="#34D399"/>
+            <circle cx="170" cy="100" r="4" fill="#34D399"/>
+            <circle cx="230" cy="100" r="4" fill="#34D399"/>
+            <circle cx="140" cy="140" r="5" fill="#10B981"/>
+            <circle cx="200" cy="135" r="5" fill="#34D399"/>
+            <circle cx="260" cy="140" r="5" fill="#10B981"/>
+            <!-- Telemetry overlay -->
+            <rect x="110" y="150" width="180" height="26" rx="4" fill="rgba(3,6,4,0.85)" stroke="rgba(52,211,153,0.4)" stroke-width="1"/>
+            <text x="200" y="167" font-family="JetBrains Mono" font-size="10" fill="#34D399" font-weight="700" text-anchor="middle">416 INSTANCED FURROWS</text>
+          </svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">
+          <span>DRAW CALLS: &lt; 12</span>
+          <span>GPU OVERHEAD: &lt; 4%</span>
+          <span>MEMORY: 32MB VRAM</span>
+        </div>
+      </div>
+      <div class="chapter-stepper">
+        <div class="step-item">
+          <div class="step-badge">CH 01</div>
+          <div>
+            <div class="step-body-title">Bare Earth &amp; Soil Physics</div>
+            <div class="step-body-desc">Visualizes seedbed moisture, soil texture classes, and baseline compaction metrics.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-badge">CH 02</div>
+          <div>
+            <div class="step-body-title">Germination &amp; Root Genesis</div>
+            <div class="step-body-desc">Simulates hydraulic water uptake, VPD transpiration, and subterranean root network expansion.</div>
+          </div>
+        </div>
+        <div class="step-item active">
+          <div class="step-badge">CH 03</div>
+          <div>
+            <div class="step-body-title">Vegetative Canopy &amp; Vision Surveillance</div>
+            <div class="step-body-desc">416 instanced stalks sway under wind physics. Edge vision AI monitors for foliar blights.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-badge">CH 04</div>
+          <div>
+            <div class="step-body-title">Golden Hour Harvest Window</div>
+            <div class="step-body-desc">Calculates optimum combine harvester scheduling based on grain moisture and rainfall forecasts.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-badge">CH 05</div>
+          <div>
+            <div class="step-body-title">Mandi Logistics &amp; Liquidation</div>
+            <div class="step-body-desc">Connects field yield directly to APMC price curves for maximum farmer monetization.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 08: PLATFORM ECOSYSTEM (12 MODULES) -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Platform Breadth</div>
+    </div>
+    <div class="slide-counter">08 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Modular Operations Suite</div>
+      <h2 class="slide-headline">The <span>12-Module</span> Agricultural Ecosystem</h2>
+      <div class="slide-subheadline">Comprehensive end-to-end operational software powering biological, marketplace, and financial workflows.</div>
+    </div>
+    <div class="ecosystem-layers">
+      <div class="glass-card eco-pillar-card accent-emerald">
+        <div>
+          <div class="eco-pillar-header">
+            <span class="tag-pill emerald">01 · Agronomy</span>
+            <div class="eco-pillar-name" style="margin-top:6px">Field Science</div>
+          </div>
+          <div class="eco-module-list">
+            <div class="eco-module-item">
+              <div class="emi-title">Soil NPK Analyzer <span class="emi-tag">Lab Grade</span></div>
+              <div class="emi-desc">Lab-grade macro/micronutrient mapping and fertilizer prescription.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Hyperlocal Weather <span class="emi-tag">7-Day</span></div>
+              <div class="emi-desc">7-day micro-forecasts with precipitation and spray windows.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">AI Crop Calendar <span class="emi-tag">Dynamic</span></div>
+              <div class="emi-desc">Dynamic phenological stage tracking tailored to sowing date.</div>
+            </div>
+          </div>
+        </div>
+        <div class="eco-footer-kpi"><span>STATUS</span><strong style="color:var(--emerald-light)">DEPLOYED</strong></div>
+      </div>
+      <div class="glass-card eco-pillar-card accent-amber">
+        <div>
+          <div class="eco-pillar-header">
+            <span class="tag-pill amber">02 · Marketplace</span>
+            <div class="eco-pillar-name" style="margin-top:6px">Commerce &amp; Assets</div>
+          </div>
+          <div class="eco-module-list">
+            <div class="eco-module-item">
+              <div class="emi-title">Sell Crops Engine <span class="emi-tag" style="color:var(--amber-light)">Direct</span></div>
+              <div class="emi-desc">Direct mandi connect with multi-market price arbitrage.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Buy Seeds &amp; Inputs <span class="emi-tag" style="color:var(--amber-light)">Certified</span></div>
+              <div class="emi-desc">Certified supplier marketplace with verified germination ratings.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Rent Machinery <span class="emi-tag" style="color:var(--amber-light)">GPS</span></div>
+              <div class="emi-desc">Tractor and harvester sharing with GPS telemetry tracking.</div>
+            </div>
+          </div>
+        </div>
+        <div class="eco-footer-kpi"><span>STATUS</span><strong style="color:var(--amber-light)">ACTIVE</strong></div>
+      </div>
+      <div class="glass-card eco-pillar-card accent-cyan">
+        <div>
+          <div class="eco-pillar-header">
+            <span class="tag-pill cyan">03 · Finance</span>
+            <div class="eco-pillar-name" style="margin-top:6px">Capital &amp; Policy</div>
+          </div>
+          <div class="eco-module-list">
+            <div class="eco-module-item">
+              <div class="emi-title">KCC Loan Connect <span class="emi-tag" style="color:var(--cyan-light)">Instant</span></div>
+              <div class="emi-desc">Kisan Credit Card automated eligibility and bank underwriting.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Government Schemes <span class="emi-tag" style="color:var(--cyan-light)">200+</span></div>
+              <div class="emi-desc">200+ Central and State subsidy rules matching engine.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Decision Audit Log <span class="emi-tag" style="color:var(--cyan-light)">Immutable</span></div>
+              <div class="emi-desc">Immutable chronological farm journal recording all AI advice.</div>
+            </div>
+          </div>
+        </div>
+        <div class="eco-footer-kpi"><span>STATUS</span><strong style="color:var(--cyan-light)">INTEGRATED</strong></div>
+      </div>
+      <div class="glass-card eco-pillar-card accent-rose">
+        <div>
+          <div class="eco-pillar-header">
+            <span class="tag-pill rose">04 · Support</span>
+            <div class="eco-pillar-name" style="margin-top:6px">Advisory &amp; Intel</div>
+          </div>
+          <div class="eco-module-list">
+            <div class="eco-module-item">
+              <div class="emi-title">Gemini AI Agronomist <span class="emi-tag" style="color:var(--rose-light)">5 Lang</span></div>
+              <div class="emi-desc">Multilingual conversational advisor across 5 Indic languages.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Community Exchange <span class="emi-tag" style="color:var(--rose-light)">Regional</span></div>
+              <div class="emi-desc">Regional grower network for peer-to-peer agronomic intelligence.</div>
+            </div>
+            <div class="eco-module-item">
+              <div class="emi-title">Live APMC Mandi Ticker <span class="emi-tag" style="color:var(--rose-light)">500+</span></div>
+              <div class="emi-desc">Real-time price feeds across 500+ national wholesale mandis.</div>
+            </div>
+          </div>
+        </div>
+        <div class="eco-footer-kpi"><span>STATUS</span><strong style="color:var(--rose-light)">LIVE</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 09: TECH STACK & ARCHITECTURE -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Engineering Infrastructure</div>
+    </div>
+    <div class="slide-counter">09 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Production Engineering Specifications</div>
+      <h2 class="slide-headline">Modern Cloud &amp; <span>Edge Infrastructure</span></h2>
+      <div class="slide-subheadline">High-throughput asynchronous FastAPI backend running on Python 3.13 alongside React 18 &amp; Three.js.</div>
+    </div>
+    <div class="tech-spec-split">
+      <div class="terminal-code-panel">
+        <div class="tcp-header">
+          <div class="tcp-dots"><div class="tcp-dot"></div><div class="tcp-dot"></div><div class="tcp-dot"></div></div>
+          <div class="tcp-title">sagri_backend_core.py</div>
+          <span class="tag-pill emerald">Python 3.13</span>
+        </div>
+        <div class="tcp-body">
+          <span class="comment"># FastAPI Asynchronous Inference Routing</span><br>
+          <span class="key">from</span> fastapi <span class="key">import</span> FastAPI, Depends<br>
+          <span class="key">import</span> onnxruntime <span class="key">as</span> ort<br>
+          <span class="key">import</span> xgboost <span class="key">as</span> xgb<br><br>
+          app = FastAPI(title=<span class="str">"SAGRI ML Gateway"</span>, version=<span class="val">"2.4.0"</span>)<br><br>
+          <span class="comment"># Zero-latency in-memory model execution</span><br>
+          ort_session = ort.InferenceSession(<span class="str">"models/mobilenetv2_38cls.onnx"</span>)<br>
+          risk_booster = xgb.Booster(model_file=<span class="str">"models/risk_radar_v2.json"</span>)<br><br>
+          <span class="comment"># Production Health probe: 200 OK &lt; 2ms</span><br>
+          <span class="key">@app.get</span>(<span class="str">"/"</span>)<br>
+          <span class="key">async def</span> <span class="str">root_health</span>():<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">return</span> {<span class="str">"status"</span>: <span class="str">"online"</span>, <span class="str">"engine"</span>: <span class="val">"FastAPI"</span>}
+        </div>
+      </div>
+      <div class="stack-categories-grid">
+        <div class="sc-card">
+          <div class="sc-title">Client-Side Architecture</div>
+          <div class="sc-tags">
+            <span class="tag-pill cyan">React 18</span>
+            <span class="tag-pill cyan">TypeScript</span>
+            <span class="tag-pill cyan">Tailwind CSS</span>
+            <span class="tag-pill cyan">Three.js r167</span>
+            <span class="tag-pill cyan">Framer Motion</span>
+            <span class="tag-pill cyan">Lucide Icons</span>
+          </div>
+        </div>
+        <div class="sc-card">
+          <div class="sc-title">Machine Learning Engines</div>
+          <div class="sc-tags">
+            <span class="tag-pill emerald">ONNX Runtime 1.19</span>
+            <span class="tag-pill emerald">Scikit-Learn 1.5</span>
+            <span class="tag-pill emerald">XGBoost 2.1</span>
+            <span class="tag-pill emerald">Statsmodels AR</span>
+            <span class="tag-pill emerald">Google Gemini 1.5</span>
+          </div>
+        </div>
+        <div class="sc-card">
+          <div class="sc-title">Multi-Lingual Localization</div>
+          <div class="sc-tags">
+            <span class="tag-pill amber">Hindi</span>
+            <span class="tag-pill amber">Punjabi</span>
+            <span class="tag-pill amber">Telugu</span>
+            <span class="tag-pill amber">Bengali</span>
+            <span class="tag-pill amber">Tamil</span>
+            <span class="tag-pill amber">Voice Web Speech API</span>
+          </div>
+        </div>
+        <div class="sc-card">
+          <div class="sc-title">Active Service Topology &amp; Ports</div>
+          <div class="sc-tags">
+            <span class="tag-pill rose">:8000 ML API (FastAPI)</span>
+            <span class="tag-pill rose">:5173 Classic UI</span>
+            <span class="tag-pill rose">:5174 Enterprise UI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: TRACTION & VISION 2026 -->
+<div class="slide">
+  <div class="bg-mesh"></div>
+  <div class="slide-topbar">
+    <div class="brand-group">
+      <div class="brand-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="brand-text">SAGRI</div>
+      <div class="brand-tag">Commercial Vision</div>
+    </div>
+    <div class="slide-counter">10 / 10</div>
+  </div>
+  <div class="slide-canvas">
+    <div class="title-section">
+      <div class="kicker"><span class="kicker-line"></span>Strategic Roadmap &amp; Market Horizon</div>
+      <h2 class="slide-headline">Scaling from Validation to <span>10 Million Smallholders</span></h2>
+      <div class="slide-subheadline">Capitalizing on validated model precision to transform India's primary production and market liquidity.</div>
+    </div>
+    <div class="traction-split">
+      <div class="roadmap-timeline">
+        <div class="rm-node">
+          <div class="rm-quarter">Q1 2025</div>
+          <div class="rm-content">
+            <div class="rm-title">5-State Operational Pilot Launch</div>
+            <div class="rm-desc">Deployment across Punjab, Haryana, Uttar Pradesh, MP, and Maharashtra targeting 50,000 active wheat and rice farmers.</div>
+          </div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-quarter">Q3 2025</div>
+          <div class="rm-content">
+            <div class="rm-title">Sentinel-2 Multispectral Satellite Integration</div>
+            <div class="rm-desc">Automated 10-meter field boundary detection, NDVI biomass vigor tracking, and micro-irrigation deficit alerts.</div>
+          </div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-quarter">Q1 2026</div>
+          <div class="rm-content">
+            <div class="rm-title">Autonomous Drone Fleet Spray API</div>
+            <div class="rm-desc">Telemetry links to commercial drone spraying services with variable-rate pesticide delivery calculated by SAGRI Vision.</div>
+          </div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-quarter">Q3 2026</div>
+          <div class="rm-content">
+            <div class="rm-title">10M Smallholders &middot; 22 Indian Languages</div>
+            <div class="rm-desc">Protecting ₹500 Cr+ in annual agricultural yield value while underwriting ₹1,200 Cr in low-interest institutional KCC credit.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scorecard-panel">
+          <div class="score-box emerald">
+            <div class="score-num">94.5%</div>
+            <div class="score-lbl">Vision Confidence</div>
+          </div>
+          <div class="score-box emerald">
+            <div class="score-num">96.0%</div>
+            <div class="score-lbl">Crop Precision</div>
+          </div>
+          <div class="score-box amber">
+            <div class="score-num">99.87%</div>
+            <div class="score-lbl">Risk Model Acc</div>
+          </div>
+          <div class="score-box amber">
+            <div class="score-num">&lt;450ms</div>
+            <div class="score-lbl">Edge Latency</div>
+          </div>
+        </div>
+        <div class="market-tam-strip">
+          <div class="tam-card"><div class="tam-val">$34B</div><div class="tam-lbl">Indian Agtech TAM</div></div>
+          <div class="tam-card"><div class="tam-val">$12B</div><div class="tam-lbl">Serviceable SAM</div></div>
+          <div class="tam-card"><div class="tam-val">10M</div><div class="tam-lbl">Farmers Target</div></div>
+        </div>
+        <div class="mission-callout">
+          <div class="mission-text">"Every Acre Monitored. Every Harvest Protected. Every Farmer Empowered."</div>
+          <div class="mission-sub">SAGRI CORE ENTERPRISE MANDATE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
