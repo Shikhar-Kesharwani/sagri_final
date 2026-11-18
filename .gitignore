@@ -91,3 +91,7 @@ backend/data/
 !backend/data/state_profiles.csv
 
 *.bak
+
+# Research paper drafts (untracked on GitHub for conference blind-review & anti-plagiarism)
+docs/SAGRI_Paper_IEEE.tex
+docs/SAGRI_RESEARCH_PAPER.md
