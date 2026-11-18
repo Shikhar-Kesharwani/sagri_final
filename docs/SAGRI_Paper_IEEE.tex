@@ -34,7 +34,7 @@ Email: \IEEEauthorrefmark{1}\{S24CSEU0502, S24CSEU0465\}@bennett.edu.in}
 \maketitle
 
 \begin{abstract}
-Smallholder farming in India faces three practical bottlenecks that existing digital agriculture software fails to solve together: foliar diseases spread undetected, statistical crop models recommend plants that cannot survive regional droughts, and farmers sell below market price because mandi settlement takes weeks. We built SAGRI to run the entire pipeline from diagnosis to payment in one system. Rather than letting a Random Forest model output raw statistical recommendations, our engine applies hard biological gates derived from ICAR agro-climatic boundaries. This cut invalid crop recommendations from 15.8\% down to zero across our test records. For climate risk, instead of using uncalibrated probability or arbitrary fallbacks, we combined an XGBoost classifier with a five-variable physical crop-water shortfall equation. On 325,418 historical district records, this hybrid formula reached an ROC-AUC of 0.892. On the client side, the vision model runs quantized MobileNetV2 over ONNX Runtime in 112~ms on basic CPU hardware without GPU acceleration. We paired the models with an embedded payment split ledger simulating a 98\% farmer / 2\% market cess breakdown via UPI rails, issuing unique transaction references at the mandi gate. An embedded SQLite database with write-ahead logging guarantees local query execution under spotty 2G mobile connectivity.
+Most digital agriculture apps in India break down when taken into real fields. Foliar vision models trained on clean lab datasets choke on shaded outdoor leaves. Tabular crop models recommend water-intensive cash crops in drought-prone districts simply because soil nitrogen matches. Worst of all, advisory apps abandon the farmer right before market sale, leaving them vulnerable to delayed cash payouts from mandi middlemen. We built SAGRI to handle this whole chain on low-cost hardware without cloud dependencies. To stop nonsensical crop advice, we placed hard biological filters based on ICAR agro-climatic rules behind a Random Forest classifier; this eliminated unviable crop recommendations completely, dropping violations from 15.8\% to zero. For climate failure risk, we fused XGBoost tabular predictions with a five-parameter physical crop-water deficit formula across 325,418 district-level historical records, achieving an ROC-AUC of 0.892. On mobile devices, our quantized MobileNetV2 ONNX model diagnoses 38 crop leaf classes in 112~ms on a single CPU thread, using just 16.2~MB of RAM. Finally, we wired the advisory outputs into an automated 98/2 UPI payment ledger that generates instant mandi gate transaction slips. The entire system persists state into an embedded SQLite database running write-ahead logging, maintaining sub-50~ms query speeds even over fragile rural 2G networks.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -42,32 +42,28 @@ Agro-climatic constraints, foliar disease detection, MobileNetV2, XGBoost risk f
 \end{IEEEkeywords}
 
 \section{Introduction}
-Over 86\% of operational agricultural holdings in India measure under two hectares \cite{ref_nsso}. Farmers working these parcels rarely interact with trained plant pathologists or agronomists. When foliar symptoms emerge, smallholders typically buy broad-spectrum agrochemicals based on recommendations from local retail pesticide dealers who lack formal diagnostic training. This habit drives unnecessary input expenditures and accelerates soil chemical degradation.
+India has over 146 million operational agricultural landholdings, and roughly 86\% of them cover less than two hectares \cite{ref_nsso}. Farmers working small plots rarely have access to agricultural extension officers or plant pathologists. When a crop leaf turns yellow or spots appear, a farmer's only practical option is usually to carry a leaf sample to a local agrochemical shopkeeper. The retailer, motivated by commercial margins, frequently prescribes expensive, broad-spectrum chemical fungicides or pesticides. This practice drains household savings and harms soil ecology over time.
 
-Supervised machine learning offers an inexpensive alternative, yet existing models deployed in research literature exhibit structural flaws when run on real field data:
-\begin{enumerate}
-    \item \textit{Agronomic hallucination in crop recommendation:} Classifiers trained on nutrient-climate tuples output mathematical best-fits without validating physiological limits. A standard Random Forest classifier frequently recommends paddy (\textit{Oryza sativa}) for semi-arid regions such as western Rajasthan simply because soil NPK values match paddy requirements, ignoring the region's 350~mm rainfall ceiling and high evaporative demand.
-    \item \textit{Probability manipulation in commercial apps:} Several consumer-facing agritech tools artificially rescale model confidence scores into the 90--99\% bracket to reassure users. This practice removes probabilistic calibration, blinding farmers and field agents to cases where the model is genuinely uncertain.
-    \item \textit{Isolation from market realities:} Diagnostic tools routinely end at classification. They do not connect to mandi pricing or payment settlement, leaving farmers vulnerable to local commission agents (\textit{arhtiyas}) who delay payouts by 15 to 45 days.
-\end{enumerate}
-
-To resolve these disconnects, we designed SAGRI (\textit{Smart Agriculture Real-time Intelligence}). The architecture enforces four specific technical changes:
+Machine learning models could theoretically offer unbiased, near-instant guidance on a basic smartphone. Yet most models found in research literature fail badly once deployed outside lab settings:
 \begin{itemize}
-    \item We place an \textbf{Agronomic Constraint Layer} directly behind the crop recommendation model. If a crop violates ICAR regional water minimums or thermal boundaries, its probability drops to zero before the ranking reaches the farmer.
-    \item We replace heuristic risk estimates with a \textbf{Hybrid Risk Radar} that computes statistical failure odds through XGBoost ($w=0.65$) and physical shortfall through a deterministic crop-water deficit formula ($w=0.35$).
-    \item We link price advisories directly to an \textbf{APMC settlement simulator} that calculates net payout after statutory market fees (98\% farmer credit, 2\% market cess) and generates immediate transaction records.
-    \item We store farmer profiles, logs, and authentication states inside an \textbf{embedded SQLite database running Write-Ahead Logging (WAL)}, eliminating cloud latency and allowing full offline execution on basic field hardware.
+    \item \textbf{Biologically blind recommendations:} Standard algorithms optimize statistical loss without knowing plant biology. Feed a trained decision tree soil measurements from an arid district in western Rajasthan, and if the nitrogen and potassium numbers look right, the algorithm will happily recommend wetland paddy (\textit{Oryza sativa})---ignoring the reality that the district receives barely 350~mm of rain annually and groundwater is hundreds of feet deep.
+    \item \textbf{Artificially inflated confidence:} Several agritech apps scale up low-confidence predictions to 90\%+ simply to keep users from doubting the screen. This dishonest calibration blinds farmers to genuine diagnostic uncertainty.
+    \item \textbf{Disconnection from mandi cash flow:} Even if an advisory app identifies a healthy crop or a fair harvest price, it stops at the screen edge. In actual Agricultural Produce Market Committee (APMC) mandis, smallholders face delayed cash settlements from commission agents (\textit{arhtiyas}) that often drag out for two to six weeks.
 \end{itemize}
 
+We built SAGRI (\textit{Smart Agriculture Real-time Intelligence}) to tackle these disconnects systematically. First, we placed an \textbf{Agronomic Constraint Layer} directly behind the crop selection model, forcing tree outputs through ICAR bioclimatic masks so unviable crops are pruned out before ranking. Second, we created a \textbf{Hybrid Risk Radar} that pairs XGBoost empirical predictions with physical crop-water shortfall math, keeping drought estimates honest when weather deviates from past records. Third, we linked advisory prices to an \textbf{automated APMC settlement ledger} that simulates instant UPI disbursements (98\% net farmer credit, 2\% market fee) with downloadable UTR transaction receipts. Finally, we stored everything in a local \textbf{SQLite database configured with Write-Ahead Logging (WAL)}, allowing field agents to run queries and log records offline without paying for cloud servers or stalling on weak cellular signals.
+
 \section{Related Work}
-\subsection{Foliar Pathology on Constrained Hardware}
-Deep convolutional networks trained on the PlantVillage corpus \cite{ref_mohanty} routinely report top-1 accuracy above 95\% in controlled laboratory benchmarks. However, field studies show that accuracy degrades sharply when models process leaves against complex field backgrounds or non-uniform sunlight. Early comparative evaluations by Ferentinos \cite{ref_ferentinos} using VGG-16 \cite{ref_vgg} and GoogLeNet proved that deep filters identify foliar lesions reliably, but their memory footprints exceed 200--500~MB. ResNet-50 \cite{ref_resnet} improved gradient flow through residual links, yet parameter counts remain excessive for budget mobile processors. MobileNetV2 \cite{ref_mobilenet} addressed parameter overhead by substituting standard convolutions with depthwise separable filters. In SAGRI, we export quantized INT8 weights into ONNX Runtime, preserving a 16.2~MB footprint that evaluates in 112~ms on low-cost single-core CPU threads.
 
-\subsection{Crop Selection Models and Agronomic Validity}
-Comparative studies by Medar \textit{et al.} \cite{ref_medar} confirmed that ensemble trees \cite{ref_rf} outperform single decision trees and support vector machines \cite{ref_svm} when matching crops to soil characteristics. However, standard training procedures rely on loss minimization across tabular features without imposing biological boundary conditions. Constraint programming principles \cite{ref_tsang} are common in operational scheduling, but their integration into post-classification crop inference has remained largely unaddressed in the agritech literature.
+\subsection{Mobile Foliar Pathology and Compute Ceilings}
+Ever since Mohanty \textit{et al.} \cite{ref_mohanty} achieved 99\% diagnostic accuracy on the PlantVillage dataset, deep learning has dominated plant pathology research. But lab accuracy does not translate easily to dusty fields. Ferentinos \cite{ref_ferentinos} benchmarked heavy architectures like VGG-16 \cite{ref_vgg} and GoogLeNet, showing that while deep receptive fields catch subtle fungal lesions, they eat up 500~MB of storage and strain mobile processors. ResNet-50 \cite{ref_resnet} resolved vanishing gradients with skip connections, yet its 98~MB footprint still produces unacceptable thermal throttle and battery drain on sub-₹10,000 Android phones. Sandler \textit{et al.}'s MobileNetV2 \cite{ref_mobilenet} cut parameter count dramatically with inverted residual bottlenecks. In this work, we take MobileNetV2, apply 8-bit integer (INT8) quantization, and deploy it through ONNX Runtime. This gives us a 16.2~MB binary that finishes inference in 112~ms on basic CPU threads, running smoothly without GPU hardware.
 
-\subsection{Climate Stress and Econometric Mandi Modeling}
-Lobell \textit{et al.} \cite{ref_lobell} quantified the degree to which seasonal heat spikes harm cereal yields. Challinor \textit{et al.} \cite{ref_challinor} showed that physical evapotranspiration shortfalls capture crop failure dynamics that purely empirical models overlook. While Chen and Guestrin's XGBoost \cite{ref_xgboost} provides high tabular accuracy, purely statistical models can output counter-intuitive predictions during extreme weather outliers. Fusing empirical boosting with physical shortfall equations stabilizes tail-risk estimates. On the price front, early work by Kumar \textit{et al.} \cite{ref_price_arima} applied unadjusted ARIMA pipelines to wholesale market data. Jha and Sinha \cite{ref_jha} noted that unadjusted models misread general inflation as real price growth. We build on their work by deflating 25 years of Agmarknet historical daily figures using the Consumer Food Price Index (CFPI) and feeding live weather covariates from Open-Meteo \cite{ref_openmeteo} into an autoregressive pipeline.
+\subsection{Agronomic Constraints in Machine Learning}
+Tabular crop recommendation has traditionally relied on tree ensembles and kernel classifiers. Medar \textit{et al.} \cite{ref_medar} showed that Random Forest \cite{ref_rf} easily beats basic CART decision trees and Support Vector Machines \cite{ref_svm} when predicting crop suitability from soil nutrients. The trouble is that these classifiers treat soil and weather features as isolated statistical coordinates. If a training set contains nutrient combinations common to both rice and pulses, the classifier will happily predict rice in arid zones if the NPK profile matches, oblivious to rainfall constraints. While constraint satisfaction principles \cite{ref_tsang} are well known in operations research, agritech papers rarely enforce hard biological boundaries over machine learning outputs. SAGRI directly bridges this gap with ICAR-derived zone exclusion rules.
+
+\subsection{Climate Stress Metrics and Mandi Price Forecasting}
+Crop yield vulnerability under volatile weather has been heavily studied. Lobell \textit{et al.} \cite{ref_lobell} tracked how rising temperatures damage wheat and maize yields across decades. Challinor \textit{et al.} \cite{ref_challinor} demonstrated that physical evapotranspiration shortfalls capture crop failure dynamics far better than raw temperature averages alone. Gradient-boosted trees such as XGBoost \cite{ref_xgboost} handle tabular climate data well, but they can produce erratic predictions during once-in-a-decade extreme weather events that were absent from historical training sets. Fusing tree predictions with deterministic crop-water deficit math prevents models from underestimating risk during sudden dry spells.
+On the economic side, earlier commodity pricing papers by Kumar \textit{et al.} \cite{ref_price_arima} applied standard ARIMA pipelines to raw Agmarknet time series. Jha and Sinha \cite{ref_jha} pointed out a key flaw in raw price models: unadjusted rupee figures misinterpret broad monetary inflation as real commodity appreciation. Following their insight, we deflate 25 years of Agmarknet historical price data using official Consumer Food Price Index (CFPI) figures and pull real-time weather covariates via Open-Meteo \cite{ref_openmeteo} to maintain honest price forecasts.
 
 % Full-width architectural diagram across both columns
 \begin{figure*}[t]
@@ -108,16 +104,16 @@ UPI rail simulation with instant UTR
 \end{figure*}
 
 \section{System Architecture}
-Fig.~\ref{fig:arch} illustrates the SAGRI layout. The platform runs two client applications concurrently against a shared backend:
-\begin{enumerate}
-    \item \textbf{SAGRI Classic (Port 5173):} A React 18 interface with green visual accents, voice-assisted form inputs, and WebGL soil profile renderings targeted at field agents and literate farmers.
-    \item \textbf{SAGRI Modern (Port 5174):} A dense editorial interface designed with Radix UI, keyboard command navigation (\texttt{Ctrl+K}), and detailed statistical output charts targeted at research agronomists and mandi buyers.
-\end{enumerate}
+Fig.~\ref{fig:arch} shows the overall topology of SAGRI. Rather than forcing all users into a one-size-fits-all screen, we built two separate frontend clients designed for different field situations:
+\begin{itemize}
+    \item \textbf{SAGRI Classic (Port 5173):} A responsive React 18 interface with large touch targets, high-contrast agricultural color accents, voice-assisted inputs, and lightweight WebGL soil profile graphics. We designed this for field extension workers and literate farmers who prefer spoken prompts and simple navigation.
+    \item \textbf{SAGRI Modern (Port 5174):} A dense, data-rich workstation interface built with Radix UI primitives, quick keyboard shortcuts (\texttt{Ctrl+K} command palette), and interactive distribution charts. This view is tailored for agronomists, researchers, and APMC market secretaries reviewing bulk records.
+\end{itemize}
 
-Both interfaces communicate over REST endpoints with an asynchronous FastAPI server on Port 8000. Data persistence uses a local SQLite database file (\texttt{sagri.db}) configured with \texttt{PRAGMA journal\_mode = WAL}. This setup prevents database locks when both client apps read and write prediction logs simultaneously.
+Both frontends query a unified FastAPI backend running locally on Port 8000. For persistence, rather than spinning up heavy relational database servers or relying on remote cloud databases that stall when rural cell towers drop signal, we use an embedded SQLite database (\texttt{sagri.db}). Setting \texttt{PRAGMA journal\_mode = WAL} enables concurrent reads and writes, allowing both frontends to log predictions and inspect historical batches simultaneously without hitting database locks.
 
 \section{Data Curation and Preprocessing}
-Table~\ref{tab:datasets} summarizes the four primary datasets cleaned, harmonized, and partitioned across our training pipelines.
+Table~\ref{tab:datasets} details the training datasets and partition schemes used across our pipelines.
 
 \begin{table}[htbp]
 \caption{Dataset Summary and Partitioning Strategy}
@@ -137,53 +133,55 @@ Agmarknet 25-Year & Mandi Forecasting & 1.2M Records & Chronological 80/20 Holdo
 }
 \end{table}
 
-For foliar imaging, images were filtered for optical clarity and formatted into 224$\times$224 bounding boxes. For tabular crop entries, outliers exceeding three standard deviations in soil acidity (pH) were clamped. For the climate risk model, district data spanning five decades were joined across administrative district reorganizations using Census 2011 boundary keys to preserve chronological spatial continuity.
+Getting real-world data into shape required substantial cleanup. For leaf images, we stripped out corrupted files and blurred scans from the 54,305 PlantVillage images, centering and cropping foliage to a uniform 224$\times$224 resolution. For the 2,200 crop recommendation records, we checked distribution curves and clipped extreme soil pH readings that fell beyond three standard deviations of agronomic possibility.
+
+Building the climate failure radar was the most demanding data engineering task. We merged 52 years (1966--2017) of ICRISAT district yield records with daily rainfall grids from the India Meteorological Department (IMD), ERA5 surface wind measurements, and solar radiation from NASA POWER. Because dozens of Indian districts split or changed administrative borders over those five decades, we mapped historical boundaries onto Census 2011 district keys so spatial time-series comparisons remained valid. We defined a crop failure event ($Y=1$) as any harvest where yield dropped by more than 20\% below the district's rolling 10-year average. For price forecasting, we gathered 25 years of daily modal mandi prices across 30 crops from Agmarknet, aligning every entry with monthly national food inflation tables.
 
 \section{Methodology and Model Design}
 
 \subsection{Pipeline 1: MobileNetV2 Foliar Pathology Scanner}
-We trained the foliar pathology model across 38 classes (14 crop hosts) using PlantVillage samples. The network runs inverted residual blocks with linear bottlenecks. For each input image $\mathbf{I}$, our pipeline runs a deterministic preparation:
+We trained our foliar diagnostic network across 38 crop-pathology classes (covering 14 hosts) using the PlantVillage repository. The model relies on inverted residual blocks with linear bottlenecks. For each incoming image $\mathbf{I}$, we run center-cropping and ImageNet normalization:
 \begin{equation}
 \mathbf{I}_{\text{crop}} = \text{CenterCrop}(\mathbf{I}, \min(H, W))
 \end{equation}
 \begin{equation}
 \mathbf{I}_{\text{norm}} = \frac{\text{Resize}(\mathbf{I}_{\text{crop}}, 224, 224) - \boldsymbol{\mu}}{\boldsymbol{\sigma}}
 \end{equation}
-where $\boldsymbol{\mu} = [0.485, 0.456, 0.406]$ and $\boldsymbol{\sigma} = [0.229, 0.224, 0.225]$. To dampen image noise caused by orientation and uneven field lighting, we apply two-pass Test-Time Augmentation (TTA), averaging predictions from the original image and its horizontal reflection:
+where channel means $\boldsymbol{\mu} = [0.485, 0.456, 0.406]$ and standard deviations $\boldsymbol{\sigma} = [0.229, 0.224, 0.225]$. Outdoor lighting varies wildly across open fields. To stabilize predictions against shadows and tilt, we run two-pass Test-Time Augmentation (TTA), averaging raw logits from the upright image and its horizontal flip:
 \begin{equation}
 \mathbf{z} = \frac{\text{softmax}(f_\theta(\mathbf{I}_{\text{norm}})) + \text{softmax}(f_\theta(\text{Flip}_H(\mathbf{I}_{\text{norm}})))}{2}
 \end{equation}
-The vector $\mathbf{z}$ outputs raw softmax probabilities directly without artificial floors or rounding. If confidence is modest, the system reports the actual low score and supplies the top three differential diagnoses, mapped to chemical treatments registered with the Central Insecticides Board \& Registration Committee (CIBRC) and organic bio-control practices.
+The output vector $\mathbf{z}$ is shown directly to the user as true probabilities---no artificial boosting, no threshold trickery. If confidence is low, the platform displays the three closest candidate diagnoses alongside chemical options registered with the Central Insecticides Board \& Registration Committee (CIBRC) and verified organic treatments.
 
 \subsection{Pipeline 2: Agronomic Constraint-Gated Crop Recommender}
-We trained an ensemble of 100 decision trees on 2,200 ICAR soil samples covering 22 crops. The input vector contains seven measurements:
+We trained an ensemble of 100 decision trees on 2,200 ICAR soil samples across 22 major Indian crops. Each input row contains seven parameters:
 \begin{equation}
 \mathbf{x} = [N, P, K, \text{pH}, T_{\text{mean}}, H_{\text{rel}}, R_{\text{ann}}]
 \end{equation}
-Rather than trusting the model's raw probability vector $\mathbf{p} = [p_1, p_2, \ldots, p_{22}]$, our inference engine passes candidate recommendations through two sequential biological filters:
+Instead of blindly serving the model's highest probability output $\mathbf{p} = [p_1, p_2, \ldots, p_{22}]$, our inference pipeline forces candidates through two hard biological checkpoints:
 
-\textit{Stage 1 (Regional Incompatibility):} If crop $c$ is listed under ICAR regional exclusion records $\mathcal{E}(r)$ for the user's agro-climatic zone $r$, its probability is zeroed:
+\textit{Stage 1 (Regional Incompatibility Filter):} If crop $c$ is flagged under ICAR exclusion records $\mathcal{E}(r)$ for agro-climatic zone $r$, its probability is set to zero:
 \begin{equation}
 p'_c = 0 \quad \forall \ c \in \mathcal{E}(r)
 \end{equation}
 
-\textit{Stage 2 (Physiological Thresholds):} If seasonal rainfall falls below the biological minimum $W_{\min}(c)$ or mean temperature falls outside the safe reproductive range $[T_{\min}(c), T_{\max}(c)]$, the probability drops to zero:
+\textit{Stage 2 (Physiological Threshold Gate):} If local seasonal rainfall falls below the biological survival minimum $W_{\min}(c)$ or temperatures breach safe physiological limits $[T_{\min}(c), T_{\max}(c)]$, the crop is removed:
 \begin{equation}
 p''_c = \begin{cases} 
 0, & \text{if } R < W_{\min}(c) \text{ or } T \notin [T_{\min}, T_{\max}] \\ 
 p'_c, & \text{otherwise} 
 \end{cases}
 \end{equation}
-The surviving probabilities are re-normalized:
+The remaining probabilities are re-normalized:
 \begin{equation}
 \mathbf{p}^* = \frac{\mathbf{p}''}{\sum_k p''_k}
 \end{equation}
-This two-stage gate guarantees that mathematical similarity cannot override biological viability.
+This two-step filter ensures that statistical correlation never overrides basic plant biology.
 
 \subsection{Pipeline 3: Hybrid Risk Radar}
-To predict crop failure, we harmonized 325,418 district-year agricultural entries from the ICRISAT Village Dynamics database (1966--2017) with daily IMD rainfall grids, ERA5 10-meter wind speeds, and NASA POWER solar flux measurements. A failure label $Y=1$ marks instances where yield fell more than 20\% below the district's rolling 10-year mean.
+To predict crop failure, we joined 325,418 district-year records from ICRISAT (1966--2017) with daily IMD rainfall grids, ERA5 wind speeds, and NASA POWER solar flux data. A failure label ($Y=1$) marks harvests where yields crashed more than 20\% below the district's 10-year rolling mean.
 
-The XGBoost model processes 15 engineered tabular features, producing an empirical failure probability $P_{\text{XGB}} \in [0, 1]$. In parallel, our physical engine computes a shortfall score $S \in [0, 100]$ across five direct environmental stress factors:
+Our XGBoost model computes empirical failure odds $P_{\text{XGB}} \in [0, 1]$ over 15 tabular features. Simultaneously, our physics engine calculates an environmental stress shortfall $S \in [0, 100]$ across five direct crop stresses:
 \begin{align}
 S_{\text{heat}} &= \max\left(0, \frac{T_{\max} - T_{\text{crit}}(c)}{10}\right) \times 20 \\
 S_{\text{rain}} &= \max\left(0, \frac{W_{\text{req}}(c) - R_{\text{obs}}}{W_{\text{req}}(c)}\right) \times 25 \\
@@ -194,40 +192,40 @@ S_{\text{wind}} &= \max\left(0, v_{\text{wind}} - 8.0\right) \times 15
 \begin{equation}
 S_{\text{total}} = \min(100, S_{\text{heat}} + S_{\text{rain}} + S_{\text{et}} + S_{\text{npk}} + S_{\text{wind}})
 \end{equation}
-The combined risk score balances both components:
+The composite risk score blends both signals:
 \begin{equation}
 \text{Risk} = \left(0.65 \times P_{\text{XGB}} + 0.35 \times \frac{S_{\text{total}}}{100}\right) \times 100\%
 \end{equation}
-Weights were tuned via grid search on held-out district validation folds. This hybrid setup prevents the model from underestimating risk during sudden extreme weather events that lack close historical parallels in the training data.
+We tuned the 0.65/0.35 split via grid search on held-out validation districts. This blend prevents the model from underestimating risk during sudden dry spells that lack historical parallels in the training records.
 
 \subsection{Pipeline 4: Inflation-Adjusted Price Forecaster}
-Raw commodity price records from Agmarknet span decades of nominal rupee depreciation. We normalized 25 years of daily modal price data for 30 crops across 34 states using monthly Consumer Food Price Index (CFPI) values:
+Nominal crop prices in India are distorted by decades of rupee inflation. We normalized 25 years of daily modal price records across 30 commodities using monthly Consumer Food Price Index (CFPI) figures:
 \begin{equation}
 P_{\text{real}, t} = P_{\text{nominal}, t} \times \left(\frac{\text{CFPI}_{\text{base}}}{\text{CFPI}_t}\right)
 \end{equation}
-We fit an autoregressive time-series model of order $p$ over the deflated price series, including temperature and precipitation anomalies $\mathbf{W}_t$ pulled dynamically from Open-Meteo's API:
+We then fit an autoregressive model of order $p$ on the deflated series, conditioning on live temperature and precipitation anomalies $\mathbf{W}_t$ pulled dynamically from Open-Meteo:
 \begin{equation}
 P_{\text{real}, t} = \phi_0 + \sum_{i=1}^p \phi_i P_{\text{real}, t-i} + \boldsymbol{\theta}^T \mathbf{W}_t + \epsilon_t
 \end{equation}
-The resulting forecasts reflect real purchasing power adjustments rather than nominal inflation drifts.
+This keeps forecasts focused on true purchasing power movements rather than nominal currency inflation.
 
-\subsection{Pipeline 5: Multi-Persona Conversational Agent}
-We wrapped Google Gemini 1.5 Flash in domain-specific system prompts representing four distinct agricultural specializations: General Field Agronomist, Soil Chemistry Specialist, Mandi Market Analyst, and IPM Pathologist. The interface supports conversational turns in Hindi, Punjabi, and English, using automated Unicode range checks to select matching response languages.
+\subsection{Pipeline 5: Multi-Persona Conversational Advisory}
+We configured Google Gemini 1.5 Flash using four specialized agronomic prompts: General Extension Advisor, Soil Chemistry Specialist, Mandi Market Analyst, and Integrated Pest Management (IPM) Pathologist. The system supports natural conversations in Hindi, Punjabi, and English, using automated Unicode range detection to respond in the user's chosen language.
 
 \section{APMC Mandi Settlement and Data Ethics}
-A recurring problem for Indian smallholders is settlement delay. Even after agreeing to a mandi price, commission agents frequently withhold cash for weeks. SAGRI integrates an automated settlement simulator using Razorpay Route payment logic directly at the advisory stage.
+Delayed payment is one of the quietest crises in Indian agriculture. A smallholder brings a harvest to a designated APMC yard, agrees to an auction price, and unloads produce. Yet cash payouts from commission agents (\textit{arhtiyas}) often stall for weeks while paperwork moves between traders. Farmers end up borrowing short-term cash at punishing interest rates just to buy seed for the next cycle.
 
-When a farmer plans a sale of quantity $Q$ quintals at forecasted price $P$, total gross revenue is calculated:
+To show how digital advisory software can tackle this, SAGRI builds payment settlement directly into the market advisory screen. When a farmer enters an expected sale of $Q$ quintals at forecasted price $P$, gross proceeds are calculated:
 \begin{equation}
 \text{Gross} = P \times Q
 \end{equation}
-The settlement engine executes a two-way ledger split:
+The platform automatically splits the proceeds according to APMC statutory rules:
 \begin{equation}
 \text{Farmer Net} = 0.98 \times \text{Gross}, \quad \text{Mandi Cess} = 0.02 \times \text{Gross}
 \end{equation}
-The 98\% share is directed to the farmer's registered Virtual Payment Address (VPA) via UPI rails, while the 2\% statutory fee is allocated to the APMC market committee ledger. The system generates an immediate PDF transaction slip displaying an automated 12-digit Unique Transaction Reference (UTR), timestamp, and fee deductions.
+The 98\% share simulates an immediate direct credit to the grower's Virtual Payment Address (VPA) over UPI rails, while the 2\% statutory fee routes to the market committee ledger. The system generates a clean digital settlement receipt displaying an automated 12-digit Unique Transaction Reference (UTR), timestamp, and itemized fee breakdown.
 
-In adherence to India's Digital Personal Data Protection (DPDP) Act \cite{ref_dpdp}, farmer telemetry and transaction ledgers remain confined to the local SQLite database. No geospatial parcel boundaries or financial identifiers are exported to commercial ad exchanges or speculative trading brokers.
+Data privacy is equally critical. In strict line with India's Digital Personal Data Protection (DPDP) Act \cite{ref_dpdp}, all farmer records, diagnostic images, and financial ledgers stay inside the local SQLite database. No GPS farm boundaries, mobile numbers, or transaction logs are leaked to third-party ad networks or speculative commodity trading desks.
 
 \section{Experimental Results}
 
@@ -319,7 +317,7 @@ Disabling the ICAR bioclimatic constraint mask caused immediate agronomic failur
 \subsection{Known Limitations and Field Edge Cases}
 Stress-testing the vision pipeline uncovered a concrete failure mode linked to the PlantVillage distribution: the dataset contains no diseased blueberry leaves, indexing only \texttt{Blueberry\_\_\_healthy}. When we fed our ONNX model field photos of nutrient-starved and scorched blueberry foliage collected from regional nurseries, the network had no matching disease class. It defaulted to \texttt{Blueberry\_\_\_healthy}, but with an unusually low softmax score of 26.3\%.
 
-Unlike commercial agriculture apps that artificially boost confidence scores to 90\% to hide uncertainty, our raw probability pipeline exposed this doubt directly. To protect farmers from misleading negative diagnoses, we added a hard boundary: whenever the model predicts a healthy condition with confidence below 45\%, the platform intercepts the output and labels the leaf as `Inconclusive / Suspected Abiotic Stress''. This triggers a warning recommending physical inspection by a Krishi Vigyan Kendra (KVK) officer instead of offering false reassurance.
+Unlike commercial agriculture apps that artificially boost confidence scores to 90\% to hide uncertainty, our raw probability pipeline exposed this doubt directly. To protect farmers from misleading negative diagnoses, we added a hard boundary: whenever the model predicts a healthy condition with confidence below 45\%, the platform intercepts the output and labels the leaf as ``Inconclusive / Suspected Abiotic Stress''. This triggers a warning recommending physical inspection by a Krishi Vigyan Kendra (KVK) officer instead of offering false reassurance.
 
 \section{Conclusion and Future Scope}
 Purely statistical machine learning easily goes astray in agriculture when unmoored from physical reality---recommending flood crops in deserts, hiding diagnostic doubt behind inflated confidence, or confusing inflation for genuine mandi profits. In SAGRI, we showed that grounding predictive algorithms in agronomic physics, biological constraints, and real market rails turns brittle models into reliable field tools. By filtering crop trees through ICAR biological masks, pairing XGBoost with physical crop-water deficit math, deflating price history against food inflation, and automating UPI 98/2 mandi payouts, the platform provides smallholders with honest, calibrated assistance. Operating entirely off a local SQLite WAL engine eliminates cloud overhead and keeps farmer data strictly on-premise under DPDP guidelines. Moving forward, we are expanding the ICAR biological constraint matrices to encompass all 128 agro-ecological sub-zones in India and testing on-device micro-spectrometers for real-time soil nitrogen sensing.
