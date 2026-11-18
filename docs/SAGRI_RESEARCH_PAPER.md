@@ -1,6 +1,6 @@
 # SAGRI: An Agro-Climatic Constraint-Gated Multimodal Architecture for Smallholder Advisory and Mandi Gate Settlement
 
-**Authors:** Shikhar Kesharwani, Santusht Lakhanpal, Sanchit Jain, Monu Singh  
+**Authors:** Shikhar Kesharwani, Santusht Lakhanpal, Monu Singh  
 **Institution:** Department of Computer Science and Engineering, Bennett University, Greater Noida, UP, India  
 **Repository:** https://github.com/Shikhar-Kesharwani/sagri_final  
 

@@ -4,9 +4,8 @@
 **Institution:** Bennett University, Greater Noida  
 **Evaluator:** Monu Singh  
 **Team Members:**
-- Shikhar Kesharwani (S24CSEU0502) - Lead Machine Learning Engineer
-- Santusht Lakhanpal (S24CSEU0465) - Computer Vision Engineer
-- Sanchit Jain (S24CSEU0460) - Full-Stack & Integration Engineer
+- Shikhar Kesharwani (S24CSEU0502) - Lead Machine Learning & Full-Stack Engineer
+- Santusht Lakhanpal (S24CSEU0465) - Computer Vision & System Integration Engineer
 
 ---
 
@@ -40,7 +39,7 @@
 
 ---
 
-### Question 4 (For Shikhar / Sanchit): Why was inflation adjustment necessary for mandi price forecasting?
+### Question 4 (For Shikhar): Why was inflation adjustment necessary for mandi price forecasting?
 **Model Answer:**
 > "A quintal of wheat sold for Rs 300 twenty years ago and sells for over Rs 2,200 today. If you feed raw rupee numbers from the past 20 years into a regression model, the model mistakes general currency depreciation for an agricultural supply-and-demand trend.
 > 
@@ -50,7 +49,7 @@
 
 ---
 
-### Question 5 (For Sanchit): How does your frontend communicate with the machine learning models?
+### Question 5 (For Shikhar / Santusht): How does your frontend communicate with the machine learning models?
 **Model Answer:**
 > "We built an asynchronous REST gateway using Python FastAPI in `backend/main.py`. The models are loaded into server memory once during application startup using `@app.on_event('startup')`. 
 > 
@@ -58,7 +57,7 @@
 
 ---
 
-### Question 6 (For Sanchit): What happens if a farmer does not know their exact soil N-P-K numbers?
+### Question 6 (For Shikhar / Santusht): What happens if a farmer does not know their exact soil N-P-K numbers?
 **Model Answer:**
 > "We recognized that many small farmers in India do not have recent soil health test cards. To make SAGRI practical and feasible, we integrated an ICAR-backed state profile database in `backend/data/state_profiles.csv`. 
 > 

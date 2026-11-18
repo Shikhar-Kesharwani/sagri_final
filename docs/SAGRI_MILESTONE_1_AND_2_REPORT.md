@@ -17,7 +17,7 @@
 | **Institution** | Bennett University, Greater Noida |
 | **Department** | School of Computer Science Engineering and Technology (SCSET) |
 | **Faculty Guide & Evaluator**| **Monu Singh** |
-| **Project Repository** | `AyushGU12/sagri_final` |
+| **Project Repository** | `Shikhar-Kesharwani/sagri_final` |
 | **Technology Stack** | Python 3.11, Scikit-Learn, ONNX Runtime, FastAPI, React 18, Vite 6, Tailwind CSS |
 | **Current Stage** | **Phase 2 of 3 (Milestones 1 & 2 Evaluated Today; Milestone 3 for Final Defense)** |
 
@@ -25,9 +25,8 @@
 
 | Enrollment No. | Student Name | Core Engineering Focus | Phased Academic Contribution |
 | :--- | :--- | :--- | :--- |
-| **S24CSEU0502** | **Shikhar Kesharwani** | Machine Learning & Statistical Modeling | Soil-Crop Suitability Model, Gini Split Calibration, Baseline Data Preprocessing |
-| **S24CSEU0465** | **Santusht Lakhanpal** | Computer Vision & Disease Pipeline | MobileNetV2 Deep Learning, PlantVillage Augmentation, ONNX CPU Runtime Optimization |
-| **S24CSEU0460** | **Sanchit Jain** | Full-Stack Architecture & API Gateway | Asynchronous FastAPI Services, React Web UI Prototype, Data Validation Contracts |
+| **S24CSEU0502** | **Shikhar Kesharwani** | Machine Learning & Full-Stack Core | Soil-Crop Suitability Model, Gini Calibration, FastAPI Backend Services |
+| **S24CSEU0465** | **Santusht Lakhanpal** | Computer Vision & Disease Pipeline | MobileNetV2 Deep Learning, PlantVillage Augmentation, ONNX CPU Runtime |
 
 ---
 
@@ -321,7 +320,7 @@ All core endpoints evaluated under Milestone 2 are active, asynchronous, and ver
 
 ## 8. Collaborative Team Engineering Methodology
 
-The SAGRI platform was conceptualized, engineered, and evaluated through an integrated team workflow by the three members of our Bennett University student team: **Shikhar Kesharwani**, **Santusht Lakhanpal**, and **Sanchit Jain**.
+The SAGRI platform was conceptualized, engineered, and evaluated through an integrated team workflow by the members of our Bennett University student team: **Shikhar Kesharwani** and **Santusht Lakhanpal**.
 
 To maintain technical excellence across all layers of the stack throughout Milestones 1 and 2, the project team structured responsibilities into three collaborative domain modules:
 
