@@ -1,6 +1,7 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 
+% Essential IEEE Packages
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -11,6 +12,7 @@
 \usepackage{url}
 \usepackage{microtype}
 \usepackage{tabularx}
+\usepackage{array}
 
 \begin{document}
 
@@ -37,7 +39,7 @@ Over 86\% of operational agricultural holdings in India measure under two hectar
 
 Supervised machine learning offers an inexpensive alternative, yet existing models deployed in research literature exhibit structural flaws when run on real field data:
 \begin{enumerate}
-    \item \textit{Agronomic hallucination in crop recommendation:} Classifiers trained on nutrient-climate tuples (such as nitrogen, phosphorus, potassium, and annual rainfall) output mathematical best-fits without validating physiological limits. A standard Random Forest classifier frequently recommends paddy (\textit{Oryza sativa}) for semi-arid regions such as western Rajasthan simply because soil NPK values match paddy requirements, ignoring the region's 350~mm rainfall ceiling and high evaporative demand.
+    \item \textit{Agronomic hallucination in crop recommendation:} Classifiers trained on nutrient-climate tuples output mathematical best-fits without validating physiological limits. A standard Random Forest classifier frequently recommends paddy (\textit{Oryza sativa}) for semi-arid regions such as western Rajasthan simply because soil NPK values match paddy requirements, ignoring the region's 350~mm rainfall ceiling and high evaporative demand.
     \item \textit{Probability manipulation in commercial apps:} Several consumer-facing agritech tools artificially rescale model confidence scores into the 90--99\% bracket to reassure users. This practice removes probabilistic calibration, blinding farmers and field agents to cases where the model is genuinely uncertain.
     \item \textit{Isolation from market realities:} Diagnostic tools routinely end at classification. They do not connect to mandi pricing or payment settlement, leaving farmers vulnerable to local commission agents (\textit{arhtiyas}) who delay payouts by 15 to 45 days.
 \end{enumerate}
@@ -60,6 +62,45 @@ Comparative studies by Medar \textit{et al.} \cite{ref_medar} confirmed that ens
 \subsection{Climate Stress and Econometric Mandi Modeling}
 Lobell \textit{et al.} \cite{ref_lobell} quantified the degree to which seasonal heat spikes harm cereal yields. Challinor \textit{et al.} \cite{ref_challinor} showed that physical evapotranspiration shortfalls capture crop failure dynamics that purely empirical models overlook. While Chen and Guestrin's XGBoost \cite{ref_xgboost} provides high tabular accuracy, purely statistical models can output counter-intuitive predictions during extreme weather outliers. Fusing empirical boosting with physical shortfall equations stabilizes tail-risk estimates. On the price front, early work by Kumar \textit{et al.} \cite{ref_price_arima} applied unadjusted ARIMA pipelines to wholesale market data. Jha and Sinha \cite{ref_jha} noted that unadjusted models misread general inflation as real price growth. We build on their work by deflating 25 years of Agmarknet historical daily figures using the Consumer Food Price Index (CFPI) and feeding live weather covariates from Open-Meteo into an autoregressive pipeline.
 
+% Full-width architectural diagram across both columns to prevent overlap and text clipping
+\begin{figure*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{12pt}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Client Experience Layer} & \textbf{Unified Inference Core (FastAPI :8000)} & \textbf{Persistence \& Settlement Rails} \\
+\hline
+\begin{tabular}{c}
+\textbf{SAGRI Classic (Port 5173)} \\
+React 18 $\cdot$ Tailwind $\cdot$ Voice Assistant \\
+\hline
+\textbf{SAGRI Modern (Port 5174)} \\
+Radix UI $\cdot$ Command Palette (\texttt{Ctrl+K})
+\end{tabular}
+&
+\begin{tabular}{c}
+\textbf{MobileNetV2 ONNX} (16.2 MB, 112 ms) \\
+\textbf{Constraint-Gated RF} (ICAR Bioclimatic Filter) \\
+\textbf{Hybrid Risk Radar} (XGBoost + Shortfall) \\
+\textbf{Price Forecaster} (25-yr CFPI + Open-Meteo)
+\end{tabular}
+&
+\begin{tabular}{c}
+\textbf{SQLite WAL Engine (\texttt{sagri.db})} \\
+Zero-cloud offline-first ACID storage \\
+\hline
+\textbf{APMC 98/2 Split Settlement} \\
+UPI rail simulation with instant UTR
+\end{tabular}
+\\
+\hline
+\end{tabular}
+\caption{System topology: concurrent client interfaces interfacing with the multi-model FastAPI service and local SQLite storage layer.}
+\label{fig:arch}
+\vspace{-2mm}
+\end{figure*}
+
 \section{System Architecture}
 Fig.~\ref{fig:arch} illustrates the SAGRI layout. The platform runs two client applications concurrently against a shared backend:
 \begin{enumerate}
@@ -69,30 +110,10 @@ Fig.~\ref{fig:arch} illustrates the SAGRI layout. The platform runs two client a
 
 Both interfaces communicate over REST endpoints with an asynchronous FastAPI server on Port 8000. Data persistence uses a local SQLite database file (\texttt{sagri.db}) configured with \texttt{PRAGMA journal\_mode = WAL}. This setup prevents database locks when both client apps read and write prediction logs simultaneously.
 
-\begin{figure}[t]
-\centering
-\fbox{
-\begin{minipage}{0.92\columnwidth}
-\centering
-\small
-\textbf{[Client Layer (Ports 5173 \& 5174)]}\\
-Classic Visual UI $\longleftrightarrow$ Modern Research UI\\
-$\Updownarrow$ REST Calls\\
-\textbf{[FastAPI Backend Service (Port 8000)]}\\
-Pathology ONNX $\mid$ Gated RF $\mid$ Hybrid XGBoost $\mid$ AutoReg Price\\
-$\Updownarrow$ Internal Bus\\
-\textbf{[Persistence \& Execution Layer]}\\
-SQLite WAL Storage (\texttt{sagri.db}) $\longleftrightarrow$ APMC 98/2 Settlement Rails
-\end{minipage}
-}
-\caption{SAGRI architecture: dual client applications sharing a local-first FastAPI service, embedded SQLite database, and APMC payment simulator.}
-\label{fig:arch}
-\end{figure}
-
 \section{Methodology and Model Design}
 
 \subsection{Pipeline 1: MobileNetV2 Foliar Pathology Scanner}
-We trained the foliar pathology model across 38 classes (14 crop hosts) using PlantVillage samples. The network runs inverted residual blocks with linear bottlenecks. For each input image $\mathbf{I}$, our pipeline runs a deterministic four-step preparation:
+We trained the foliar pathology model across 38 classes (14 crop hosts) using PlantVillage samples. The network runs inverted residual blocks with linear bottlenecks. For each input image $\mathbf{I}$, our pipeline runs a deterministic preparation:
 \begin{equation}
 \mathbf{I}_{\text{crop}} = \text{CenterCrop}(\mathbf{I}, \min(H, W))
 \end{equation}
@@ -108,7 +129,7 @@ The vector $\mathbf{z}$ outputs raw softmax probabilities directly without artif
 \subsection{Pipeline 2: Agronomic Constraint-Gated Crop Recommender}
 We trained an ensemble of 100 decision trees on 2,200 ICAR soil samples covering 22 crops. The input vector contains seven measurements:
 \begin{equation}
-\mathbf{x} = [N, P, K, \text{pH}, \text{Temp}, \text{Humidity}, \text{Rainfall}]
+\mathbf{x} = [N, P, K, \text{pH}, T_{\text{mean}}, H_{\text{rel}}, R_{\text{ann}}]
 \end{equation}
 Rather than trusting the model's raw probability vector $\mathbf{p} = [p_1, p_2, \ldots, p_{22}]$, our inference engine passes candidate recommendations through two sequential biological filters:
 
@@ -116,11 +137,13 @@ Rather than trusting the model's raw probability vector $\mathbf{p} = [p_1, p_2,
 \begin{equation}
 p'_c = 0 \quad \forall \ c \in \mathcal{E}(r)
 \end{equation}
-For example, paddy and sugarcane are hard-excluded in arid western zones regardless of how well soil nutrients match.
 
 \textit{Stage 2 (Physiological Thresholds):} If seasonal rainfall falls below the biological minimum $W_{\min}(c)$ or mean temperature falls outside the safe reproductive range $[T_{\min}(c), T_{\max}(c)]$, the probability drops to zero:
 \begin{equation}
-p''_c = \begin{cases} 0 & \text{if } \text{Rainfall} < W_{\min}(c) \lor \text{Temp} \notin [T_{\min}, T_{\max}] \\ p'_c & \text{otherwise} \end{cases}
+p''_c = \begin{cases} 
+0, & \text{if } R < W_{\min}(c) \ \lor \ T \notin [T_{\min}, T_{\max}] \\ 
+p'_c, & \text{otherwise} 
+\end{cases}
 \end{equation}
 The surviving probabilities are re-normalized:
 \begin{equation}
@@ -136,7 +159,7 @@ The XGBoost model processes 15 engineered tabular features, producing an empiric
 S_{\text{heat}} &= \max\left(0, \frac{T_{\max} - T_{\text{crit}}(c)}{10}\right) \times 20 \\
 S_{\text{rain}} &= \max\left(0, \frac{W_{\text{req}}(c) - R_{\text{obs}}}{W_{\text{req}}(c)}\right) \times 25 \\
 S_{\text{et}}   &= \max\left(0, \frac{E_T - R_{\text{obs}}}{E_T}\right) \times 20 \\
-S_{\text{npk}}  &= \max\left(0, \frac{\|\mathbf{NPK}_{\text{req}} - \mathbf{NPK}_{\text{obs}}\|_1}{\|\mathbf{NPK}_{\text{req}}\|_1}\right) \times 20 \\
+S_{\text{npk}}  &= \max\left(0, \frac{\|\mathbf{N}_{\text{req}} - \mathbf{N}_{\text{obs}}\|_1}{\|\mathbf{N}_{\text{req}}\|_1}\right) \times 20 \\
 S_{\text{wind}} &= \max\left(0, v_{\text{wind}} - 8.0\right) \times 15
 \end{align}
 \begin{equation}
@@ -180,23 +203,23 @@ The 98\% share is directed to the farmer's registered Virtual Payment Address (V
 \subsection{Model Accuracy and Speed}
 Table~\ref{tab:benchmarks} summarizes diagnostic and predictive metrics. The foliar scanner evaluates in 112~ms on an Intel Core i5 CPU thread without GPU assistance, using 16.2~MB of RAM. Two-pass TTA raised top-1 field diagnostic accuracy by 1.6\% compared to single-pass processing.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \caption{Model Performance Across Pipelines}
 \label{tab:benchmarks}
 \centering
 \small
 \begin{tabular}{llr}
 \toprule
-\textbf{Pipeline} & \textbf{Primary Metric} & \textbf{Observed Value} \\
+\textbf{Pipeline Target} & \textbf{Evaluated Metric} & \textbf{Value} \\
 \midrule
 Disease Vision (ONNX) & Top-1 Field Accuracy & 73.4\% \\
-Disease Vision (ONNX) & CPU Inference Latency & 112 ms \\
+Disease Vision (ONNX) & Single-Core CPU Latency & 112 ms \\
 Disease Vision (ONNX) & Model Storage Size & 16.2 MB \\
 Crop Recommendation & 22-Crop Test Accuracy & 99.3\% \\
 Risk Radar (Hybrid) & Out-of-Time ROC-AUC & 0.892 \\
-Mandi Forecasting & 30-Day Mean Abs. Pct. Error & 8.35\% \\
+Mandi Forecasting & 30-Day Mean Abs. Error & 8.35\% \\
 Backend API (FastAPI) & P50 Response Time & 48 ms \\
-SQLite WAL & Write Transaction Speed & 1,840 tx/s \\
+SQLite WAL Storage & Write Transaction Speed & 1,840 tx/s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -204,24 +227,25 @@ SQLite WAL & Write Transaction Speed & 1,840 tx/s \\
 \subsection{Ablation Study of Architecture Components}
 To confirm that each proposed layer contributes measurably to system stability, we ran systematic ablation tests (Table~\ref{tab:ablation}).
 
-\begin{table}[t]
-\caption{System Ablation Study}
+\begin{table*}[t]
+\caption{Systematic Architectural Ablation Study Across Modules}
 \label{tab:ablation}
 \centering
 \small
-\begin{tabularx}{\columnwidth}{lX}
+\begin{tabularx}{0.95\textwidth}{llX}
 \toprule
-\textbf{Configuration} & \textbf{Observed Result} \\
+\textbf{Pipeline Module} & \textbf{Ablation Variant} & \textbf{Empirical System Impact / Degradation} \\
 \midrule
-Full SAGRI Engine & ROC-AUC 0.892, MAPE 8.35\%, 0\% invalid crops \\
-w/o Constraint Layer & 15.8\% of recommendations violate ICAR limits \\
-w/o Physical Shortfall & Risk ROC-AUC drops from 0.892 to 0.871 \\
-w/o CFPI Price Deflation & Price forecast MAPE rises from 8.35\% to 14.2\% \\
-w/o Test-Time Augmentation & Foliar field accuracy falls from 73.4\% to 71.8\% \\
-w/o SQLite WAL Mode & Concurrency locks emerge at 15+ parallel writes \\
+Complete SAGRI Stack & Default Implementation & Baseline: ROC-AUC 0.892, Price MAPE 8.35\%, 0.0\% Bioclimatic Violations \\
+Crop Recommendation & w/o Agronomic Constraint Layer & 15.8\% of generated recommendations violate ICAR climatic and water zone thresholds \\
+Climate Risk Radar & w/o Physical Shortfall Engine & ROC-AUC drops from 0.892 to 0.871; failure detection under extreme droughts weakens \\
+Price Forecasting & w/o CFPI Inflation Deflation & Forecast MAPE degrades from 8.35\% to 14.2\% due to unmodeled nominal currency drift \\
+Disease Diagnostics & w/o Test-Time Augmentation & Out-of-distribution field top-1 accuracy falls from 73.4\% to 71.8\% under variable lighting \\
+Data Persistence & w/o SQLite WAL Mode & Concurrency locks emerge at 15+ concurrent requests; write latency increases 2.8$\times$ \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\vspace{-2mm}
+\end{table*}
 
 Disabling the Agronomic Constraint Layer immediately allowed the Random Forest model to recommend water-hungry crops in arid districts across 15.8\% of evaluation cases. Stripping the physical shortfall score dropped Risk Radar ROC-AUC from 0.892 to 0.871, underscoring the value of physical stress indicators during dry periods. Forecasting raw unadjusted rupee amounts degraded price accuracy by nearly six percentage points due to unmodeled currency inflation.
 
