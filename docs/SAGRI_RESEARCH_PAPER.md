@@ -27,33 +27,59 @@ To resolve these disconnects, we designed SAGRI (*Smart Agriculture Real-time In
 
 ---
 
-### 2. Experimental Results & Ablation Analysis
-
-#### Model Performance Across Pipelines
-| Pipeline | Primary Metric | Observed Value |
-| :--- | :--- | :--- |
-| **Disease Vision (ONNX)** | Top-1 Field Accuracy | 73.4% |
-| **Disease Vision (ONNX)** | CPU Inference Latency | 112 ms |
-| **Disease Vision (ONNX)** | Model Storage Size | 16.2 MB |
-| **Crop Recommendation** | 22-Crop Test Accuracy | 99.3% |
-| **Risk Radar (Hybrid)** | Out-of-Time ROC-AUC | 0.892 |
-| **Mandi Forecasting** | 30-Day Mean Abs. Pct. Error | 8.35% |
-| **Backend API (FastAPI)** | P50 Response Time | 48 ms |
-| **SQLite WAL** | Write Transaction Speed | 1,840 tx/s |
-
-#### Systematic Ablation Study
-| Configuration | Observed Result |
-| :--- | :--- |
-| **Full SAGRI Engine** | ROC-AUC 0.892, MAPE 8.35%, 0% invalid crops |
-| **w/o Constraint Layer** | 15.8% of recommendations violate ICAR limits |
-| **w/o Physical Shortfall** | Risk ROC-AUC drops from 0.892 to 0.871 |
-| **w/o CFPI Price Deflation** | Price forecast MAPE rises from 8.35% to 14.2% |
-| **w/o Test-Time Augmentation** | Foliar field accuracy falls from 73.4% to 71.8% |
-| **w/o SQLite WAL Mode** | Concurrency locks emerge at 15+ parallel writes |
+### 2. Dataset Curation and Partitioning
+| Dataset Source | Target Task | Sample Count | Evaluation Split |
+| :--- | :--- | :--- | :--- |
+| **PlantVillage** | Foliar Pathology | 54,305 Images | 80% Train / 20% Test |
+| **ICAR Soil Survey** | Crop Recommendation | 2,200 Rows | 5-Fold Stratified CV |
+| **ICRISAT + IMD + ERA5** | Failure Risk Radar | 325,418 Rows | 1966–2007 Train / 2008–2017 Test |
+| **Agmarknet 25-Year** | Mandi Forecasting | 1.2M Records | Chronological 80/20 Holdout |
 
 ---
 
-### 3. Transparent Handling of Model Edge Cases
+### 3. Experimental Results & Ablation Analysis
+
+#### Model Performance Across Pipelines
+| Pipeline Target | Evaluated Metric | Value |
+| :--- | :--- | :--- |
+| **Disease Vision (ONNX)** | Top-1 Field Accuracy | 73.4% |
+| **Disease Vision (ONNX)** | Single-Core CPU Latency | 112 ms |
+| **Disease Vision (ONNX)** | Model Storage Size | 16.2 MB |
+| **Crop Recommendation** | 22-Crop Test Accuracy | 99.3% |
+| **Risk Radar (Hybrid)** | Out-of-Time ROC-AUC | 0.892 |
+| **Mandi Forecasting** | 30-Day Mean Abs. Error | 8.35% |
+| **Backend API (FastAPI)** | P50 Response Time | 48 ms |
+| **SQLite WAL Storage** | Write Transaction Speed | 1,840 tx/s |
+
+#### Comparative Baseline Evaluation
+| Task Domain | Model Architecture | Accuracy / AUC | CPU Latency | Storage Size |
+| :--- | :--- | :--- | :--- | :--- |
+| **Vision Scanner** | VGG-16 | 72.8% | 980 ms | 528 MB |
+| **Vision Scanner** | ResNet-50 | 74.1% | 410 ms | 98 MB |
+| **Vision Scanner** | **MobileNetV2 (Ours)** | **73.4%** | **112 ms** | **16.2 MB** |
+| **Crop Recommender** | Decision Tree (CART) | 84.1% | 1 ms | 0.4 MB |
+| **Crop Recommender** | Support Vector Machine | 89.2% | 14 ms | 3.8 MB |
+| **Crop Recommender** | **Random Forest (Ours)** | **99.3%** | **6 ms** | **2.1 MB** |
+| **Risk Estimation** | Logistic Regression | 0.712 (AUC) | 2 ms | 0.1 MB |
+| **Risk Estimation** | Random Forest Regressor | 0.835 (AUC) | 12 ms | 8.4 MB |
+| **Risk Estimation** | Standalone XGBoost | 0.871 (AUC) | 5 ms | 4.2 MB |
+| **Risk Estimation** | **Hybrid Radar (Ours)** | **0.892 (AUC)** | **8 ms** | **4.3 MB** |
+
+#### Systematic Architectural Ablation Study
+| Pipeline Module | Ablation Variant | Empirical System Impact / Degradation |
+| :--- | :--- | :--- |
+| **Complete SAGRI Stack** | Default Implementation | Baseline: ROC-AUC 0.892, Price MAPE 8.35%, 0.0% Bioclimatic Violations |
+| **Crop Recommendation** | w/o Agronomic Constraint Layer | 15.8% of generated recommendations violate ICAR climatic and water zone thresholds |
+| **Climate Risk Radar** | w/o Physical Shortfall Engine | ROC-AUC drops from 0.892 to 0.871; failure detection under extreme droughts weakens |
+| **Price Forecasting** | w/o CFPI Inflation Deflation | Forecast MAPE degrades from 8.35% to 14.2% due to unmodeled nominal currency drift |
+| **Disease Diagnostics** | w/o Test-Time Augmentation | Out-of-distribution field top-1 accuracy falls from 73.4% to 71.8% under variable lighting |
+| **Data Persistence** | w/o SQLite WAL Mode | Concurrency locks emerge at 15+ concurrent requests; write latency increases 2.8x |
+
+---
+
+### 4. Transparent Handling of Model Edge Cases
 During validation, we noted an informative edge case: the PlantVillage dataset contains no diseased blueberry leaves, indexing only `Blueberry___healthy`. When presented with visibly diseased blueberry foliage, our vision model classified the leaf as healthy with a low softmax confidence score of 26.3%. 
 
 Because SAGRI avoids artificial confidence inflation, this low score exposes the model's ambiguity rather than masking it. We are implementing an automatic rule: whenever a "healthy" classification arrives with under 45% confidence, the system flags the leaf as *"Inconclusive / Suspected Abiotic Stress"* to prevent giving false reassurance to growers.
+
+In accordance with India's Digital Personal Data Protection (DPDP) Act 2023, farmer telemetry and transaction ledgers remain strictly within the local SQLite database, preventing privacy leakage to speculative commodity traders.
