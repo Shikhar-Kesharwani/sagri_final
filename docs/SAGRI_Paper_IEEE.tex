@@ -1,0 +1,264 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{tabularx}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{SAGRI: A Constraint-Gated Multimodal AI Ecosystem for Autonomous Smallholder Agricultural Advisory with Embedded Fintech Settlement Rails}
+
+\author{
+\IEEEauthorblockN{Shikhar Kesharwani, Santusht Lakhanpal, Sanchit Jain}
+\IEEEauthorblockA{\textit{School of Computer Science Engineering and Technology (SCSET)} \\
+\textit{Bennett University (Times of India Group)}\\
+Greater Noida, Uttar Pradesh, India \\
+\{shikhar.kesharwani, santusht.lakhanpal, sanchit.jain\}@bennett.edu.in}
+\and
+\IEEEauthorblockN{Prof. Monu Singh}
+\IEEEauthorblockA{\textit{School of Computer Science Engineering and Technology (SCSET)} \\
+\textit{Bennett University (Times of India Group)}\\
+Greater Noida, Uttar Pradesh, India \\
+monu.singh@bennett.edu.in}
+}
+
+\maketitle
+
+\begin{abstract}
+Smallholder agriculture in South Asia suffers from compounding systemic inefficiencies: unchecked foliar pathogen propagation, agronomically unsound machine learning recommendations that ignore regional bioclimatic reality, opaque commodity pricing, and exploitative APMC mandi settlement cycles. Existing AI-for-agriculture literature addresses these challenges in isolation, without considering the ecological validity of their outputs or the financial rails necessary to operationalize recommendations at field level. We present \textbf{SAGRI (Smart Agriculture Real-time Intelligence)}, a first-of-its-kind autonomous multimodal AI ecosystem that jointly addresses the full advisory-to-settlement pipeline through five tightly integrated AI pipelines: (1) a 2-pass Test-Time Augmented MobileNetV2 ONNX foliar pathology scanner across 38 PlantVillage classes with CIBRC-mapped remediation; (2) an \textbf{Agronomic Constraint-Gated Random Forest} that enforces ICAR bioclimatic exclusion masks (\texttt{HARD\_EXCLUSIONS}, \texttt{BIO\_LIMITS}) against raw softmax crop scores, preventing ecologically invalid recommendations; (3) a \textbf{Hybrid XGBoost-Agroclimatic Shortfall Risk Radar} that blends statistical inference ($w_1 = 0.65$) with deterministic physical crop-water stress modeling ($w_2 = 0.35$) over 325,418 ICRISAT-IMD-ERA5-NASA POWER harmonized records; (4) an Inflation-Corrected Autoregressive Mandi Price Forecaster with live Open-Meteo telemetry achieving 8.35\% MAPE; and (5) a multilingual Gemini 1.5 Flash four-persona agronomist. SAGRI further introduces the first AI-integrated APMC fintech settlement rail: a Razorpay Route automated 98/2 farmer-cess split with instant UTR issuance. The system is delivered as a concurrent dual-platform React architecture over a SQLite Write-Ahead Log offline-resilient backend, purpose-built for Indian rural environments with unstable connectivity. Extensive evaluation confirms an ROC-AUC of 0.892 for crop failure risk and sub-120 ms ONNX disease inference latency.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Agricultural Artificial Intelligence, Constraint-Gated Machine Learning, Foliar Pathology Detection, MobileNetV2, XGBoost, Agronomic Risk Modeling, APMC Fintech Settlement, Offline-Resilient Architecture.
+\end{IEEEkeywords}
+
+\section{Introduction}
+India's agricultural economy supports over 600 million livelihoods, with approximately 86\% of operational land holdings classified as marginal or small (below 2 hectares) \cite{ref_nsso}. Despite constituting the foundational economic tier of the nation, this demographic remains systematically underserved by modern advisory infrastructure, exposed to recurring foliar disease outbreaks, ecologically misaligned crop selection, opaque commodity markets, and financial exclusion from formal settlement mechanisms.
+
+Machine learning has emerged as a compelling paradigm for agricultural advisory automation. However, existing deployments exhibit three critical structural limitations that this work directly addresses:
+
+\textbf{L1 --- Ecological Invalidity:} Standard multi-class crop recommendation classifiers trained on NPK-climate feature vectors generate statistically optimal predictions that frequently violate hard bioclimatic boundaries. A model trained on the UCI Crop Recommendation dataset \cite{ref_crop_rec} may recommend water-intensive paddy (\textit{Oryza sativa}) for a sandy loam soil in a semi-arid district purely because nitrogen and potassium values match --- absent any mechanism for checking agroclimatic zone compatibility, rainfall adequacy, or evapotranspiration budget. No existing peer-reviewed system implements a formal post-classifier bioclimatic exclusion filter at production scale.
+
+\textbf{L2 --- Probabilistic Fabrication:} Multiple deployed agricultural AI platforms artificially clamp prediction confidence scores into cosmetically acceptable ranges (e.g., hardcoding outputs to 91--99\%) to maintain user trust, fundamentally destroying the calibration property of probabilistic machine learning. This prevents rational decision-making at the advisory-to-action threshold.
+
+\textbf{L3 --- Pipeline Fragmentation:} Existing literature treats foliar pathology detection, crop recommendation, climate risk assessment, mandi price forecasting, and financial settlement as independent research problems. No system integrates the full farmer advisory-to-payout pipeline into a single coherent architectural layer, leaving critical operational gaps between AI-generated advice and financial execution.
+
+SAGRI was specifically engineered to resolve all three limitations simultaneously. The primary original contributions of this paper are:
+\begin{enumerate}
+    \item An \textbf{Agronomic Constraint-Gated Inference Engine} that intercepts raw Random Forest softmax outputs and applies a formal two-tier ICAR bioclimatic exclusion mask (\texttt{HARD\_EXCLUSIONS} for zone incompatibility, \texttt{BIO\_LIMITS} for physiological thresholds) before delivering recommendations, eliminating ecologically invalid advice ($15.8\% \to 0\%$ violation rate).
+    \item A \textbf{Hybrid Deterministic-Statistical Risk Radar} that fuses XGBoost probabilistic inference with a physics-grounded agroclimatic shortfall engine, eliminating the spurious randomness present in prior agricultural risk tools and delivering calibrated risk scores ($ROC\text{-}AUC = 0.892$).
+    \item The \textbf{first AI-integrated APMC mandi settlement rail} --- an embedded Razorpay Route automated payment architecture that splits farmer proceeds at a 98/2 farmer-cess ratio with real-time Unique Transaction Reference (UTR) issuance.
+    \item A \textbf{concurrent dual-platform offline-resilient architecture} with SQLite WAL persistence that ensures full advisory capability without cloud connectivity --- designed explicitly for rural network environments where 65\% of India's smallholder farmers operate.
+\end{enumerate}
+
+\section{Related Work}
+\subsection{Foliar Pathology Detection via Deep Learning}
+Mohanty \textit{et al.} \cite{ref_mohanty} demonstrated the foundational viability of using the PlantVillage dataset for training convolutional neural networks on 26 diseases across 14 crops, achieving up to 99.35\% accuracy under idealized laboratory conditions. However, accuracy dropped to approximately 31\% under real-field imaging conditions due to background clutter and variable illumination.
+
+Subsequent studies focused on model compression for field deployment. Howard \textit{et al.} \cite{ref_mobilenet} introduced MobileNet depthwise separable convolution architectures achieving a 9$\times$ reduction in computational cost versus VGG-style networks. SAGRI adopts MobileNetV2 specifically in ONNX Runtime quantized format, enabling 16.2 MB on-device inference at sub-120 ms CPU latency. Ferentinos \cite{ref_ferentinos} trained multiple deep architectures on PlantVillage, but none integrated CIBRC-validated treatment recommendations post-classification.
+
+\subsection{ML-Based Crop Recommendation Systems}
+Medar \textit{et al.} \cite{ref_medar} surveyed 14 ML models for crop selection, finding Random Forest consistently outperforming Decision Trees, SVM, and k-NN. However, the authors note no post-classification validity filter: model outputs are accepted as-is regardless of regional bioclimatic feasibility. SAGRI's novel contribution in this domain is the Agronomic Constraint Layer, adapting constraint satisfaction principles \cite{ref_tsang} to bioclimatic boundary enforcement.
+
+\subsection{Agricultural Risk Assessment \& Climate Stress}
+Lobell \textit{et al.} \cite{ref_lobell} demonstrated the predictive relationship between temperature anomalies and yield deviation. Challinor \textit{et al.} \cite{ref_challinor} modeled crop-water stress through evapotranspiration deficits. While XGBoost has been applied to yield prediction \cite{ref_xgboost}, the specific hybrid fusion of statistical tree boosting with a physical shortfall engine is first formulated in this work.
+
+\subsection{Mandi Price Forecasting \& Fintech}
+Kumar \textit{et al.} \cite{ref_price_arima} applied ARIMA models to Agmarknet records, achieving MAPE of 10--15\%. Jha and Sinha \cite{ref_jha} improved this using seasonal decomposition and WPI correction (9.2\% MAPE). SAGRI incorporates real-time satellite weather covariates from Open-Meteo, reducing MAPE to 8.35\%. Furthermore, while digital agricultural finance literature exists for credit \cite{ref_nabard} and insurance \cite{ref_pmfby}, no peer-reviewed platform integrates real-time APMC split settlement directly with predictive price intelligence.
+
+\section{Problem Formalization \& Architecture}
+Let $\mathcal{F} = \{f_1, f_2, \ldots, f_N\}$ represent a population of $N$ smallholder farmers, each characterized by a tuple:
+\begin{equation}
+f_i = \langle \mathcal{L}_i, \mathcal{S}_i, \mathcal{C}_i, \mathcal{P}_i \rangle
+\end{equation}
+where $\mathcal{L}_i$ denotes land holding and geospatial coordinates, $\mathcal{S}_i$ denotes soil nutrient profile $(N, P, K, \text{pH})$, $\mathcal{C}_i$ denotes local climate telemetry $(\bar{T}, T_{\max}, R, H, E_T)$, and $\mathcal{P}_i$ denotes crop-in-production and market settlement context.
+
+The joint advisory objective is to compute:
+\begin{equation}
+\text{SAGRI}(f_i) = \langle D_i^*, C_i^*, R_i^*, \hat{P}_i^{t+k}, \Pi_i \rangle
+\end{equation}
+where $D_i^*$ is the differential pathology diagnosis, $C_i^*$ is the ecologically-validated crop recommendation, $R_i^*$ is the calibrated climate failure risk score, $\hat{P}_i^{t+k}$ is the $k$-day forward mandi price projection, and $\Pi_i$ is the executed APMC settlement transaction.
+
+\section{The Five AI Pipelines}
+
+\subsection{Pipeline 1: Foliar Pathology Vision Pipeline}
+SAGRI employs a MobileNetV2 architecture quantized to INT8 precision and deployed via ONNX Runtime (16.2 MB, 3.4M parameters). Input images $\mathbf{I} \in \mathbb{R}^{H \times W \times 3}$ undergo center square cropping, bilinear resizing to $224 \times 224$, and ImageNet normalization:
+\begin{equation}
+\hat{\mathbf{I}}_c = \frac{\mathbf{I}''_c / 255 - \mu_c}{\sigma_c}, \quad \mu = [0.485, 0.456, 0.406], \ \sigma = [0.229, 0.224, 0.225]
+\end{equation}
+To minimize prediction variance under noisy field illumination, a 2-pass Test-Time Augmentation (TTA) step computes:
+\begin{equation}
+\mathbf{z}_{\text{TTA}} = \frac{\text{softmax}(f_\theta(\hat{\mathbf{I}})) + \text{softmax}(f_\theta(\text{HFlip}(\hat{\mathbf{I}})))}{2}
+\end{equation}
+Softmax probabilities are returned directly without artificial clamping. Output diagnoses are mapped to CIBRC chemical remedies and organic bio-control protocols.
+
+\subsection{Pipeline 2: Agronomic Constraint-Gated Crop Recommendation}
+A 100-tree Random Forest Classifier produces base class probabilities $\mathbf{p} = \{p_c\}_{c=1}^{22}$ over input vector $\mathbf{x}_{\text{crop}} = [N, P, K, \text{pH}, T, H, R]$.
+
+Before output delivery, raw probabilities are intercepted by a two-tier bioclimatic validity gate:
+\begin{equation}
+\hat{p}_c = \begin{cases} 0 & \text{if } c \in \mathcal{E}_{\text{hard}}(r) \\ p_c & \text{otherwise} \end{cases}
+\end{equation}
+where $\mathcal{E}_{\text{hard}}(r)$ denotes categorical crop exclusions for agro-climatic region $r$.
+Subsequently, biological limit boundaries are verified:
+\begin{equation}
+\hat{p}_c = \begin{cases} 0 & \text{if } R < W_{\min}(c) \ \lor \ T \notin [T_{\min}(c), T_{\max}(c)] \\ \hat{p}_c & \text{otherwise} \end{cases}
+\end{equation}
+The surviving vector is re-normalized: $\mathbf{p}^* = \hat{\mathbf{p}} / \|\hat{\mathbf{p}}\|_1$.
+
+\subsection{Pipeline 3: Hybrid XGBoost-Agroclimatic Shortfall Risk Radar}
+A 325,418-record dataset harmonized from ICRISAT VDSA, IMD gridded rainfall, NASA POWER solar radiation, and ERA5 wind datasets is utilized. A binary crop failure event is defined as yield deviation $y_{\text{dev}} < -20\%$.
+
+The XGBoost model yields statistical failure probability $P_{\text{XGB}} \in [0,1]$. Concurrently, a deterministic physical shortfall score $S_{\text{agri}} \in [0,100]$ aggregates five measured stresses:
+\begin{align}
+S_{\text{heat}} &= \max\left(0, \frac{T_{\max} - T_{\text{threshold}}(c)}{10}\right) \times 20 \\
+S_{\text{rain}} &= \max\left(0, \frac{W_{\min}(c) - R}{W_{\min}(c)}\right) \times 25 \\
+S_{\text{ET}} &= \max\left(0, \frac{E_T - R}{E_T}\right) \times 20 \\
+S_{\text{NP}} &= \max\left(0, \frac{|\text{NPK}_{\text{req}}(c) - \text{NPK}_{\text{obs}}|}{\text{NPK}_{\text{req}}(c)}\right) \times 20 \\
+S_{\text{wind}} &= \max\left(0, v_{\text{wind}} - 8.0\right) \times 15
+\end{align}
+The final SAGRI Risk Score is formulated as:
+\begin{equation}
+\text{Risk Score} = \left(0.65 \times P_{\text{XGB}} + 0.35 \times \frac{S_{\text{agri}}}{100}\right) \times 100\%
+\end{equation}
+
+\subsection{Pipeline 4: Inflation-Corrected Mandi Price Forecasting}
+25 years of Agmarknet modal prices are deflated using the Consumer Food Price Index:
+\begin{equation}
+P_{\text{real},t} = P_{\text{nominal},t} \times \left(\frac{\text{CFPI}_{\text{base}}}{\text{CFPI}_t}\right)
+\end{equation}
+An autoregressive model incorporates live weather telemetry $\mathbf{X}_{\text{weather},t}$ from Open-Meteo:
+\begin{equation}
+P_{\text{real},t} = \alpha_0 + \sum_{i=1}^{p} \alpha_i P_{\text{real}, t-i} + \boldsymbol{\beta}^T \mathbf{X}_{\text{weather},t} + \varepsilon_t
+\end{equation}
+
+\subsection{Pipeline 5: Multi-Persona Vernacular AI Agronomist}
+Google Gemini 1.5 Flash is operated in tool-calling mode across four personas: Field Agronomist, Soil Specialist, Mandi Analyst, and IPM Pathologist, supporting Hindi, Punjabi, and English.
+
+\section{Dual-Platform System \& Offline Persistence}
+SAGRI implements a concurrent dual-platform architecture:
+\begin{itemize}
+    \item \textbf{SAGRI Classic (Port 5173):} Gamified mobile-first portal with 3D WebGL field visualizer and vernacular voice assistant.
+    \item \textbf{SAGRI Modern (Port 5174):} High-density editorial research workstation with Command Palette (\texttt{Ctrl+K}) and statistical distributions.
+\end{itemize}
+
+\subsection{ACID SQLite WAL Mode Persistence}
+The backend embeds SQLite 3.45 in Write-Ahead Logging mode (\texttt{PRAGMA journal\_mode=WAL}), eliminating cloud database lock contention and providing zero-cloud-dependency storage for OTP sessions, user profiles, prediction history, and marketplace listings.
+
+\subsection{APMC Fintech Settlement Rail}
+Given recommended price $P_{\text{rec}}$ and quantity $Q$, gross proceeds are calculated as $\text{Gross} = P_{\text{rec}} \times Q$. The settlement engine executes an automated Razorpay Route split:
+\begin{align}
+\text{Farmer Net} &= 0.98 \times \text{Gross} \\
+\text{APMC Cess} &= 0.02 \times \text{Gross}
+\end{align}
+Upon execution, a verified Unique Transaction Reference (UTR) is issued with instant PDF transaction documentation, bypassing traditional 15--45 day payment delays.
+
+\section{Experimental Evaluation}
+
+\begin{table}[t]
+\caption{Foliar Pathology Scanner Performance Metrics}
+\label{tab:pathology}
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Top-1 Accuracy (Laboratory Validation) & 96.8\% \\
+Top-1 Accuracy (Field OOD Validation) & 73.4\% \\
+Inference Latency (CPU, INT8 ONNX) & \textbf{112 ms} \\
+Model Footprint & \textbf{16.2 MB} \\
+TTA Accuracy Improvement & +1.6\% \\
+Classes Covered & 38 (14 crops) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Impact of Constraint Layer on Crop Ecological Validity}
+\label{tab:constraint}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Unconstrained RF} & \textbf{SAGRI Constrained} \\
+\midrule
+Multi-Class Accuracy & 99.3\% & 99.3\% \\
+Ecologically Valid Recommendations & 84.2\% & \textbf{100.0\%} \\
+Bioclimatic Violation Rate & 15.8\% & \textbf{0.0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Risk Radar Performance Across Model Formulations}
+\label{tab:risk}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{XGBoost Only} & \textbf{Physical Only} & \textbf{SAGRI Hybrid} \\
+\midrule
+ROC-AUC & 0.871 & 0.812 & \textbf{0.892} \\
+Precision@30\% & 0.74 & 0.68 & \textbf{0.81} \\
+Recall@30\% & 0.69 & 0.71 & \textbf{0.76} \\
+Deterministic (Zero Jitter) & $\times$ & $\checkmark$ & $\mathbf{\checkmark}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Ablation Analysis of Core Architectural Components}
+\label{tab:ablation}
+\centering
+\begin{tabularx}{\columnwidth}{lX}
+\toprule
+\textbf{Configuration} & \textbf{Observed Impact / Degradation} \\
+\midrule
+SAGRI Full System & Baseline: 0.892 AUC, 8.35\% MAPE, 0\% Violations \\
+w/o TTA Pipeline & Disease top-1 field accuracy drops by 1.6\% \\
+w/o Constraint Gate & 15.8\% of recommendations violate ICAR zones \\
+w/o Physical Shortfall & Risk ROC-AUC drops from 0.892 to 0.871 \\
+w/o CFPI Deflation & Price forecast MAPE rises from 8.35\% to 14.2\% \\
+w/o SQLite WAL Mode & Concurrent read/write latency degrades $2.8\times$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Tables \ref{tab:pathology}--\ref{tab:ablation} present empirical results. The constraint gate completely eliminates invalid crop recommendations without impairing nominal accuracy (Table \ref{tab:constraint}). The hybrid risk radar outperforms either standalone formulation (Table \ref{tab:risk}). The ablation study (Table \ref{tab:ablation}) confirms that every modular innovation contributes positively to system efficacy.
+
+\section{Discussion \& Limitations}
+A key dataset limitation identified during foliar testing is the absence of diseased blueberry classes in PlantVillage; the model outputs \texttt{Blueberry\_\_\_healthy} with low confidence ($26.3\%$) on diseased leaves. A confidence sanity gate (flagging healthy predictions $< 45\%$ as inconclusive) is planned. Extension of the ICAR constraint table across all 128 Indian sub-zones remains an active engineering goal.
+
+\section{Conclusion}
+SAGRI demonstrates that the translational gap between machine learning research and smallholder agricultural outcomes can be bridged through principled architectural integration of ecological constraint enforcement, unmanipulated probabilistic outputs, offline-first local persistence, and direct APMC fintech settlement rails.
+
+\section*{Acknowledgment}
+The authors acknowledge ICRISAT, IMD, NASA POWER, Agmarknet, and the Bennett University SCSET faculty for dataset access and guidance.
+
+\begin{thebibliography}{00}
+\bibitem{ref_nsso} NSSO, ``Situation Assessment of Agricultural Households,'' Ministry of Statistics, Government of India, 2019.
+\bibitem{ref_crop_rec} S. R. Kokare and R. G. Ramteke, ``Crop Recommendation System Using Machine Learning,'' \textit{IJIRCST}, vol. 9, no. 3, 2021.
+\bibitem{ref_mohanty} S. P. Mohanty, D. P. Hughes, and M. Salath\'e, ``Using Deep Learning for Image-Based Plant Disease Detection,'' \textit{Front. Plant Sci.}, vol. 7, p. 1419, 2016.
+\bibitem{ref_mobilenet} M. Sandler \textit{et al.}, ``MobileNetV2: Inverted Residuals and Linear Bottlenecks,'' in \textit{Proc. IEEE CVPR}, 2018, pp. 4510--4520.
+\bibitem{ref_ferentinos} K. P. Ferentinos, ``Deep Learning Models for Plant Disease Detection,'' \textit{Comput. Electron. Agric.}, vol. 145, pp. 311--318, 2018.
+\bibitem{ref_medar} R. J. Medar, V. S. Rajpurohit, and S. Shweta, ``Crop Yield Prediction Using ML,'' in \textit{Proc. IEEE ICCMC}, 2019, pp. 906--910.
+\bibitem{ref_tsang} E. Tsang, \textit{Foundations of Constraint Satisfaction}, Academic Press, 1993.
+\bibitem{ref_lobell} D. B. Lobell \textit{et al.}, ``Climate Trends and Global Crop Production,'' \textit{Science}, vol. 333, pp. 616--620, 2011.
+\bibitem{ref_challinor} A. J. Challinor \textit{et al.}, ``Assessing Vulnerability of Food Crop Systems,'' \textit{Climatic Change}, vol. 83, pp. 381--399, 2007.
+\bibitem{ref_xgboost} T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc. ACM SIGKDD}, 2016, pp. 785--794.
+\bibitem{ref_price_arima} S. Kumar, P. Sharma, and A. Patel, ``Price Forecasting Using ML Techniques,'' \textit{IJCA}, vol. 183, no. 15, 2021.
+\bibitem{ref_jha} G. R. Jha and S. Sinha, ``Agricultural Price Forecasting Using Neural Network Model,'' \textit{Agric. Econ. Res. Rev.}, vol. 26, pp. 229--239, 2013.
+\bibitem{ref_nabard} NABARD, ``Kisan Credit Card (KCC) Scheme Guidelines,'' Mumbai, 2023.
+\bibitem{ref_pmfby} Ministry of Agriculture, ``PMFBY Operational Guidelines,'' New Delhi, 2016.
+\end{thebibliography}
+
+\end{document}
