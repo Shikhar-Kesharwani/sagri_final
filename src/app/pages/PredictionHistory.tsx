@@ -131,8 +131,8 @@ export function PredictionHistory() {
             { label: 'Success Rate', value: '100%', icon: <TrendingUp className="w-5 h-5" /> },
           ]);
         }
-      } catch (_) {}
-    }
+      } catch (err) {
+        console.warn("Using local prediction history fallback:", err);
       } finally {
         setLoading(false);
       }
