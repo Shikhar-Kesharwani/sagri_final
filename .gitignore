@@ -95,3 +95,6 @@ backend/data/
 # Research paper drafts (untracked on GitHub for conference blind-review & anti-plagiarism)
 docs/SAGRI_Paper_IEEE.tex
 docs/SAGRI_RESEARCH_PAPER.md
+
+# New frontend (kept local-only for active local dev/testing, untracked on GitHub)
+new_frontend/
